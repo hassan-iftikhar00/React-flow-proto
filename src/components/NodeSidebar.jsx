@@ -20,14 +20,14 @@ export default function NodeSidebar({ onAddNode }) {
 
   return (
     <aside className="node-sidebar">
-      <h3>📌 IVR Blocks</h3>
+      <h3>📌 IVR Controls</h3>
       {nodeTypes.map((n) => (
         <div
           key={n.type}
           className="node-item"
           draggable
           onDragStart={(e) => onDragStart(e, n.type)}
-          onClick={() => onAddNode(n.type)}   // ✅ comment hata diya
+          onClick={() => onAddNode(n.type)} // ✅ comment hata diya
         >
           <span style={{ marginRight: 6 }}>{n.icon}</span>
           {n.label}
