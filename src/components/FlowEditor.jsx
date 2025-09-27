@@ -7,14 +7,20 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   MarkerType,
+  useReactFlow,
+  ReactFlowProvider,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import Toolbar from "./Toolbar";
 import {
   PlayNode,
   MenuNode,
   CollectNode,
   DecisionNode,
   TransferNode,
+  TTSNode,
+  STTNode,
+  SetVariableNode,
   EndNode,
 } from "./CustomNode";
 
@@ -31,6 +37,26 @@ const initialNodes = [
     },
     position: { x: 100, y: 50 },
   },
+  {
+    id: "2",
+    type: "decision",
+    data: {
+      label: "Decision",
+      condition: "Check user input",
+    },
+    position: { x: 100, y: 200 },
+  },
+];
+
+const initialEdges = [
+  {
+    id: "edge-1-2",
+    source: "1",
+    target: "2",
+    animated: true,
+    markerEnd: { type: MarkerType.Arrow },
+    style: { stroke: "#06b6d4", strokeWidth: 2 },
+  },
 ];
 
 const nodeTypes = {
@@ -39,14 +65,41 @@ const nodeTypes = {
   collect: CollectNode,
   decision: DecisionNode,
   transfer: TransferNode,
+  tts: TTSNode,
+  stt: STTNode,
+  set: SetVariableNode,
   end: EndNode,
 };
 
-export default function FlowEditor({ flowAction, setFlowAction }) {
+function FlowEditorContent({ flowAction, setFlowAction }) {
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedEdge, setSelectedEdge] = useState(null);
+
+  // Get the currently selected element (node or edge)
+  const selectedElement = selectedNode
+    ? {
+        ...selectedNode,
+        // Get the current node from state to reflect updates
+        ...(nodes.find((n) => n.id === selectedNode.id) || {}),
+      }
+    : selectedEdge
+    ? {
+        ...selectedEdge,
+        type: "edge",
+        // Get the current edge from state to reflect updates
+        ...(edges.find((e) => e.id === selectedEdge.id) || {}),
+      }
+    : null;
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
+
+  // Toolbar state
+  const [showGrid, setShowGrid] = useState(true);
+  const [showMiniMap, setShowMiniMap] = useState(true);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // add edge
   const onConnect = useCallback(
@@ -80,6 +133,12 @@ export default function FlowEditor({ flowAction, setFlowAction }) {
             return { condition: "Enter condition" };
           case "transfer":
             return { number: "Enter phone number" };
+          case "tts":
+            return { text: "Text to convert to speech" };
+          case "stt":
+            return { variable: "speechText" };
+          case "set":
+            return { variable: "myVariable", value: "myValue" };
           default:
             return {};
         }
@@ -96,111 +155,453 @@ export default function FlowEditor({ flowAction, setFlowAction }) {
     }
   }, [flowAction, setNodes, setFlowAction]);
 
+  // Toolbar functions
+  const handleSave = () => {
+    const flowData = { nodes, edges };
+    const dataStr = JSON.stringify(flowData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ivr-flow.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLoad = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const flowData = JSON.parse(e.target.result);
+            setNodes(flowData.nodes || []);
+            setEdges(flowData.edges || []);
+          } catch (error) {
+            alert("Invalid file format");
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleExport = () => {
+    const flowData = { nodes, edges };
+    console.log("Exporting flow:", flowData);
+    alert("Flow exported to console");
+  };
+
+  const handleImport = () => {
+    alert("Import functionality - to be implemented");
+  };
+
+  const handleZoomIn = () => {
+    zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    zoomOut();
+  };
+
+  const handleFitView = () => {
+    fitView();
+  };
+
+  const handleUndo = () => {
+    console.log("Undo");
+  };
+
+  const handleRedo = () => {
+    console.log("Redo");
+  };
+
+  const handleClearAll = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to clear all nodes and connections?"
+      )
+    ) {
+      setNodes([]);
+      setEdges([]);
+    }
+  };
+
+  const handleAutoLayout = () => {
+    console.log("Auto layout - to be implemented");
+  };
+
+  const handleToggleGrid = () => {
+    setShowGrid(!showGrid);
+  };
+
+  const handleToggleMiniMap = () => {
+    setShowMiniMap(!showMiniMap);
+  };
+
+  const handleValidateFlow = () => {
+    const validation = {
+      nodes: nodes.length,
+      edges: edges.length,
+      startNodes: nodes.filter((n) => !edges.some((e) => e.target === n.id))
+        .length,
+      endNodes: nodes.filter((n) => !edges.some((e) => e.source === n.id))
+        .length,
+    };
+    alert(
+      `Flow Validation:\n• ${validation.nodes} nodes\n• ${validation.edges} connections\n• ${validation.startNodes} start points\n• ${validation.endNodes} end points`
+    );
+  };
+
+  const handleRunFlow = () => {
+    alert("Flow simulation - to be implemented");
+  };
+
+  // Advanced toolbar handlers
+  const handleUpdateElement = (updates) => {
+    if (selectedNode) {
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.id === selectedNode.id
+            ? {
+                ...node,
+                style: {
+                  ...node.style,
+                  ...updates,
+                },
+                data: {
+                  ...node.data,
+                  style: {
+                    ...node.data.style,
+                    ...updates,
+                  },
+                },
+              }
+            : node
+        )
+      );
+    } else if (selectedEdge) {
+      setEdges((eds) =>
+        eds.map((edge) =>
+          edge.id === selectedEdge.id
+            ? {
+                ...edge,
+                // Handle style properties
+                style: {
+                  ...edge.style,
+                  ...(updates.stroke && { stroke: updates.stroke }),
+                  ...(updates.strokeWidth && {
+                    strokeWidth: updates.strokeWidth,
+                  }),
+                  ...(updates.strokeDasharray && {
+                    strokeDasharray: updates.strokeDasharray,
+                  }),
+                },
+                // Handle other edge properties
+                ...(updates.animated !== undefined && {
+                  animated: updates.animated,
+                }),
+              }
+            : edge
+        )
+      );
+
+      // Update the selectedEdge state to reflect changes in toolbar
+      setSelectedEdge((prev) =>
+        prev
+          ? {
+              ...prev,
+              style: {
+                ...prev.style,
+                ...updates,
+              },
+              ...(updates.animated !== undefined && {
+                animated: updates.animated,
+              }),
+            }
+          : null
+      );
+    }
+  };
+
+  const handleAddShape = (shapeType) => {
+    console.log("Add shape:", shapeType);
+    // Implementation for adding shapes
+  };
+
+  const handleAddLabel = () => {
+    console.log("Add label");
+    // Implementation for adding labels
+  };
+
+  const handleAddArrow = () => {
+    console.log("Add arrow");
+    // Implementation for adding arrows
+  };
+
   return (
-    <div className="flow-container" ref={reactFlowWrapper}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={(_, node) => setSelectedNode(node)}
-        nodeTypes={nodeTypes}
-        fitView
-      >
-        <MiniMap />
-        <Controls />
-        <Background gap={12} />
-      </ReactFlow>
-
-      {/* Enhanced config panel */}
-      {selectedNode && (
-        <div className="config-panel">
-          <h4>⚙️ Configure {selectedNode.type}</h4>
-
-          {selectedNode.type === "play" && (
-            <>
-              <label>Prompt Text:</label>
-              <input
-                type="text"
-                value={selectedNode.data.text || ""}
-                onChange={(e) =>
-                  setNodes((nds) =>
-                    nds.map((n) =>
-                      n.id === selectedNode.id
-                        ? { ...n, data: { ...n.data, text: e.target.value } }
-                        : n
-                    )
-                  )
-                }
-              />
-            </>
+    <div className="flow-editor-wrapper">
+      <Toolbar
+        selectedElement={selectedElement}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onFitView={handleFitView}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onToggleGrid={handleToggleGrid}
+        onToggleMiniMap={handleToggleMiniMap}
+        onAutoLayout={handleAutoLayout}
+        showGrid={showGrid}
+        showMiniMap={showMiniMap}
+        canUndo={false}
+        canRedo={false}
+        onUpdateElement={handleUpdateElement}
+        onAddShape={handleAddShape}
+        onAddLabel={handleAddLabel}
+        onAddArrow={handleAddArrow}
+      />
+      <div className="flow-container" ref={reactFlowWrapper}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={(_, node) => {
+            setSelectedNode(node);
+            setSelectedEdge(null);
+          }}
+          onEdgeClick={(_, edge) => {
+            setSelectedEdge(edge);
+            setSelectedNode(null);
+          }}
+          onPaneClick={() => {
+            setSelectedNode(null);
+            setSelectedEdge(null);
+          }}
+          nodeTypes={nodeTypes}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+          minZoom={0.3}
+          maxZoom={2}
+          fitView
+          fitViewOptions={{
+            padding: 0.2,
+            minZoom: 0.5,
+            maxZoom: 1.2,
+          }}
+        >
+          {showMiniMap && (
+            <MiniMap
+              nodeStrokeWidth={3}
+              style={{
+                height: 100,
+                width: 150,
+              }}
+              pannable
+              zoomable
+            />
           )}
-
-          {selectedNode.type === "collect" && (
-            <>
-              <label>Variable Name:</label>
-              <input
-                type="text"
-                value={selectedNode.data.variable || ""}
-                onChange={(e) =>
-                  setNodes((nds) =>
-                    nds.map((n) =>
-                      n.id === selectedNode.id
-                        ? {
-                            ...n,
-                            data: { ...n.data, variable: e.target.value },
-                          }
-                        : n
-                    )
-                  )
-                }
-              />
-            </>
+          <Controls />
+          {showGrid && (
+            <Background gap={24} color="#64748b" variant="dots" size={2} />
           )}
+        </ReactFlow>
 
-          {selectedNode.type === "decision" && (
-            <>
-              <label>Condition:</label>
-              <input
-                type="text"
-                value={selectedNode.data.condition || ""}
-                onChange={(e) =>
-                  setNodes((nds) =>
-                    nds.map((n) =>
-                      n.id === selectedNode.id
-                        ? {
-                            ...n,
-                            data: { ...n.data, condition: e.target.value },
-                          }
-                        : n
-                    )
-                  )
-                }
-              />
-            </>
-          )}
+        {/* Enhanced config panel */}
+        {selectedNode && (
+          <div className="config-panel">
+            <div className="config-header">
+              <h4>⚙️ Configure {selectedNode.type}</h4>
+              <button
+                className="config-close-btn"
+                onClick={() => setSelectedNode(null)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
 
-          {selectedNode.type === "transfer" && (
-            <>
-              <label>Phone Number:</label>
-              <input
-                type="text"
-                value={selectedNode.data.number || ""}
-                onChange={(e) =>
-                  setNodes((nds) =>
-                    nds.map((n) =>
-                      n.id === selectedNode.id
-                        ? { ...n, data: { ...n.data, number: e.target.value } }
-                        : n
+            {selectedNode.type === "play" && (
+              <>
+                <label>Prompt Text:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.text || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? { ...n, data: { ...n.data, text: e.target.value } }
+                          : n
+                      )
                     )
-                  )
-                }
-              />
-            </>
-          )}
-        </div>
-      )}
+                  }
+                />
+              </>
+            )}
+
+            {selectedNode.type === "collect" && (
+              <>
+                <label>Variable Name:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.variable || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? {
+                              ...n,
+                              data: { ...n.data, variable: e.target.value },
+                            }
+                          : n
+                      )
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {selectedNode.type === "decision" && (
+              <>
+                <label>Condition:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.condition || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? {
+                              ...n,
+                              data: { ...n.data, condition: e.target.value },
+                            }
+                          : n
+                      )
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {selectedNode.type === "transfer" && (
+              <>
+                <label>Phone Number:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.number || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? {
+                              ...n,
+                              data: { ...n.data, number: e.target.value },
+                            }
+                          : n
+                      )
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {selectedNode.type === "tts" && (
+              <>
+                <label>Text to Speak:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.text || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? { ...n, data: { ...n.data, text: e.target.value } }
+                          : n
+                      )
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {selectedNode.type === "stt" && (
+              <>
+                <label>Store Speech in Variable:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.variable || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? {
+                              ...n,
+                              data: { ...n.data, variable: e.target.value },
+                            }
+                          : n
+                      )
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {selectedNode.type === "set" && (
+              <>
+                <label>Variable Name:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.variable || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? {
+                              ...n,
+                              data: { ...n.data, variable: e.target.value },
+                            }
+                          : n
+                      )
+                    )
+                  }
+                />
+                <label>Value:</label>
+                <input
+                  type="text"
+                  value={selectedNode.data.value || ""}
+                  onChange={(e) =>
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id
+                          ? { ...n, data: { ...n.data, value: e.target.value } }
+                          : n
+                      )
+                    )
+                  }
+                />
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+// Main FlowEditor component wrapped with ReactFlowProvider
+export default function FlowEditor({ flowAction, setFlowAction }) {
+  return (
+    <ReactFlowProvider>
+      <FlowEditorContent
+        flowAction={flowAction}
+        setFlowAction={setFlowAction}
+      />
+    </ReactFlowProvider>
   );
 }

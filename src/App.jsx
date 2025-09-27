@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
@@ -8,8 +7,10 @@ import FlowBuilder from "./pages/FlowBuilder";
 import "./styles.css";
 
 export default function App() {
+
   const [active, setActive] = useState("dashboard"); // default page = Dashboard
   const [theme, setTheme] = useState("light");       // default theme
+
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -24,15 +25,10 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <Sidebar
-        active={active}
-        setActive={setActive}
-        theme={theme}
-        setTheme={setTheme}
-      />
-
+      {/* Theme toggle moved to navbar or can be removed */}
       <div className="main-content">
-        <Navbar />
+
+        <Navbar theme={theme} setTheme={setTheme} />
         {/* Dashboard page */}
         {active === "dashboard" && <Dashboard />}
 
@@ -46,6 +42,7 @@ export default function App() {
 
         {/* FlowBuilder page (if you want it separately) */}
         {active === "flowbuilder" && <FlowBuilder />}
+
       </div>
     </div>
   );
