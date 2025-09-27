@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   ZoomIn,
   ZoomOut,
@@ -35,6 +36,7 @@ import {
   Layers,
   Scan,
   Spline,
+  ChevronRight,
 } from "lucide-react";
 
 export default function Toolbar({
@@ -56,8 +58,9 @@ export default function Toolbar({
   onAddLabel,
   onAddArrow,
 }) {
-  const [showTooltip, setShowTooltip] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const [scrollIndicatorStyle, setScrollIndicatorStyle] = useState({});
   const toolbarRef = useRef(null);
 
   const isNodeSelected = selectedElement && selectedElement.type !== "edge";
@@ -65,39 +68,67 @@ export default function Toolbar({
   const isLabelSelected =
     selectedElement && selectedElement.elementType === "label";
 
-  // Document-level mouse tracking to ensure tooltips hide properly
-  useEffect(() => {
-    const handleDocumentMouseMove = (e) => {
-      if (!toolbarRef.current) return;
+  // Check for overflow and update scroll indicator
+  const checkOverflow = useCallback(() => {
+    if (toolbarRef.current) {
+      const element = toolbarRef.current;
+      const hasHorizontalOverflow = element.scrollWidth > element.clientWidth;
+      setHasOverflow(hasHorizontalOverflow);
 
-      const toolbarRect = toolbarRef.current.getBoundingClientRect();
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      const isMouseOverToolbar =
-        mouseX >= toolbarRect.left &&
-        mouseX <= toolbarRect.right &&
-        mouseY >= toolbarRect.top &&
-        mouseY <= toolbarRect.bottom + 60; // Extra space for tooltips
-
-      if (!isMouseOverToolbar) {
-        setShowTooltip(null);
+      // Add/remove class for styling
+      if (hasHorizontalOverflow) {
+        element.classList.add("has-overflow");
+      } else {
+        element.classList.remove("has-overflow");
       }
-    };
 
-    document.addEventListener("mousemove", handleDocumentMouseMove);
-    return () => {
-      document.removeEventListener("mousemove", handleDocumentMouseMove);
-    };
+      // Update scroll indicator position
+      const rect = element.getBoundingClientRect();
+      setScrollIndicatorStyle({
+        top: rect.top + rect.height / 2,
+        right: 8,
+        transform: "translateY(-50%)",
+      });
+    }
   }, []);
 
-  const handleMouseEnter = (title, description) => {
-    setShowTooltip({ title, description });
-  };
+  // Check overflow on mount and when content changes
+  useEffect(() => {
+    checkOverflow();
 
-  const handleMouseLeave = () => {
-    // Let the document mouse move handler take care of hiding
-  };
+    // Check on resize and scroll
+    const handleResize = () => checkOverflow();
+    const handleScroll = () => checkOverflow();
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll);
+
+    // Check when content changes (after render)
+    const timeoutId = setTimeout(checkOverflow, 100);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [checkOverflow, selectedElement]);
+
+  // Re-check overflow when activeDropdown changes
+  useEffect(() => {
+    const timeoutId = setTimeout(checkOverflow, 100);
+    return () => clearTimeout(timeoutId);
+  }, [activeDropdown, checkOverflow]);
+
+  // Handle scroll arrow click
+  const handleScrollRight = useCallback(() => {
+    if (toolbarRef.current) {
+      const scrollAmount = 150; // Pixels to scroll
+      toolbarRef.current.scrollBy({
+        left: scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  }, []);
 
   const TooltipButton = ({
     icon: Icon,
@@ -107,32 +138,204 @@ export default function Toolbar({
     className = "",
     active = false,
     disabled = false,
-  }) => (
-    <div
-      className="tooltip-wrapper"
-      onMouseEnter={() => handleMouseEnter(title, description)}
-      onMouseLeave={handleMouseLeave}
-    >
-      <button
-        className={`toolbar-icon-btn ${className} ${active ? "active" : ""} ${
-          disabled ? "disabled" : ""
-        }`}
-        onClick={onClick}
-        disabled={disabled}
-      >
-        <Icon size={16} />
-      </button>
-      {showTooltip && showTooltip.title === title && (
-        <div className="toolbar-tooltip">
-          <div className="tooltip-header">
-            <Icon size={14} />
-            <span>{title}</span>
-          </div>
-          <div className="tooltip-desc">{description}</div>
-        </div>
-      )}
-    </div>
-  );
+    shortcut,
+    category,
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+    const buttonRef = useRef(null);
+
+    // Determine context based on selected element
+    const getContextInfo = () => {
+      if (!selectedElement) {
+        return {
+          context: "Canvas",
+          contextIcon: Grid3X3,
+          contextColor: "#6b7280",
+        };
+      } else if (selectedElement.type === "edge") {
+        return {
+          context: "Edge",
+          contextIcon: CornerUpRight,
+          contextColor: "#0ea5e9",
+        };
+      } else {
+        return {
+          context: "Node",
+          contextIcon: Box,
+          contextColor: "#8b5cf6",
+        };
+      }
+    };
+
+    const contextInfo = getContextInfo();
+    const ContextIcon = contextInfo.contextIcon;
+
+    const handleMouseEnter = () => {
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setTooltipPos({
+          x: rect.left + rect.width / 2,
+          y: rect.bottom + 15,
+        });
+        setIsHovered(true);
+      }
+    };
+
+    return (
+      <>
+        <button
+          ref={buttonRef}
+          className={`toolbar-icon-btn ${className} ${active ? "active" : ""} ${
+            disabled ? "disabled" : ""
+          }`}
+          onClick={onClick}
+          disabled={disabled}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <Icon size={16} />
+        </button>
+        {isHovered &&
+          createPortal(
+            <div
+              className="enhanced-tooltip-portal"
+              style={{
+                position: "fixed",
+                left: tooltipPos.x,
+                top: tooltipPos.y,
+                transform: "translateX(-50%)",
+                background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+                color: "#1f2937",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                fontSize: "13px",
+                zIndex: 10000,
+                pointerEvents: "none",
+                minWidth: "280px",
+                maxWidth: "400px",
+                backdropFilter: "blur(10px)",
+                boxShadow:
+                  "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                animation: "tooltipFadeIn 0.2s ease-out",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 12px",
+                  borderBottom: "1px solid #f1f5f9",
+                  fontSize: "11px",
+                  fontWeight: "500",
+                  color: contextInfo.contextColor,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                <ContextIcon size={12} />
+                <span>{contextInfo.context} Controls</span>
+              </div>
+              <div style={{ padding: "12px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#64748b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {category || "Tools"}
+                  </span>
+                  {active && (
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        color: "white",
+                        padding: "2px 6px",
+                        borderRadius: "10px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flex: 1,
+                    }}
+                  >
+                    <Icon size={16} />
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: "600",
+                          fontSize: "14px",
+                          color: "#1f2937",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        {title}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748b",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        {description}
+                      </div>
+                    </div>
+                  </div>
+                  {shortcut && (
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        background: "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
+                        color: "#475569",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        border: "1px solid #e2e8f0",
+                        fontFamily: "monospace",
+                        fontWeight: "500",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {shortcut}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+      </>
+    );
+  };
 
   const ColorPicker = ({ value, onChange, title }) => {
     const [showPalette, setShowPalette] = useState(false);
@@ -273,177 +476,198 @@ export default function Toolbar({
 
   return (
     <div className="flow-toolbar" ref={toolbarRef}>
-      {/* Zoom & View Controls */}
-      <div className="toolbar-group">
-        <TooltipButton
-          icon={ZoomIn}
-          title="Zoom In"
-          description="Increase canvas zoom level"
-          onClick={onZoomIn}
-        />
-        <TooltipButton
-          icon={ZoomOut}
-          title="Zoom Out"
-          description="Decrease canvas zoom level"
-          onClick={onZoomOut}
-        />
-        <TooltipButton
-          icon={Maximize2}
-          title="Fit View"
-          description="Fit entire flow in viewport"
-          onClick={onFitView}
-        />
-      </div>
-
-      <div className="toolbar-divider"></div>
-
-      {/* History Controls */}
-      <div className="toolbar-group">
-        <TooltipButton
-          icon={RotateCcw}
-          title="Undo"
-          description="Undo last action"
-          onClick={onUndo}
-          disabled={!canUndo}
-        />
-        <TooltipButton
-          icon={RotateCw}
-          title="Redo"
-          description="Redo last undone action"
-          onClick={onRedo}
-          disabled={!canRedo}
-        />
-      </div>
-
-      <div className="toolbar-divider"></div>
-
-      {/* Layout & Display */}
-      <div className="toolbar-group">
-        <TooltipButton
-          icon={Layers}
-          title="Auto Layout"
-          description="Automatically arrange nodes in optimal layout"
-          onClick={onAutoLayout}
-        />
-        <TooltipButton
-          icon={Grid3X3}
-          title="Toggle Grid"
-          description="Show/hide background grid for alignment"
-          onClick={onToggleGrid}
-          active={showGrid}
-        />
-        <TooltipButton
-          icon={showMiniMap ? Eye : EyeOff}
-          title="Toggle MiniMap"
-          description="Show/hide minimap overview"
-          onClick={onToggleMiniMap}
-          active={showMiniMap}
-        />
-      </div>
-
-      <div className="toolbar-divider"></div>
-
-      {/* Add Elements */}
-      <div className="toolbar-group">
-        <div className="dropdown-wrapper">
+      {/* Navigation Section */}
+      <div className="toolbar-section">
+        <div className="toolbar-group">
           <TooltipButton
-            icon={Box}
-            title="Add Shape"
-            description="Add geometric shapes as containers"
-            onClick={() =>
-              setActiveDropdown(activeDropdown === "shapes" ? null : "shapes")
-            }
-            active={activeDropdown === "shapes"}
+            icon={ZoomIn}
+            title="Zoom In"
+            description="Increase canvas zoom level for detailed view"
+            onClick={onZoomIn}
+            shortcut="Ctrl +"
+            category="Navigation"
           />
-          {activeDropdown === "shapes" && (
-            <div className="dropdown-menu">
-              <button onClick={() => onAddShape("rectangle")}>
-                <Square size={14} /> Rectangle
-              </button>
-              <button onClick={() => onAddShape("circle")}>
-                <Circle size={14} /> Circle
-              </button>
-              <button onClick={() => onAddShape("triangle")}>
-                <Triangle size={14} /> Triangle
-              </button>
-              <button onClick={() => onAddShape("hexagon")}>
-                <Hexagon size={14} /> Hexagon
-              </button>
-            </div>
-          )}
+          <TooltipButton
+            icon={ZoomOut}
+            title="Zoom Out"
+            description="Decrease canvas zoom level for broader view"
+            onClick={onZoomOut}
+            shortcut="Ctrl -"
+            category="Navigation"
+          />
+          <TooltipButton
+            icon={Maximize2}
+            title="Fit View"
+            description="Automatically fit all flow elements in viewport"
+            onClick={onFitView}
+            shortcut="Ctrl 0"
+            category="Navigation"
+          />
         </div>
-
-        <TooltipButton
-          icon={Tag}
-          title="Add Label"
-          description="Add text labels and annotations"
-          onClick={onAddLabel}
-        />
-
-        <TooltipButton
-          icon={CornerUpRight}
-          title="Add Arrow"
-          description="Add pointing arrows for annotations"
-          onClick={onAddArrow}
-        />
       </div>
 
-      {/* Text Formatting - Show only when node/label is selected */}
+      {/* Edit Section */}
+      <div className="toolbar-section">
+        <div className="toolbar-group">
+          <TooltipButton
+            icon={RotateCcw}
+            title="Undo"
+            description="Reverse the last action performed"
+            onClick={onUndo}
+            disabled={!canUndo}
+            shortcut="Ctrl Z"
+            category="Edit"
+          />
+          <TooltipButton
+            icon={RotateCw}
+            title="Redo"
+            description="Restore the last undone action"
+            onClick={onRedo}
+            disabled={!canRedo}
+            shortcut="Ctrl Y"
+            category="Edit"
+          />
+        </div>
+      </div>
+
+      {/* View Section */}
+      <div className="toolbar-section">
+        <div className="toolbar-group">
+          <TooltipButton
+            icon={Layers}
+            title="Auto Layout"
+            description="Automatically arrange nodes in optimal layout"
+            onClick={onAutoLayout}
+            category="Layout"
+          />
+          <TooltipButton
+            icon={Grid3X3}
+            title="Toggle Grid"
+            description="Show/hide background grid for alignment"
+            onClick={onToggleGrid}
+            active={showGrid}
+            category="View"
+          />
+          <TooltipButton
+            icon={showMiniMap ? Eye : EyeOff}
+            title="Toggle MiniMap"
+            description="Show/hide minimap overview"
+            onClick={onToggleMiniMap}
+            active={showMiniMap}
+            category="View"
+          />
+        </div>
+      </div>
+
+      {/* Add Section */}
+      <div className="toolbar-section">
+        <div className="toolbar-group">
+          <div className="dropdown-wrapper">
+            <TooltipButton
+              icon={Box}
+              title="Add Shape"
+              description="Add geometric shapes as containers"
+              onClick={() =>
+                setActiveDropdown(activeDropdown === "shapes" ? null : "shapes")
+              }
+              active={activeDropdown === "shapes"}
+            />
+            {activeDropdown === "shapes" && (
+              <div className="dropdown-menu">
+                <button onClick={() => onAddShape("rectangle")}>
+                  <Square size={14} /> Rectangle
+                </button>
+                <button onClick={() => onAddShape("circle")}>
+                  <Circle size={14} /> Circle
+                </button>
+                <button onClick={() => onAddShape("triangle")}>
+                  <Triangle size={14} /> Triangle
+                </button>
+                <button onClick={() => onAddShape("hexagon")}>
+                  <Hexagon size={14} /> Hexagon
+                </button>
+              </div>
+            )}
+          </div>
+
+          <TooltipButton
+            icon={Tag}
+            title="Add Label"
+            description="Add text labels and annotations"
+            onClick={onAddLabel}
+          />
+
+          <TooltipButton
+            icon={CornerUpRight}
+            title="Add Arrow"
+            description="Add pointing arrows for annotations"
+            onClick={onAddArrow}
+          />
+        </div>
+      </div>
+
+      {/* Typography Section - Show only when node/label is selected */}
       {(isNodeSelected || isLabelSelected) && (
-        <>
-          <div className="toolbar-divider"></div>
+        <div className="toolbar-section">
           <div className="toolbar-group">
-            <TooltipButton
-              icon={Bold}
-              title="Bold"
-              description="Make selected text bold"
-              onClick={() =>
-                onUpdateElement({
-                  fontWeight:
-                    selectedElement?.style?.fontWeight === "bold"
-                      ? "normal"
-                      : "bold",
-                })
-              }
-              active={
-                selectedElement?.style?.fontWeight === "bold" ||
-                selectedElement?.data?.style?.fontWeight === "bold"
-              }
-            />
-            <TooltipButton
-              icon={Italic}
-              title="Italic"
-              description="Make selected text italic"
-              onClick={() =>
-                onUpdateElement({
-                  fontStyle:
-                    selectedElement?.style?.fontStyle === "italic"
-                      ? "normal"
-                      : "italic",
-                })
-              }
-              active={
-                selectedElement?.style?.fontStyle === "italic" ||
-                selectedElement?.data?.style?.fontStyle === "italic"
-              }
-            />
-            <TooltipButton
-              icon={Underline}
-              title="Underline"
-              description="Underline selected text"
-              onClick={() =>
-                onUpdateElement({
-                  textDecoration:
-                    selectedElement?.style?.textDecoration === "underline"
-                      ? "none"
-                      : "underline",
-                })
-              }
-              active={
-                selectedElement?.style?.textDecoration === "underline" ||
-                selectedElement?.data?.style?.textDecoration === "underline"
-              }
-            />
+            <div className="toolbar-text-controls">
+              <TooltipButton
+                icon={Bold}
+                title="Bold"
+                description="Apply bold font weight to selected node text"
+                shortcut="Ctrl B"
+                category="Typography"
+                onClick={() =>
+                  onUpdateElement({
+                    fontWeight:
+                      selectedElement?.style?.fontWeight === "bold"
+                        ? "normal"
+                        : "bold",
+                  })
+                }
+                active={
+                  selectedElement?.style?.fontWeight === "bold" ||
+                  selectedElement?.data?.style?.fontWeight === "bold"
+                }
+              />
+              <TooltipButton
+                icon={Italic}
+                title="Italic"
+                description="Apply italic font style to selected node text"
+                shortcut="Ctrl I"
+                category="Typography"
+                onClick={() =>
+                  onUpdateElement({
+                    fontStyle:
+                      selectedElement?.style?.fontStyle === "italic"
+                        ? "normal"
+                        : "italic",
+                  })
+                }
+                active={
+                  selectedElement?.style?.fontStyle === "italic" ||
+                  selectedElement?.data?.style?.fontStyle === "italic"
+                }
+              />
+              <TooltipButton
+                icon={Underline}
+                title="Underline"
+                description="Apply underline decoration to selected node text"
+                category="Typography"
+                onClick={() =>
+                  onUpdateElement({
+                    textDecoration:
+                      selectedElement?.style?.textDecoration === "underline"
+                        ? "none"
+                        : "underline",
+                  })
+                }
+                active={
+                  selectedElement?.style?.textDecoration === "underline" ||
+                  selectedElement?.data?.style?.textDecoration === "underline"
+                }
+              />
+            </div>
 
             <div className="font-controls">
               <select
@@ -492,18 +716,55 @@ export default function Toolbar({
               title="Text Color"
             />
           </div>
-        </>
+
+          <div className="toolbar-alignment-group">
+            <TooltipButton
+              icon={AlignLeft}
+              title="Align Left"
+              description="Align text to the left"
+              category="Typography"
+              onClick={() => onUpdateElement({ textAlign: "left" })}
+              active={
+                selectedElement?.style?.textAlign === "left" ||
+                (!selectedElement?.style?.textAlign &&
+                  !selectedElement?.data?.style?.textAlign)
+              }
+            />
+            <TooltipButton
+              icon={AlignCenter}
+              title="Align Center"
+              description="Center align text"
+              category="Typography"
+              onClick={() => onUpdateElement({ textAlign: "center" })}
+              active={
+                selectedElement?.style?.textAlign === "center" ||
+                selectedElement?.data?.style?.textAlign === "center"
+              }
+            />
+            <TooltipButton
+              icon={AlignRight}
+              title="Align Right"
+              description="Align text to the right"
+              category="Typography"
+              onClick={() => onUpdateElement({ textAlign: "right" })}
+              active={
+                selectedElement?.style?.textAlign === "right" ||
+                selectedElement?.data?.style?.textAlign === "right"
+              }
+            />
+          </div>
+        </div>
       )}
 
-      {/* Node Styling - Show only when node is selected */}
+      {/* Node Styling Section - Show only when node is selected */}
       {isNodeSelected && (
-        <>
-          <div className="toolbar-divider"></div>
+        <div className="toolbar-section">
           <div className="toolbar-group">
             <TooltipButton
               icon={Paintbrush}
               title="Background"
               description="Change node background color"
+              category="Styling"
             />
             <ColorPicker
               value={
@@ -520,6 +781,7 @@ export default function Toolbar({
               icon={RectangleHorizontal}
               title="Border"
               description="Change border color and width"
+              category="Styling"
             />
             <ColorPicker
               value={
@@ -602,13 +864,12 @@ export default function Toolbar({
               />
             </div>
           </div>
-        </>
+        </div>
       )}
 
-      {/* Edge Styling - Show only when edge is selected */}
+      {/* Edge Styling Section - Show only when edge is selected */}
       {isEdgeSelected && (
-        <>
-          <div className="toolbar-divider"></div>
+        <div className="toolbar-section">
           <div className="toolbar-group">
             <div className="dropdown-wrapper">
               <TooltipButton
@@ -680,8 +941,22 @@ export default function Toolbar({
               title="Edge Width"
             />
           </div>
-        </>
+        </div>
       )}
+
+      {/* Scroll Indicator */}
+      <div
+        className={`toolbar-scroll-indicator ${hasOverflow ? "visible" : ""}`}
+        style={scrollIndicatorStyle}
+      >
+        <div
+          className="scroll-arrow"
+          title="Click to scroll right for more tools"
+          onClick={handleScrollRight}
+        >
+          <ChevronRight size={14} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -108,6 +108,8 @@ body,
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .navbar {
   height: 64px;
@@ -141,6 +143,9 @@ body,
   gap: 12px;
   overflow: hidden;
   padding: 16px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .node-sidebar {
   width: 220px;
@@ -174,7 +179,8 @@ body,
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   position: relative;
   overflow: hidden;
-  margin-top: 8px;
+  margin-top: 0;
+  border-radius: 0 0 8px 8px;
 }
 
 /* Right utility bar: small buttons */
@@ -477,50 +483,92 @@ body,
 .flow-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 4px;
+  padding: 8px 12px;
   background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2px;
-  flex-wrap: wrap;
-  overflow: visible;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible;
   position: relative;
   z-index: 10;
+  min-height: 44px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  justify-content: flex-start;
+  border-top: 1px solid #e5e7eb;
+}
+
+.flow-toolbar.has-overflow {
+  padding-right: 40px;
+}
+
+.flow-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.toolbar-section-header {
+  display: none;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 1px;
+  padding-right: 6px;
+  margin-right: 6px;
+  border-right: 1px solid #e5e7eb;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.toolbar-group:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
 }
 
 .toolbar-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 4px;
+  padding: 4px 8px;
   background: transparent;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 400;
   color: #374151;
-  transition: all 0.2s;
+  transition: all 0.12s;
   white-space: nowrap;
+  height: 28px;
 }
 
 .toolbar-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #1f2937;
+  background: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .toolbar-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #374151;
+  border-color: #374151;
   color: white;
 }
 
@@ -544,9 +592,10 @@ body,
 
 .toolbar-divider {
   width: 1px;
-  height: 24px;
-  background: #e2e8f0;
-  margin: 0 8px;
+  height: 20px;
+  background: #e5e7eb;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 /* New Toolbar Icon Buttons */
@@ -554,30 +603,30 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   background: transparent;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  color: #374151;
-  transition: all 0.2s;
+  color: #6b7280;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+  font-size: 14px;
 }
 
 .toolbar-icon-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #1f2937;
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .toolbar-icon-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background: #e5e7eb;
+  color: #1f2937;
 }
 
 .toolbar-icon-btn.disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -589,6 +638,533 @@ body,
   z-index: 1;
 }
 
+/* Simple Tooltip System */
+.simple-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 9999;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease-out;
+  white-space: nowrap;
+}
+
+.tooltip-content {
+  padding: 8px 12px;
+}
+
+.tooltip-title {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.tooltip-desc {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.tooltip-shortcut {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Enhanced tooltip portal styles */
+.enhanced-tooltip-portal {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+
+/* React Flow Controls positioning */
+.react-flow__controls {
+  position: absolute !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 1000 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #374151 !important;
+  font-size: 16px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #f8fafc !important;
+  color: #1f2937 !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+/* React Flow Controls zoom display */
+.react-flow__controls-zoom {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin: 2px 0 !important;
+  text-align: center !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* React Flow MiniMap positioning */
+.react-flow__minimap {
+  position: absolute !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 1000 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  overflow: hidden !important;
+}
+
+/* Flow container should not clip controls */
+.flow-container {
+  position: relative;
+  flex: 1;
+  overflow: visible !important;
+}
+
+.flow-container .react-flow {
+  background: transparent;
+}
+
+/* Ensure controls are visible above content */
+.flow-editor-wrapper .react-flow__controls,
+.flow-editor-wrapper .react-flow__minimap {
+  z-index: 1001 !important;
+}
+
+/* Toolbar scroll indicator */
+.toolbar-scroll-indicator {
+  position: fixed;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.toolbar-scroll-indicator.visible {
+  opacity: 1;
+}
+
+.scroll-arrow {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+@keyframes scrollPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes scrollArrowBounce {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(1px);
+    opacity: 1;
+  }
+}
+
+.scroll-arrow:hover {
+  background: #f9fafb;
+  color: #111827;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.scroll-arrow:active {
+  transform: scale(0.98);
+  background: #f3f4f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.scroll-arrow svg {
+  animation: scrollPulse 3s ease-in-out infinite;
+  transition: transform 0.2s ease;
+  z-index: 1;
+}
+
+.scroll-arrow:hover svg {
+  transform: translateX(1px);
+}
+
+/* Modern toolbar layout enhancements */
+.toolbar-text-controls {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.toolbar-text-controls .toolbar-icon-btn {
+  border-radius: 2px;
+  width: 24px;
+  height: 24px;
+}
+
+.toolbar-text-controls .toolbar-icon-btn.active {
+  background: #374151;
+  color: white;
+}
+
+.toolbar-alignment-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.toolbar-alignment-group .toolbar-icon-btn {
+  border-radius: 2px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Responsive toolbar styles */
+@media (max-width: 1200px) {
+  .flow-toolbar {
+    gap: 3px;
+    padding: 6px 10px;
+  }
+
+  .toolbar-group {
+    gap: 1px;
+    margin-right: 4px;
+    padding-right: 4px;
+  }
+
+  .toolbar-icon-btn {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+@media (max-width: 900px) {
+  .flow-toolbar {
+    gap: 3px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+    min-height: 40px;
+    max-height: 80px;
+    overflow-y: auto;
+  }
+
+  .toolbar-group {
+    margin-right: 4px;
+    padding-right: 4px;
+    margin-bottom: 2px;
+  }
+
+  .toolbar-icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .flow-toolbar {
+    gap: 2px;
+    padding: 3px 6px;
+    flex-wrap: wrap;
+    min-height: 36px;
+    max-height: 72px;
+    overflow-y: auto;
+    justify-content: space-between;
+  }
+
+  .toolbar-group {
+    margin-right: 2px;
+    padding-right: 2px;
+    margin-bottom: 2px;
+    border-right: none;
+  }
+
+  .toolbar-group:not(:last-child)::after {
+    content: "";
+    width: 1px;
+    height: 20px;
+    background: rgba(226, 232, 240, 0.5);
+    margin-left: 2px;
+  }
+
+  .toolbar-icon-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* Custom scrollbar for mobile */
+  .flow-toolbar::-webkit-scrollbar {
+    height: 3px;
+    display: block;
+  }
+
+  .flow-toolbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+  }
+
+  .flow-toolbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .flow-toolbar {
+    padding: 2px 4px;
+    gap: 1px;
+    max-height: 60px;
+  }
+
+  .flow-toolbar.has-overflow {
+    padding-right: 32px;
+  }
+
+  .toolbar-group {
+    gap: 1px;
+    margin-right: 1px;
+    padding-right: 1px;
+  }
+
+  .toolbar-icon-btn {
+    width: 24px;
+    height: 24px;
+  }
+
+  .toolbar-scroll-indicator {
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .scroll-arrow {
+    width: 28px;
+    height: 28px;
+  }
+
+  .scroll-arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+.enhanced-tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: #ffffff;
+  filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.05));
+}
+
+.tooltip-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.context-text {
+  font-weight: 600;
+}
+
+.tooltip-main {
+  padding: 0;
+}
+
+.tooltip-category-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #fafbfc, #ffffff);
+}
+
+.tooltip-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+.tooltip-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.tooltip-action-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tooltip-action-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tooltip-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.tooltip-desc {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
+.tooltip-shortcut {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  color: #475569;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tooltip-status-inline {
+  display: inline-block;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.tooltip-category {
+  display: inline-block;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1d4ed8;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-status {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Legacy tooltip support */
 .toolbar-tooltip {
   position: absolute;
   top: 100%;
@@ -616,7 +1192,7 @@ body,
   border-bottom-color: #1f2937;
 }
 
-.tooltip-header {
+.toolbar-tooltip .tooltip-header {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -624,7 +1200,7 @@ body,
   margin-bottom: 2px;
 }
 
-.tooltip-desc {
+.toolbar-tooltip .tooltip-desc {
   font-size: 11px;
   opacity: 0.9;
 }
@@ -678,10 +1254,10 @@ body,
 }
 
 .color-picker-wrapper {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -802,20 +1378,26 @@ body,
 
 .font-family-select {
   padding: 4px 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #d1d5db;
   border-radius: 4px;
   font-size: 12px;
   background: white;
   cursor: pointer;
+  height: 28px;
+  min-width: 100px;
+  color: #374151;
 }
 
 .font-size-input {
   width: 50px;
   padding: 4px 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #d1d5db;
   border-radius: 4px;
   font-size: 12px;
   text-align: center;
+  height: 28px;
+  color: #374151;
+  background: white;
 }
 
 /* Dimension Controls */
@@ -966,7 +1548,16 @@ body,
   background: #ffffff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  overflow: visible;
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  position: relative;
+}
+
+/* Ensure controls are visible above content */
+.flow-editor-wrapper .react-flow__controls,
+.flow-editor-wrapper .react-flow__minimap {
+  z-index: 1001 !important;
 }
 
 /* Node sidebar stays the same but is now the only sidebar */
