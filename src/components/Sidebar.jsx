@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { 
   Settings, Phone, Database, Sun, Moon, 
   Play, Menu, Keyboard, Mic, Volume2, Clock,
-  BookOpen, Cpu, Variable, Languages, FileText,
-  CheckCircle, FunctionSquare, Shuffle, Power, ChevronDown, ChevronRight
+  Variable, Languages, FileText,
+  CheckCircle, FunctionSquare, Shuffle, Power, ChevronDown, ChevronRight,
+  Home, Workflow
 } from 'lucide-react'
 
 export default function Sidebar({ active, setActive, theme, setTheme }) {
@@ -11,6 +12,14 @@ export default function Sidebar({ active, setActive, theme, setTheme }) {
   const toggleCategory = (title) => setOpenCategory(openCategory === title ? null : title)
 
   const categories = [
+    // Dashboard & Flows → direct items (no expand)
+    {
+      title: 'main',
+      items: [
+        { key: 'dashboard', label: '📊 Dashboard', Icon: Home },
+        { key: 'flows', label: '🌀 Flows', Icon: Workflow },
+      ]
+    },
     {
       title: '🔧 System',
       items: [
@@ -78,26 +87,42 @@ export default function Sidebar({ active, setActive, theme, setTheme }) {
       <div className='rf-sidebar-list'>
         {categories.map((cat) => (
           <div key={cat.title} style={{ marginBottom: 8 }}>
-            <div 
-              className="rf-category-header"
-              onClick={() => toggleCategory(cat.title)}
-            >
-              <span>{cat.title}</span>
-              {openCategory === cat.title ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
-            </div>
-            {openCategory === cat.title && (
-              <div>
-                {cat.items.map(({ key, label, Icon }) => (
-                  <div 
-                    key={key} 
-                    className={'rf-sidebar-item ' + (active === key ? 'active' : '')} 
-                    onClick={() => setActive(key)}
-                  >
-                    <Icon size={18} />
-                    <div>{label}</div>
+            {/* agar category 'main' hai (Dashboard + Flows) toh direct items dikhayenge */}
+            {cat.title === 'main' ? (
+              cat.items.map(({ key, label, Icon }) => (
+                <div 
+                  key={key} 
+                  className={'rf-sidebar-item ' + (active === key ? 'active' : '')} 
+                  onClick={() => setActive(key)}
+                >
+                  <Icon size={18} />
+                  <div>{label}</div>
+                </div>
+              ))
+            ) : (
+              <>
+                <div 
+                  className="rf-category-header"
+                  onClick={() => toggleCategory(cat.title)}
+                >
+                  <span>{cat.title}</span>
+                  {openCategory === cat.title ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+                </div>
+                {openCategory === cat.title && (
+                  <div>
+                    {cat.items.map(({ key, label, Icon }) => (
+                      <div 
+                        key={key} 
+                        className={'rf-sidebar-item ' + (active === key ? 'active' : '')} 
+                        onClick={() => setActive(key)}
+                      >
+                        <Icon size={18} />
+                        <div>{label}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         ))}
