@@ -1,5 +1,6 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
+import { Trash2 } from "lucide-react";
 
 export function PlayNode({ data, style }) {
   const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
@@ -40,6 +41,18 @@ export function PlayNode({ data, style }) {
       className={`node play-node ${backgroundColor ? "custom-bg" : ""}`}
       style={nodeStyle}
     >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong style={textStyle}>▶ Play Prompt</strong>
       <div style={textStyle}>{data.text || "No prompt set"}</div>
 
@@ -95,6 +108,18 @@ export function MenuNode({ data, style }) {
       className={`node menu-node ${backgroundColor ? "custom-bg" : ""}`}
       style={nodeStyle}
     >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong style={textStyle}>📋 Menu</strong>
       <ul>
         {(data.options || []).map((o, i) => (
@@ -155,6 +180,18 @@ export function CollectNode({ data, style }) {
       className={`node collect-node ${backgroundColor ? "custom-bg" : ""}`}
       style={nodeStyle}
     >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong style={textStyle}>⌨ Collect Input</strong>
       <div style={textStyle}>Variable: {data.variable || "var1"}</div>
 
@@ -209,6 +246,18 @@ export function DecisionNode({ data, style }) {
       className={`node decision-node ${backgroundColor ? "custom-bg" : ""}`}
       style={nodeStyle}
     >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong style={textStyle}>⚖ Decision</strong>
       <div style={textStyle}>{data.condition || "No condition set"}</div>
 
@@ -229,6 +278,18 @@ export function DecisionNode({ data, style }) {
 export function TransferNode({ data }) {
   return (
     <div className="node transfer-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong>📞 Transfer Call</strong>
       <div>{data.number || "No DNIS"}</div>
 
@@ -249,6 +310,18 @@ export function TransferNode({ data }) {
 export function TTSNode({ data }) {
   return (
     <div className="node tts-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong>🗣️ Text-to-Speech</strong>
       <div>{data.text || "Enter text to speak"}</div>
 
@@ -269,6 +342,18 @@ export function TTSNode({ data }) {
 export function STTNode({ data }) {
   return (
     <div className="node stt-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong>🎙️ Speech-to-Text</strong>
       <div>Variable: {data.variable || "speechText"}</div>
 
@@ -289,6 +374,18 @@ export function STTNode({ data }) {
 export function SetVariableNode({ data }) {
   return (
     <div className="node set-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong>⚙️ Set Variable</strong>
       <div>
         {data.variable || "variable"} = {data.value || "value"}
@@ -308,9 +405,21 @@ export function SetVariableNode({ data }) {
   );
 }
 
-export function EndNode() {
+export function EndNode({ data }) {
   return (
     <div className="node end-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
       <strong>⏹ End</strong>
 
       <Handle
