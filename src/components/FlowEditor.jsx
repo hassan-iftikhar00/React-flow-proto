@@ -406,7 +406,7 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
               zoomable
             />
           )}
-          <Controls />
+          {/* <Controls /> */}
           {showGrid && (
             <Background gap={24} color="#64748b" variant="dots" size={2} />
           )}
