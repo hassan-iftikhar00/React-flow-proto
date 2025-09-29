@@ -1,76 +1,245 @@
 import React, { useState } from "react";
+import {
+  Play,
+  Edit3,
+  Copy,
+  Trash2,
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  Circle,
+  CheckCircle2,
+  Clock,
+  Calendar,
+  Menu,
+  X,
+} from "lucide-react";
 import "./Dashboard.css";
-import NodeSidebar from "../components/NodeSidebar";
-import FlowEditor from "../components/FlowEditor";
 
-export default function Dashboard() {
-  const [flowAction, setFlowAction] = useState(null);
+export default function Dashboard({ onLoadFlow, currentPage }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFlow, setSelectedFlow] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const handleAddNode = (type) => {
-    setFlowAction({ type, action: "add" });
+  // Determine button position based on current page
+  const isCanvasActive = currentPage === "flows";
+
+  // Sample flows data
+  const [flows] = useState([
+    {
+      id: 1,
+      name: "Customer Support IVR",
+      description: "Main customer support flow with menu options and routing",
+      status: "active",
+      lastModified: "2 hours ago",
+      created: "Sep 15, 2025",
+      nodes: 12,
+      connections: 8,
+      tags: ["Support", "IVR", "Production"],
+    },
+    {
+      id: 2,
+      name: "Appointment Booking",
+      description: "Automated appointment scheduling with calendar integration",
+      status: "draft",
+      lastModified: "1 day ago",
+      created: "Sep 20, 2025",
+      nodes: 8,
+      connections: 6,
+      tags: ["Booking", "Calendar", "Draft"],
+    },
+    {
+      id: 3,
+      name: "Payment Processing Flow",
+      description:
+        "Secure payment processing with validation and confirmations",
+      status: "active",
+      lastModified: "3 days ago",
+      created: "Sep 10, 2025",
+      nodes: 15,
+      connections: 12,
+      tags: ["Payment", "Security", "Production"],
+    },
+  ]);
+
+  const filteredFlows = flows.filter(
+    (flow) =>
+      flow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      flow.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleLoadFlow = (flow) => {
+    setSelectedFlow(flow);
+    if (onLoadFlow) {
+      onLoadFlow(flow);
+    }
+    // Close sidebar after loading flow
+    setIsSidebarOpen(false);
+    console.log("Loading flow:", flow.name);
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle2 className="status-icon active" size={16} />;
+      case "draft":
+        return <Circle className="status-icon draft" size={16} />;
+      case "paused":
+        return <Clock className="status-icon paused" size={16} />;
+      default:
+        return <Circle className="status-icon" size={16} />;
+    }
   };
 
   return (
-    <div className="dashboard-container">
-      <h1 className="dashboard-title">Dashboard</h1>
+    <>
+      {/* Toggle Button - Always visible */}
+      <button
+        className={`sidebar-toggle-btn ${
+          isCanvasActive ? "canvas-mode" : "welcome-mode"
+        }`}
+        onClick={() => setIsSidebarOpen(true)}
+        title="Open Flow Manager"
+      >
+        <Menu size={20} />
+        <span>Flows</span>
+      </button>{" "}
+      {/* Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      {/* Sliding Sidebar */}
+      <div className={`flows-sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <div className="flows-container">
+          {/* Header Section */}
+          <div className="flows-header">
+            <div className="flows-header-content">
+              <h1 className="flows-title">Flow Manager</h1>
+              <p className="flows-subtitle">
+                Create, manage, and deploy your conversation flows
+              </p>
+            </div>
+            <div className="header-actions">
+              <button className="btn-primary">
+                <Plus size={20} />
+                New Flow
+              </button>
+              <button
+                className="close-btn"
+                onClick={() => setIsSidebarOpen(false)}
+                title="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
 
-      {/* Cards Section */}
-      <div className="dashboard-cards">
-        <div className="card">
-          <h2>Total Flows</h2>
-          <p>12</p>
-        </div>
+          {/* Search and Filter Section */}
+          <div className="flows-toolbar">
+            <div className="search-container">
+              <Search className="search-icon" size={20} />
+              <input
+                type="text"
+                placeholder="Search flows..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <div className="toolbar-actions">
+              <button className="btn-secondary">
+                <Filter size={18} />
+                Filter
+              </button>
+            </div>
+          </div>
 
-        <div className="card">
-          <h2>Active Users</h2>
-          <p>58</p>
-        </div>
+          {/* Flows Grid */}
+          <div className="flows-grid">
+            {filteredFlows.map((flow) => (
+              <div key={flow.id} className="flow-card">
+                <div className="flow-card-header">
+                  <div className="flow-status">
+                    {getStatusIcon(flow.status)}
+                    <span className={`status-text ${flow.status}`}>
+                      {flow.status.charAt(0).toUpperCase() +
+                        flow.status.slice(1)}
+                    </span>
+                  </div>
+                  <button className="flow-menu-btn">
+                    <MoreVertical size={16} />
+                  </button>
+                </div>
 
-        <div className="card">
-          <h2>Executions</h2>
-          <p>245</p>
+                <div className="flow-card-content">
+                  <h3 className="flow-name">{flow.name}</h3>
+                  <p className="flow-description">{flow.description}</p>
+
+                  <div className="flow-stats">
+                    <div className="stat">
+                      <span className="stat-value">{flow.nodes}</span>
+                      <span className="stat-label">Nodes</span>
+                    </div>
+                    <div className="stat">
+                      <span className="stat-value">{flow.connections}</span>
+                      <span className="stat-label">Connections</span>
+                    </div>
+                  </div>
+
+                  <div className="flow-tags">
+                    {flow.tags.map((tag, index) => (
+                      <span key={index} className="flow-tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flow-card-footer">
+                  <div className="flow-meta">
+                    <div className="meta-item">
+                      <Calendar size={14} />
+                      <span>Modified {flow.lastModified}</span>
+                    </div>
+                  </div>
+                  <div className="flow-actions">
+                    <button
+                      className="btn-action"
+                      onClick={() => handleLoadFlow(flow)}
+                      title="Edit Flow"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button className="btn-action" title="Run Flow">
+                      <Play size={16} />
+                    </button>
+                    <button className="btn-action" title="Duplicate">
+                      <Copy size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {filteredFlows.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-state-content">
+                <h3>No flows found</h3>
+                <p>
+                  Try adjusting your search terms or create a new flow to get
+                  started.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Recent Flows Section */}
-      <div className="dashboard-section">
-        <h2>Recent Flows</h2>
-        <table className="dashboard-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Last Run</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Medical Billing IVR</td>
-              <td>✅ Active</td>
-              <td>Today</td>
-            </tr>
-            <tr>
-              <td>Appointment Reminder</td>
-              <td>🛑 Stopped</td>
-              <td>Yesterday</td>
-            </tr>
-            <tr>
-              <td>Customer Survey</td>
-              <td>✅ Active</td>
-              <td>2 days ago</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Flows Interface inside Dashboard */}
-      <div className="dashboard-section">
-        <h2>Flow Builder (Preview)</h2>
-        <div className="flow-page">
-          <NodeSidebar onAddNode={handleAddNode} />
-          <FlowEditor flowAction={flowAction} setFlowAction={setFlowAction} />
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
