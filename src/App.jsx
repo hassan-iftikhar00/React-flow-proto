@@ -4,6 +4,7 @@ import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
+import FloatingHamburger from "./components/FloatingHamburger";
 import "./styles.css";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
 
   // For FlowBuilder and FlowEditor
   const [flowAction, setFlowAction] = useState(null);
+  const [isFlowsSidebarOpen, setIsFlowsSidebarOpen] = useState(false);
 
   const handleAddNode = (type) => {
     setFlowAction({ type, action: "add" });
@@ -28,14 +30,39 @@ export default function App() {
     // You can add flow loading logic here
   };
 
+  const handleOpenFlowsSidebar = () => {
+    setIsFlowsSidebarOpen(true);
+  };
+
   return (
     <div className="app-container">
       {/* Theme toggle moved to navbar or can be removed */}
       <div className="main-content">
-        <Navbar theme={theme} setTheme={setTheme} />
+        {/* Show navbar only when NOT in flows mode */}
+        {active !== "flows" && <Navbar theme={theme} setTheme={setTheme} />}
+
+        {/* Show floating hamburger only when in flows mode */}
+        {active === "flows" && (
+          <FloatingHamburger 
+            onNavigate={setActive} 
+            currentPage={active}
+            onOpenFlowsSidebar={handleOpenFlowsSidebar}
+            isFlowsSidebarOpen={isFlowsSidebarOpen}
+          />
+        )}
 
         {/* Dashboard is now always available as a sidebar */}
-        <Dashboard onLoadFlow={handleLoadFlow} currentPage={active} />
+        {active !== "flows" && <Dashboard onLoadFlow={handleLoadFlow} currentPage={active} />}
+
+        {/* Dashboard component for flows sidebar even in flows mode */}
+        {active === "flows" && (
+          <Dashboard 
+            onLoadFlow={handleLoadFlow} 
+            currentPage={active}
+            isFlowsSidebarOpen={isFlowsSidebarOpen}
+            setIsFlowsSidebarOpen={setIsFlowsSidebarOpen}
+          />
+        )}
 
         {/* Dashboard page */}
         {active === "dashboard" && (
