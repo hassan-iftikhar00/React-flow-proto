@@ -17,10 +17,14 @@ import {
 } from "lucide-react";
 import "./Dashboard.css";
 
-export default function Dashboard({ onLoadFlow, currentPage }) {
+export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen, setIsFlowsSidebarOpen }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const actualIsSidebarOpen = isFlowsSidebarOpen !== undefined ? isFlowsSidebarOpen : isSidebarOpen;
+  const actualSetIsSidebarOpen = setIsFlowsSidebarOpen || setIsSidebarOpen;
 
   // Determine button position based on current page
   const isCanvasActive = currentPage === "flows";
@@ -75,7 +79,7 @@ export default function Dashboard({ onLoadFlow, currentPage }) {
       onLoadFlow(flow);
     }
     // Close sidebar after loading flow
-    setIsSidebarOpen(false);
+    actualSetIsSidebarOpen(false);
     console.log("Loading flow:", flow.name);
   };
 
@@ -94,26 +98,28 @@ export default function Dashboard({ onLoadFlow, currentPage }) {
 
   return (
     <>
-      {/* Toggle Button - Always visible */}
-      <button
-        className={`sidebar-toggle-btn ${
-          isCanvasActive ? "canvas-mode" : "welcome-mode"
-        }`}
-        onClick={() => setIsSidebarOpen(true)}
-        title="Open Flow Manager"
-      >
-        <Menu size={20} />
-        <span>Flows</span>
-      </button>{" "}
+      {/* Toggle Button - Only visible when NOT in canvas mode */}
+      {!isCanvasActive && (
+        <button
+          className={`sidebar-toggle-btn ${
+            isCanvasActive ? "canvas-mode" : "welcome-mode"
+          }`}
+          onClick={() => actualSetIsSidebarOpen(true)}
+          title="Open Flow Manager"
+        >
+          <Menu size={20} />
+          <span>Flows</span>
+        </button>
+      )}
       {/* Overlay */}
-      {isSidebarOpen && (
+      {actualIsSidebarOpen && (
         <div
           className="sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
+          onClick={() => actualSetIsSidebarOpen(false)}
         />
       )}
       {/* Sliding Sidebar */}
-      <div className={`flows-sidebar ${isSidebarOpen ? "open" : ""}`}>
+      <div className={`flows-sidebar ${actualIsSidebarOpen ? "open" : ""}`}>
         <div className="flows-container">
           {/* Header Section */}
           <div className="flows-header">
@@ -130,7 +136,7 @@ export default function Dashboard({ onLoadFlow, currentPage }) {
               </button>
               <button
                 className="close-btn"
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={() => actualSetIsSidebarOpen(false)}
                 title="Close"
               >
                 <X size={20} />
