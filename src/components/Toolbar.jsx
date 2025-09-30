@@ -140,6 +140,7 @@ export default function Toolbar({
     disabled = false,
     shortcut,
     category,
+    priority = "normal", // Add priority prop: "critical", "essential", "normal"
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -188,7 +189,7 @@ export default function Toolbar({
           ref={buttonRef}
           className={`toolbar-icon-btn ${className} ${active ? "active" : ""} ${
             disabled ? "disabled" : ""
-          }`}
+          } ${priority}`}
           onClick={onClick}
           disabled={disabled}
           onMouseEnter={handleMouseEnter}
@@ -469,16 +470,20 @@ export default function Toolbar({
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="toolbar-slider"
         title={title}
+        color="black"
       />
       <span className="slider-value">{value || min}</span>
     </div>
   );
 
   return (
-    <div className="flow-toolbar" ref={toolbarRef}>
+    <div
+      className={`flow-toolbar ${hasOverflow ? "scrollable" : ""}`}
+      ref={toolbarRef}
+    >
       {/* Navigation Section */}
-      <div className="toolbar-section">
-        <div className="toolbar-group">
+      <div className="toolbar-section critical">
+        <div className="toolbar-group critical">
           <TooltipButton
             icon={ZoomIn}
             title="Zoom In"
@@ -486,6 +491,7 @@ export default function Toolbar({
             onClick={onZoomIn}
             shortcut="Ctrl +"
             category="Navigation"
+            priority="essential"
           />
           <TooltipButton
             icon={ZoomOut}
@@ -494,6 +500,7 @@ export default function Toolbar({
             onClick={onZoomOut}
             shortcut="Ctrl -"
             category="Navigation"
+            priority="essential"
           />
           <TooltipButton
             icon={Maximize2}
@@ -502,12 +509,13 @@ export default function Toolbar({
             onClick={onFitView}
             shortcut="Ctrl 0"
             category="Navigation"
+            priority="essential"
           />
         </div>
       </div>
 
       {/* Edit Section */}
-      <div className="toolbar-section">
+      <div className="toolbar-section critical">
         <div className="toolbar-group">
           <TooltipButton
             icon={RotateCcw}
@@ -517,6 +525,8 @@ export default function Toolbar({
             disabled={!canUndo}
             shortcut="Ctrl Z"
             category="Edit"
+            priority="critical"
+            className="undo-btn"
           />
           <TooltipButton
             icon={RotateCw}
@@ -526,6 +536,8 @@ export default function Toolbar({
             disabled={!canRedo}
             shortcut="Ctrl Y"
             category="Edit"
+            priority="critical"
+            className="redo-btn"
           />
         </div>
       </div>
@@ -939,13 +951,14 @@ export default function Toolbar({
               min={1}
               max={10}
               title="Edge Width"
+              SliderColor="red"
             />
           </div>
         </div>
       )}
 
       {/* Scroll Indicator */}
-      <div
+      {/* <div
         className={`toolbar-scroll-indicator ${hasOverflow ? "visible" : ""}`}
         style={scrollIndicatorStyle}
       >
@@ -956,7 +969,7 @@ export default function Toolbar({
         >
           <ChevronRight size={14} />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

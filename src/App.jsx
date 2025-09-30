@@ -78,7 +78,7 @@ export default function App() {
         {active === "dashboard" && (
           <div className="welcome-page">
             <div className="welcome-content">
-              <h1>Welcome to Genesys Flow Professional</h1>
+              <h1>Welcome to Ascend BPO IVR Flow Builder</h1>
               <p>
                 Use the Flow Manager to create and manage your conversation
                 flows.

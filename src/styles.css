@@ -6,6 +6,15 @@
   --accent: #06b6d4;
   --muted: #94a3b8;
   --panel-bg: #ffffff;
+
+  /* Static Professional Toolbar Variables */
+  --toolbar-bg: #ffffff;
+  --primary-blue: #3b82f6;
+  --secondary-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --button-bg: #f8fafc;
+  --clean-border: #e2e8f0;
+  --clean-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -600,23 +609,25 @@ body,
   color: #ef4444;
 }
 
-/* Flow Toolbar */
+/* Flow Toolbar - Enhanced Modern Design */
 .flow-toolbar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 6px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fefefe 0%, #f8fafc 100%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   margin-bottom: 0;
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: visible;
   position: relative;
   z-index: 10;
-  min-height: 44px;
+  min-height: 52px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -624,11 +635,74 @@ body,
   scrollbar-width: none;
   -ms-overflow-style: none;
   justify-content: flex-start;
-  border-top: 1px solid #e5e7eb;
+  backdrop-filter: blur(8px);
 }
 
 .flow-toolbar.has-overflow {
-  padding-right: 40px;
+  padding-right: 64px;
+}
+
+.flow-toolbar::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 245, 255, 0.1) 25%,
+    rgba(57, 255, 20, 0.1) 50%,
+    rgba(255, 107, 53, 0.1) 75%,
+    transparent 100%
+  );
+  z-index: -1;
+  border-radius: 0;
+  animation: toolbarAura 6s linear infinite;
+}
+
+@keyframes toolbarAura {
+  0% {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 245, 255, 0.1) 25%,
+      rgba(57, 255, 20, 0.1) 50%,
+      rgba(255, 107, 53, 0.1) 75%,
+      transparent 100%
+    );
+  }
+  33% {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(57, 255, 20, 0.1) 25%,
+      rgba(255, 107, 53, 0.1) 50%,
+      rgba(0, 245, 255, 0.1) 75%,
+      transparent 100%
+    );
+  }
+  66% {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 107, 53, 0.1) 25%,
+      rgba(0, 245, 255, 0.1) 50%,
+      rgba(57, 255, 20, 0.1) 75%,
+      transparent 100%
+    );
+  }
+  100% {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 245, 255, 0.1) 25%,
+      rgba(57, 255, 20, 0.1) 50%,
+      rgba(255, 107, 53, 0.1) 75%,
+      transparent 100%
+    );
+  }
 }
 
 .flow-toolbar::-webkit-scrollbar {
@@ -638,10 +712,45 @@ body,
 .toolbar-section {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 0;
+  gap: 6px;
+  padding: 8px 12px;
   position: relative;
   flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid transparent;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  overflow: hidden;
+}
+
+.toolbar-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.1) 0%,
+    rgba(255, 107, 53, 0.1) 50%,
+    rgba(57, 255, 20, 0.1) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 11px;
+}
+
+.toolbar-section:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--neon-primary);
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3),
+    inset 0 0 20px rgba(0, 245, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.toolbar-section:hover::before {
+  opacity: 1;
 }
 
 .toolbar-section-header {
@@ -651,52 +760,134 @@ body,
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: 1px;
-  padding-right: 6px;
-  margin-right: 6px;
-  border-right: 1px solid #e5e7eb;
+  gap: 3px;
+  padding: 6px 10px;
+  margin-right: 12px;
+  border-right: 1px solid rgba(0, 245, 255, 0.3);
   flex-shrink: 1;
   min-width: 0;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(0, 245, 255, 0.05) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  overflow: hidden;
+}
+
+.toolbar-group::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.6s ease;
+}
+
+.toolbar-group:hover::before {
+  left: 100%;
+}
+
+.toolbar-group:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.1) 0%,
+    rgba(57, 255, 20, 0.1) 100%
+  );
+  border-color: var(--neon-primary);
+  box-shadow: 0 0 25px rgba(0, 245, 255, 0.4),
+    inset 0 0 25px rgba(0, 245, 255, 0.1);
+  transform: translateY(-1px) scale(1.02);
 }
 
 .toolbar-group:last-child {
   border-right: none;
   margin-right: 0;
-  padding-right: 0;
 }
 
 .toolbar-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 400;
-  color: #374151;
-  transition: all 0.12s;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   white-space: nowrap;
-  height: 28px;
+  height: 36px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.toolbar-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.toolbar-btn:hover::before {
+  left: 100%;
 }
 
 .toolbar-btn:hover {
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border-color: #9ca3af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .toolbar-btn.active {
-  background: #374151;
-  border-color: #374151;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #2563eb;
   color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-btn.active:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4), 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-btn.disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+  background: #f9fafb;
+  color: #9ca3af;
 }
 
 .toolbar-btn.validate-btn:hover {
@@ -713,10 +904,31 @@ body,
 
 .toolbar-divider {
   width: 1px;
-  height: 20px;
-  background: #e5e7eb;
-  margin: 0 4px;
+  height: 24px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(226, 232, 240, 0.8),
+    transparent
+  );
+  margin: 0 6px;
   flex-shrink: 0;
+  position: relative;
+}
+
+.toolbar-divider::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
 }
 
 /* New Toolbar Icon Buttons */
@@ -724,32 +936,75 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
+  width: 38px;
+  height: 38px;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
   cursor: pointer;
-  color: #6b7280;
-  transition: all 0.12s ease;
+  color: #cbd5e1;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.toolbar-icon-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  transition: left 0.4s ease;
+}
+
+.toolbar-icon-btn:hover::before {
+  left: 100%;
 }
 
 .toolbar-icon-btn:hover {
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  border-color: #9ca3af;
 }
 
 .toolbar-icon-btn.active {
-  background: #e5e7eb;
-  color: #1f2937;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-icon-btn.active:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4), 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-icon-btn.disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
   pointer-events: none;
+  background: #f9fafb;
+  color: #d1d5db;
+  border-color: #f3f4f6;
 }
 
 /* Tooltip */
@@ -916,20 +1171,22 @@ body,
 }
 
 .scroll-arrow {
-  width: 32px;
-  height: 32px;
-  background: #ffffff;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #1f2937;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   cursor: pointer;
   pointer-events: auto;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  backdrop-filter: blur(8px);
 }
 
 @keyframes scrollPulse {
@@ -960,16 +1217,18 @@ body,
 }
 
 .scroll-arrow:hover {
-  background: #f9fafb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   color: #111827;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-color: #d1d5db;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-color: #9ca3af;
 }
 
 .scroll-arrow:active {
-  transform: scale(0.98);
-  background: #f3f4f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transform: translateY(0) scale(0.98);
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .scroll-arrow svg {
@@ -986,38 +1245,97 @@ body,
 .toolbar-text-controls {
   display: flex;
   align-items: center;
-  gap: 1px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  padding: 2px;
+  gap: 3px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(57, 255, 20, 0.1) 100%
+  );
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1), 0 0 20px rgba(0, 245, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.toolbar-text-controls::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: textControlsFlow 4s linear infinite;
+}
+
+@keyframes textControlsFlow {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .toolbar-text-controls .toolbar-icon-btn {
-  border-radius: 2px;
-  width: 24px;
-  height: 24px;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.toolbar-text-controls .toolbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-text-controls .toolbar-icon-btn.active {
-  background: #374151;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
 }
 
 .toolbar-alignment-group {
   display: flex;
   align-items: center;
-  gap: 1px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  padding: 2px;
+  gap: 2px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 8px;
+  padding: 3px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .toolbar-alignment-group .toolbar-icon-btn {
-  border-radius: 2px;
-  width: 24px;
-  height: 24px;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.toolbar-alignment-group .toolbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-alignment-group .toolbar-icon-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
 }
 
 /* Responsive toolbar styles */
@@ -1336,37 +1654,85 @@ body,
   position: absolute;
   top: 100%;
   left: 0;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   z-index: 1000;
-  min-width: 120px;
-  padding: 4px;
+  min-width: 140px;
+  padding: 6px;
+  backdrop-filter: blur(12px);
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dropdown-menu button {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: transparent;
   border: none;
   text-align: left;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 13px;
+  font-weight: 500;
   color: #374151;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.dropdown-menu button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  transition: left 0.4s ease;
+}
+
+.dropdown-menu button:hover::before {
+  left: 100%;
 }
 
 .dropdown-menu button:hover {
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #1f2937;
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dropdown-menu button.active {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1d4ed8;
+  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.2);
+}
+
+.dropdown-menu button.active:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  transform: translateX(2px);
+  box-shadow: 0 4px 8px rgba(29, 78, 216, 0.3);
 }
 
 /* Color Picker */
@@ -1375,17 +1741,22 @@ body,
 }
 
 .color-picker-wrapper {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(209, 213, 219, 0.6);
+  border-radius: 6px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .color-picker-wrapper:hover {
-  border-color: #cbd5e1;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .color-picker-preview {
@@ -1394,19 +1765,34 @@ body,
   border: none;
   cursor: pointer;
   position: relative;
+  border-radius: 4px;
 }
 
 .color-palette {
   position: absolute;
   top: 42px;
   left: 0;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   z-index: 1000;
-  min-width: 240px;
+  min-width: 260px;
+  backdrop-filter: blur(12px);
+  animation: paletteSlideIn 0.3s ease-out;
+}
+
+@keyframes paletteSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .color-palette-grid {
@@ -1417,22 +1803,48 @@ body,
 }
 
 .color-swatch {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.color-swatch::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  border-radius: 4px;
+  transition: opacity 0.2s ease;
+  opacity: 0;
+}
+
+.color-swatch:hover::before {
+  opacity: 1;
 }
 
 .color-swatch:hover {
-  transform: scale(1.1);
-  border-color: #64748b;
+  transform: translateY(-2px) scale(1.1);
+  border-color: rgba(100, 116, 139, 0.5);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .color-swatch.active {
   border-color: #1d4ed8;
-  transform: scale(1.05);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(29, 78, 216, 0.3), 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.color-swatch.active::before {
+  opacity: 1;
 }
 
 .color-palette-custom {
@@ -1467,20 +1879,33 @@ body,
 
 .toolbar-slider {
   flex: 1;
-  height: 4px;
-  background: #e2e8f0;
+  height: 6px;
+  background: linear-gradient(to right, #e2e8f0, #cbd5e1);
   outline: none;
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: pointer;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.toolbar-slider:hover {
+  background: linear-gradient(to right, #cbd5e1, #9ca3af);
 }
 
 .toolbar-slider::-webkit-slider-thumb {
   appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--accent);
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, var(--accent), #0891b2);
   border-radius: 50%;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+.toolbar-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .slider-value {
@@ -1494,65 +1919,638 @@ body,
 .font-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .font-family-select {
-  padding: 4px 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border: 1px solid rgba(209, 213, 219, 0.6);
+  border-radius: 6px;
   font-size: 12px;
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   cursor: pointer;
-  height: 28px;
-  min-width: 100px;
+  height: 32px;
+  min-width: 120px;
   color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.font-family-select:hover {
+  border-color: #9ca3af;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.font-family-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .font-size-input {
-  width: 50px;
-  padding: 4px 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+  width: 56px;
+  padding: 6px 8px;
+  border: 1px solid rgba(209, 213, 219, 0.6);
+  border-radius: 6px;
   font-size: 12px;
+  font-weight: 500;
   text-align: center;
-  height: 28px;
+  height: 32px;
   color: #374151;
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.font-size-input:hover {
+  border-color: #9ca3af;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.font-size-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Dimension Controls */
 .dimension-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dimension-input {
-  width: 60px;
-  padding: 4px 6px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  width: 68px;
+  padding: 6px 8px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 6px;
   font-size: 12px;
+  font-weight: 500;
   text-align: center;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
 }
 
-/* Responsive toolbar */
-@media (max-width: 1200px) {
-  .toolbar-btn span {
-    display: none;
+.dimension-input:hover {
+  border-color: #9ca3af;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dimension-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* CLEAN STATIC TOOLBAR DESIGN */
+:root {
+  /* Static Toolbar Variables */
+  --toolbar-bg: #ffffff;
+  --primary-blue: #3b82f6;
+  --secondary-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --button-bg: #f8fafc;
+  --clean-border: #e2e8f0;
+  --clean-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Fixed Toolbar Base */
+.flow-toolbar {
+  background: var(--toolbar-bg) !important;
+  border: 1px solid var(--clean-border) !important;
+  box-shadow: var(--clean-shadow) !important;
+  position: relative !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  margin: 8px !important;
+  /* CRITICAL: Prevent overflow */
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  max-width: calc(100vw - 20px) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  gap: 4px !important;
+  /* Custom sleek scrollbar */
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 transparent !important;
+}
+
+/* Sleek Custom Scrollbar for Webkit */
+.flow-toolbar::-webkit-scrollbar {
+  height: 4px !important;
+  width: 4px !important;
+}
+
+.flow-toolbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 2px !important;
+}
+
+.flow-toolbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 2px !important;
+  transition: background 0.2s ease !important;
+}
+
+.flow-toolbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+.flow-toolbar::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Remove gradient border effect - keep clean */
+.flow-toolbar::before {
+  display: none !important;
+}
+
+.flow-toolbar::after {
+  display: none !important;
+}
+
+/* Clean Sections - No Background Colors */
+.toolbar-section {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 4px !important;
+  transition: none !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+}
+
+.toolbar-section:hover {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Clean Groups - No Background Colors */
+.toolbar-group {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  transition: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+  padding: 2px 4px !important;
+}
+
+.toolbar-group:hover {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Responsive Buttons */
+.toolbar-btn {
+  background: var(--button-bg) !important;
+  border: 1px solid var(--clean-border) !important;
+  border-radius: 8px !important;
+  color: #475569 !important;
+  text-shadow: none !important;
+  box-shadow: var(--clean-shadow) !important;
+  position: relative !important;
+  height: 32px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  min-width: auto !important;
+}
+
+/* Remove light effects */
+.toolbar-btn::before {
+  display: none;
+}
+
+.toolbar-btn:hover {
+  background: #ffffff !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--primary-blue) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.toolbar-btn.active {
+  background: #dbeafe !important;
+  border-color: var(--primary-blue) !important;
+  color: var(--primary-blue) !important;
+  font-weight: 600 !important;
+}
+
+/* Responsive Icon Buttons */
+.toolbar-icon-btn {
+  width: 32px !important;
+  height: 32px !important;
+  background: var(--button-bg) !important;
+  border: 1px solid var(--clean-border) !important;
+  border-radius: 6px !important;
+  color: #64748b !important;
+  box-shadow: var(--clean-shadow) !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Remove light effects from icon buttons */
+.toolbar-icon-btn::before {
+  display: none;
+}
+
+.toolbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: var(--secondary-cyan) !important;
+  color: var(--secondary-cyan) !important;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.toolbar-icon-btn.active {
+  background: rgba(6, 182, 212, 0.08) !important;
+  border-color: var(--secondary-cyan) !important;
+  color: var(--secondary-cyan) !important;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Clean Text Controls */
+.toolbar-text-controls {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  position: relative !important;
+  overflow: visible !important;
+  padding: 0 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Remove light effects from text controls */
+.toolbar-text-controls::before {
+  display: none;
+}
+
+/* Static Scroll Arrow */
+.scroll-arrow {
+  width: 36px !important;
+  height: 36px !important;
+  background: var(--button-bg) !important;
+  border-radius: 8px !important;
+  color: #64748b !important;
+  box-shadow: var(--clean-shadow) !important;
+  border: 1px solid var(--clean-border) !important;
+  transition: all 0.2s ease !important;
+}
+
+.scroll-arrow:hover {
+  background: rgba(255, 255, 255, 1) !important;
+  color: var(--primary-blue) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  border-color: var(--primary-blue) !important;
+}
+
+/* Static Dividers */
+.toolbar-divider {
+  width: 1px !important;
+  height: 28px !important;
+  background: var(--clean-border) !important;
+  border-radius: 1px !important;
+}
+
+/* ========== SMART RESPONSIVE TOOLBAR SYSTEM ========== */
+
+/* Scrollbar indicator for better UX */
+.flow-toolbar.scrollable::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 2px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 20px !important;
+  height: 2px !important;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #cbd5e1,
+    transparent
+  ) !important;
+  border-radius: 1px !important;
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+}
+
+/* Base toolbar - ensure no wrap and proper sizing */
+.flow-toolbar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  white-space: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  padding: 12px 16px !important;
+  margin: 8px !important;
+  min-height: 52px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Hide scrollbar but keep functionality */
+.flow-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.flow-toolbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ensure all toolbar children don't wrap */
+.toolbar-group,
+.toolbar-btn,
+.toolbar-icon-btn,
+.toolbar-section {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* ========== BREAKPOINT 1: Large Desktop (1400px+) - Full Size ========== */
+@media (min-width: 1400px) {
+  .flow-toolbar {
+    padding: 12px 18px !important;
+    gap: 6px !important;
+    min-height: 56px !important;
   }
 
   .toolbar-btn {
-    padding: 8px;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    height: 38px !important;
   }
 
-  .font-controls {
-    display: none;
+  .toolbar-icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
+
+/* ========== BREAKPOINT 2: Desktop (1200px - 1399px) - Slight Reduction ========== */
+@media (max-width: 1399px) and (min-width: 1200px) {
+  .toolbar-btn {
+    padding: 7px 14px !important;
+    font-size: 12px !important;
+    height: 36px !important;
   }
 
-  .dimension-controls {
-    display: none;
+  .toolbar-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* ========== BREAKPOINT 3: Laptop (1000px - 1199px) - Hide Text Labels ========== */
+@media (max-width: 1199px) and (min-width: 1000px) {
+  .toolbar-btn span {
+    display: none !important;
+  }
+
+  .toolbar-btn {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-width: auto !important;
+  }
+
+  .toolbar-icon-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .flow-toolbar {
+    gap: 3px !important;
+    padding: 8px 10px !important;
+  }
+}
+
+/* ========== BREAKPOINT 4: Tablet (800px - 999px) - Hide Less Important Buttons ========== */
+@media (max-width: 999px) and (min-width: 800px) {
+  .toolbar-btn span {
+    display: none !important;
+  }
+
+  .toolbar-btn {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    height: 32px !important;
+  }
+
+  .toolbar-icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+  }
+
+  /* Hide less critical buttons */
+  .font-controls,
+  .dimension-controls,
+  .toolbar-btn:nth-child(n + 8) {
+    display: none !important;
+  }
+
+  .flow-toolbar {
+    gap: 2px !important;
+    padding: 6px 8px !important;
+    min-height: 44px !important;
+  }
+
+  .toolbar-group {
+    padding: 4px 6px !important;
+    margin-right: 6px !important;
+  }
+}
+
+/* ========== BREAKPOINT 5: Mobile Landscape (600px - 799px) - Compact Mode ========== */
+@media (max-width: 799px) and (min-width: 600px) {
+  .toolbar-btn {
+    padding: 5px 6px !important;
+    font-size: 10px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+  }
+
+  .toolbar-icon-btn {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 13px !important;
+  }
+
+  /* Show only essential buttons */
+  .toolbar-btn:not(.essential),
+  .font-controls,
+  .dimension-controls,
+  .toolbar-text-controls,
+  .toolbar-alignment-group {
+    display: none !important;
+  }
+
+  /* Mark essential buttons */
+  .toolbar-btn[title*="Save"],
+  .toolbar-btn[title*="Undo"],
+  .toolbar-btn[title*="Redo"],
+  .toolbar-btn[title*="Zoom"],
+  .toolbar-btn[title*="Run"] {
+    display: flex !important;
+  }
+
+  .flow-toolbar {
+    gap: 1px !important;
+    padding: 4px 6px !important;
+    min-height: 38px !important;
+  }
+
+  .toolbar-group {
+    padding: 3px 4px !important;
+    margin-right: 4px !important;
+    gap: 1px !important;
+  }
+
+  .toolbar-divider {
+    height: 20px !important;
+  }
+}
+
+/* ========== BREAKPOINT 6: Mobile Portrait (400px - 599px) - Icon Only Mode ========== */
+@media (max-width: 599px) and (min-width: 400px) {
+  .toolbar-btn {
+    padding: 4px !important;
+    font-size: 0 !important; /* Hide all text */
+    height: 28px !important;
+    min-width: 28px !important;
+    width: 28px !important;
+  }
+
+  .toolbar-icon-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 12px !important;
+  }
+
+  /* Show only most essential buttons */
+  .toolbar-btn:not(.critical),
+  .toolbar-group:not(.critical),
+  .font-controls,
+  .dimension-controls,
+  .toolbar-text-controls,
+  .toolbar-alignment-group,
+  .toolbar-section:not(.critical) {
+    display: none !important;
+  }
+
+  .flow-toolbar {
+    gap: 1px !important;
+    padding: 3px 4px !important;
+    min-height: 34px !important;
+  }
+
+  .toolbar-group {
+    padding: 2px !important;
+    margin-right: 2px !important;
+    gap: 1px !important;
+  }
+
+  .toolbar-divider {
+    height: 16px !important;
+    margin: 0 1px !important;
+  }
+}
+
+/* ========== BREAKPOINT 7: Very Small Mobile (< 400px) - Minimal Mode ========== */
+@media (max-width: 399px) {
+  .toolbar-btn {
+    padding: 3px !important;
+    font-size: 0 !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    width: 26px !important;
+  }
+
+  .toolbar-icon-btn {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 11px !important;
+  }
+
+  /* Show only absolutely essential buttons (max 6-8) */
+  .toolbar-btn,
+  .toolbar-group,
+  .toolbar-section {
+    display: none !important;
+  }
+
+  /* Show only critical actions */
+  .toolbar-btn.save-btn,
+  .toolbar-btn.undo-btn,
+  .toolbar-btn.redo-btn,
+  .toolbar-btn.run-btn {
+    display: flex !important;
+  }
+
+  .flow-toolbar {
+    gap: 1px !important;
+    padding: 2px 3px !important;
+    min-height: 30px !important;
+    justify-content: space-between !important;
+  }
+
+  .toolbar-divider {
+    display: none !important;
+  }
+
+  /* Add scroll indicator for very small screens */
+  .flow-toolbar::after {
+    content: "⋯";
+    position: sticky;
+    right: 0;
+    background: white;
+    padding: 0 4px;
+    font-size: 12px;
+    color: #64748b;
+  }
+}
+
+/* ========== HOVER STATES FOR RESPONSIVE SIZES ========== */
+@media (max-width: 799px) {
+  .toolbar-btn:hover,
+  .toolbar-icon-btn:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* ========== FOCUS STATES FOR MOBILE ========== */
+@media (max-width: 599px) {
+  .toolbar-btn:focus,
+  .toolbar-icon-btn:focus {
+    outline: 2px solid var(--primary-blue) !important;
+    outline-offset: 1px !important;
   }
 }
 .config-panel label {
