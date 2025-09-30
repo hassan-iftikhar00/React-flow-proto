@@ -155,6 +155,26 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
     }
   }, [flowAction, setNodes, setFlowAction]);
 
+  // Handle node deletion
+  const handleDeleteNode = useCallback((nodeId) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+    // Clear selection if the deleted node was selected
+    if (selectedNode?.id === nodeId) {
+      setSelectedNode(null);
+    }
+  }, [setNodes, setEdges, selectedNode]);
+
+  // Update nodes to include delete handler
+  const nodesWithDeleteHandler = nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      id: node.id,
+      onDelete: handleDeleteNode,
+    },
+  }));
+
   // Toolbar functions
   const handleSave = () => {
     const flowData = { nodes, edges };
@@ -367,7 +387,7 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
       />
       <div className="flow-container" ref={reactFlowWrapper}>
         <ReactFlow
-          nodes={nodes}
+          nodes={nodesWithDeleteHandler}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}

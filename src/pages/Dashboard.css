@@ -50,7 +50,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   z-index: 1002;
   backdrop-filter: blur(2px);
 }
@@ -62,10 +62,10 @@
   right: -500px;
   width: 480px;
   height: 100vh;
-  background: white;
+  background: var(--card-bg);
   z-index: 1003;
   transition: right 0.3s ease;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  box-shadow: -4px 0 20px var(--shadow-color);
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -78,7 +78,7 @@
 .flows-container {
   padding: 24px;
   min-height: 100%;
-  background: #fafbfc;
+  background: var(--bg-color);
 }
 
 /* Header Section */
@@ -88,10 +88,10 @@
   align-items: flex-start;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  background: #fafbfc;
+  background: var(--bg-color);
   z-index: 10;
 }
 
@@ -107,17 +107,17 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: #f3f4f6;
+  background: var(--close-btn-bg);
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--muted);
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--close-btn-hover);
+  color: var(--text-color);
 }
 
 .flows-header-content {
@@ -127,14 +127,14 @@
 .flows-title {
   font-size: 32px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   margin: 0 0 8px 0;
   line-height: 1.2;
 }
 
 .flows-subtitle {
   font-size: 16px;
-  color: #6b7280;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -178,16 +178,17 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--muted);
 }
 
 .search-input {
   width: 100%;
   padding: 12px 12px 12px 44px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
-  background: white;
+  background: var(--input-bg);
+  color: var(--text-color);
   transition: all 0.2s ease;
 }
 
@@ -207,9 +208,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border: 1px solid #d1d5db;
-  background: white;
-  color: #374151;
+  border: 1px solid var(--button-secondary-border);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -217,8 +218,8 @@
 }
 
 .btn-secondary:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: var(--menu-hover-bg);
+  border-color: var(--muted);
 }
 
 /* Flows Grid */
@@ -231,9 +232,9 @@
 
 /* Flow Card */
 .flow-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   padding: 20px;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -243,7 +244,7 @@
 
 .flow-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 25px var(--shadow-color), 0 4px 10px var(--shadow-color);
   transform: translateY(-2px);
 }
 
@@ -296,14 +297,14 @@
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--muted);
   border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .flow-menu-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--menu-hover-bg);
+  color: var(--text-color);
 }
 
 /* Card Content */
@@ -314,14 +315,14 @@
 .flow-name {
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-color);
   margin: 0 0 8px 0;
   line-height: 1.3;
 }
 
 .flow-description {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--muted);
   line-height: 1.5;
   margin: 0 0 16px 0;
 }
@@ -342,13 +343,13 @@
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   line-height: 1;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--muted);
   margin-top: 2px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -361,8 +362,8 @@
 }
 
 .flow-tag {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;
@@ -375,7 +376,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 16px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-light);
 }
 
 .flow-meta {
@@ -387,7 +388,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .flow-actions {
@@ -401,11 +402,11 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--button-secondary-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--muted);
   transition: all 0.2s ease;
 }
 
@@ -428,13 +429,13 @@
 .empty-state-content h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color);
   margin: 0 0 8px 0;
 }
 
 .empty-state-content p {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--muted);
   margin: 0;
 }
 

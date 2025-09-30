@@ -4,7 +4,9 @@ import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
+
 import IVRConfig from "./pages/IVRConfig"; 
+import FloatingHamburger from "./components/FloatingHamburger";
 import "./styles.css";
 
 export default function App() {
@@ -18,6 +20,7 @@ export default function App() {
 
   // For FlowBuilder and FlowEditor actions
   const [flowAction, setFlowAction] = useState(null);
+  const [isFlowsSidebarOpen, setIsFlowsSidebarOpen] = useState(false);
 
   const handleAddNode = (type) => {
     setFlowAction({ type, action: "add" });
@@ -29,8 +32,13 @@ export default function App() {
     // TODO: add flow loading logic here
   };
 
+  const handleOpenFlowsSidebar = () => {
+    setIsFlowsSidebarOpen(true);
+  };
+
   return (
     <div className="app-container">
+
       {/* Sticky Navbar */}
       <div className="navbar-wrapper">
         <Navbar theme={theme} setTheme={setTheme} setActive={setActive} />
@@ -38,7 +46,33 @@ export default function App() {
 
       {/* Main content below navbar */}
       <div className="main-content">
-        <Dashboard onLoadFlow={handleLoadFlow} currentPage={active} />
+
+        {/* Show navbar only when NOT in flows mode */}
+        {active !== "flows" && <Navbar theme={theme} setTheme={setTheme} onLoadFlow={handleLoadFlow} currentPage={active} />}
+
+        {/* Show floating hamburger only when in flows mode */}
+        {active === "flows" && (
+          <FloatingHamburger 
+            onNavigate={setActive} 
+            currentPage={active}
+            onOpenFlowsSidebar={handleOpenFlowsSidebar}
+            isFlowsSidebarOpen={isFlowsSidebarOpen}
+          />
+        )}
+
+        {/* Dashboard is now always available as a sidebar */}
+        {active !== "flows" && <Dashboard onLoadFlow={handleLoadFlow} currentPage={active} />}
+
+        {/* Dashboard component for flows sidebar even in flows mode */}
+        {active === "flows" && (
+          <Dashboard 
+            onLoadFlow={handleLoadFlow} 
+            currentPage={active}
+            isFlowsSidebarOpen={isFlowsSidebarOpen}
+            setIsFlowsSidebarOpen={setIsFlowsSidebarOpen}
+          />
+        )}
+
 
         {/* Switch pages */}
         {active === "dashboard" && (

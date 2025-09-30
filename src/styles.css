@@ -113,8 +113,8 @@ body,
 }
 .navbar {
   height: 64px;
-  background: #fff;
-  border-bottom: 1px solid #eef3f7;
+  background: var(--navbar-bg);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -124,16 +124,17 @@ body,
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f3f6fb;
+  background: var(--search-bg);
   padding: 8px;
   border-radius: 8px;
-  border: 1px solid #eef3f7;
+  border: 1px solid var(--border-color);
 }
 .search-box input {
   border: 0;
   background: transparent;
   outline: none;
   padding: 6px;
+  color: var(--text-color);
 }
 
 /* Flow page */
@@ -146,13 +147,20 @@ body,
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+  height: 100vh; /* Full viewport height when in flows mode */
+}
+
+/* When in flows mode, remove any extra spacing */
+.main-content:has(.flow-page) {
+  height: 100vh;
+  padding: 0;
 }
 .node-sidebar {
   width: 220px;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 12px;
-  border: 1px solid #eef3f7;
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -160,13 +168,15 @@ body,
 .node-sidebar h3 {
   margin: 0 0 6px 0;
   font-size: 14px;
+  color: var(--text-color);
 }
 .node-item {
   padding: 10px;
   border-radius: 8px;
-  background: #f8fafc;
-  border: 1px dashed #e6eef7;
+  background: var(--button-secondary-bg);
+  border: 1px dashed var(--border-color);
   cursor: grab;
+  color: var(--text-color);
 }
 .node-item:active {
   cursor: grabbing;
@@ -176,7 +186,7 @@ body,
 .flow-container {
   flex: 1;
   min-height: 480px;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  background: var(--canvas-bg);
   position: relative;
   overflow: hidden;
   margin-top: 0;
@@ -218,6 +228,39 @@ body,
   --panel-bg: #ffffff;
   --text-color: #0f172a;
   --bg-color: #f3f6fb;
+  --navbar-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --border-light: #f1f5f9;
+  --input-bg: #ffffff;
+  --card-bg: #ffffff;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --button-secondary-bg: #f9fafb;
+  --button-secondary-border: #d1d5db;
+  --button-secondary-text: #374151;
+  --search-bg: #f3f6fb;
+  --menu-hover-bg: #f3f4f6;
+  --close-btn-bg: #f3f4f6;
+  --close-btn-hover: #e5e7eb;
+  /* Canvas specific variables */
+  --canvas-bg: linear-gradient(180deg, #ffffff, #fbfdff);
+  --node-bg: #ffffff;
+  --node-border: #e2e8f0;
+  --node-shadow: rgba(0, 0, 0, 0.1);
+  --delete-btn-border: #ffffff;
+  --minimap-bg: rgba(255, 255, 255, 0.95);
+  --controls-bg: rgba(255, 255, 255, 0.95);
+  --grid-color: #64748b;
+  /* Node type gradients - Light mode */
+  --play-node-bg: linear-gradient(135deg, #ecfdf5, #ffffff);
+  --menu-node-bg: linear-gradient(135deg, #eff6ff, #ffffff);
+  --collect-node-bg: linear-gradient(135deg, #fffbeb, #ffffff);
+  --decision-node-bg: linear-gradient(135deg, #f3e8ff, #ffffff);
+  --transfer-node-bg: linear-gradient(135deg, #fef2f2, #ffffff);
+  --tts-node-bg: linear-gradient(135deg, #f3e8ff, #ffffff);
+  --stt-node-bg: linear-gradient(135deg, #fef2f2, #ffffff);
+  --set-node-bg: linear-gradient(135deg, #ecfdf5, #ffffff);
+  --end-node-bg: linear-gradient(135deg, #f9fafb, #ffffff);
 }
 
 [data-theme="dark"] {
@@ -227,6 +270,39 @@ body,
   --panel-bg: #2a2f44;
   --text-color: #e6eef7;
   --bg-color: #10121a;
+  --navbar-bg: #1f2937;
+  --border-color: #374151;
+  --border-light: #4b5563;
+  --input-bg: #374151;
+  --card-bg: #1f2937;
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --button-secondary-bg: #374151;
+  --button-secondary-border: #4b5563;
+  --button-secondary-text: #e5e7eb;
+  --search-bg: #374151;
+  --menu-hover-bg: #4b5563;
+  --close-btn-bg: #374151;
+  --close-btn-hover: #4b5563;
+  /* Canvas specific variables */
+  --canvas-bg: linear-gradient(180deg, #1f2937, #111827);
+  --node-bg: #374151;
+  --node-border: #4b5563;
+  --node-shadow: rgba(0, 0, 0, 0.3);
+  --delete-btn-border: #374151;
+  --minimap-bg: rgba(31, 41, 55, 0.95);
+  --controls-bg: rgba(31, 41, 55, 0.95);
+  --grid-color: #6b7280;
+  /* Node type gradients - Dark mode */
+  --play-node-bg: linear-gradient(135deg, #065f46, #374151);
+  --menu-node-bg: linear-gradient(135deg, #1e3a8a, #374151);
+  --collect-node-bg: linear-gradient(135deg, #92400e, #374151);
+  --decision-node-bg: linear-gradient(135deg, #581c87, #374151);
+  --transfer-node-bg: linear-gradient(135deg, #991b1b, #374151);
+  --tts-node-bg: linear-gradient(135deg, #581c87, #374151);
+  --stt-node-bg: linear-gradient(135deg, #991b1b, #374151);
+  --set-node-bg: linear-gradient(135deg, #065f46, #374151);
+  --end-node-bg: linear-gradient(135deg, #4b5563, #374151);
 }
 
 .app-container {
@@ -349,12 +425,14 @@ body,
 .node {
   padding: 8px 12px;
   border-radius: 6px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
   min-width: 120px;
   max-width: 180px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--node-shadow);
   font-size: 12px;
+  position: relative;
+  color: var(--text-color);
 }
 
 .node strong {
@@ -362,11 +440,46 @@ body,
   margin-bottom: 4px;
   font-weight: 600;
   font-size: 13px;
+  color: var(--text-color);
+}
+
+/* Delete button for nodes */
+.delete-node-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #ef4444;
+  border: 2px solid var(--delete-btn-border);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.node:hover .delete-node-btn {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.delete-node-btn:hover {
+  background: #dc2626;
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
 }
 
 .play-node {
   border-color: #10b981;
-  background: linear-gradient(135deg, #ecfdf5, #ffffff);
+  background: var(--play-node-bg);
+  color: var(--text-color);
 }
 
 .play-node.custom-bg {
@@ -375,7 +488,8 @@ body,
 
 .menu-node {
   border-color: #3b82f6;
-  background: linear-gradient(135deg, #eff6ff, #ffffff);
+  background: var(--menu-node-bg);
+  color: var(--text-color);
 }
 
 .menu-node.custom-bg {
@@ -395,7 +509,8 @@ body,
 
 .collect-node {
   border-color: #f59e0b;
-  background: linear-gradient(135deg, #fffbeb, #ffffff);
+  background: var(--collect-node-bg);
+  color: var(--text-color);
 }
 
 .collect-node.custom-bg {
@@ -404,7 +519,8 @@ body,
 
 .decision-node {
   border-color: #8b5cf6;
-  background: linear-gradient(135deg, #f3e8ff, #ffffff);
+  background: var(--decision-node-bg);
+  color: var(--text-color);
 }
 
 .decision-node.custom-bg {
@@ -413,27 +529,32 @@ body,
 
 .transfer-node {
   border-color: #ef4444;
-  background: linear-gradient(135deg, #fef2f2, #ffffff);
+  background: var(--transfer-node-bg);
+  color: var(--text-color);
 }
 
 .tts-node {
   border-color: #7c3aed;
-  background: linear-gradient(135deg, #f3e8ff, #ffffff);
+  background: var(--tts-node-bg);
+  color: var(--text-color);
 }
 
 .stt-node {
   border-color: #dc2626;
-  background: linear-gradient(135deg, #fef2f2, #ffffff);
+  background: var(--stt-node-bg);
+  color: var(--text-color);
 }
 
 .set-node {
   border-color: #059669;
-  background: linear-gradient(135deg, #ecfdf5, #ffffff);
+  background: var(--set-node-bg);
+  color: var(--text-color);
 }
 
 .end-node {
   border-color: #6b7280;
-  background: linear-gradient(135deg, #f9fafb, #ffffff);
+  background: var(--end-node-bg);
+  color: var(--text-color);
 }
 
 /* Config Panel */
@@ -442,11 +563,11 @@ body,
   top: 20px;
   right: 20px;
   width: 280px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-color);
   z-index: 10;
 }
 
@@ -460,7 +581,7 @@ body,
 .config-panel h4 {
   margin: 0;
   font-size: 16px;
-  color: #1f2937;
+  color: var(--text-color);
 }
 
 .config-close-btn {
@@ -700,18 +821,18 @@ body,
   bottom: 20px !important;
   left: 20px !important;
   z-index: 1000 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--controls-bg) !important;
+  border: 1px solid var(--node-border) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 12px var(--node-shadow) !important;
   backdrop-filter: blur(8px) !important;
 }
 
 .react-flow__controls-button {
   background: transparent !important;
   border: none !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  color: #374151 !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  color: var(--text-color) !important;
   font-size: 16px !important;
   width: 32px !important;
   height: 32px !important;
@@ -723,8 +844,8 @@ body,
 }
 
 .react-flow__controls-button:hover {
-  background: #f8fafc !important;
-  color: #1f2937 !important;
+  background: var(--menu-hover-bg) !important;
+  color: var(--text-color) !important;
 }
 
 .react-flow__controls-button:last-child {
@@ -733,13 +854,13 @@ body,
 
 /* React Flow Controls zoom display */
 .react-flow__controls-zoom {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--controls-bg) !important;
+  border: 1px solid var(--node-border) !important;
   border-radius: 6px !important;
   padding: 4px 8px !important;
   font-size: 12px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
+  color: var(--text-color) !important;
   margin: 2px 0 !important;
   text-align: center !important;
   backdrop-filter: blur(8px) !important;
@@ -751,10 +872,10 @@ body,
   bottom: 20px !important;
   right: 20px !important;
   z-index: 1000 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--minimap-bg) !important;
+  border: 1px solid var(--node-border) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 12px var(--node-shadow) !important;
   backdrop-filter: blur(8px) !important;
   overflow: hidden !important;
 }
@@ -1438,17 +1559,19 @@ body,
   display: block;
   margin-bottom: 6px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-color);
   font-size: 14px;
 }
 
 .config-panel input {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   margin-bottom: 12px;
+  background: var(--input-bg);
+  color: var(--text-color);
 }
 
 .config-panel input:focus {
@@ -1515,7 +1638,7 @@ body,
 /* Navbar theme toggle */
 .theme-toggle-btn-nav {
   background: transparent;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 8px;
   cursor: pointer;
@@ -1566,7 +1689,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: var(--bg-color);
   min-height: calc(100vh - 64px);
 }
 
@@ -1574,18 +1697,18 @@ body,
   text-align: center;
   max-width: 600px;
   padding: 40px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px var(--shadow-color);
+  border: 1px solid var(--border-color);
 }
 
 .welcome-content h1 {
   font-size: 32px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-color);
   margin: 0 0 16px 0;
-  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  background: linear-gradient(135deg, #3b82f6, var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1593,7 +1716,7 @@ body,
 
 .welcome-content p {
   font-size: 16px;
-  color: #6b7280;
+  color: var(--muted);
   line-height: 1.6;
   margin: 0 0 12px 0;
 }
@@ -1606,12 +1729,195 @@ body,
 /* Node sidebar stays the same but is now the only sidebar */
 .node-sidebar {
   width: 240px;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 16px;
-  border: 1px solid #eef3f7;
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Floating Hamburger Menu Styles */
+.floating-hamburger-container {
+  position: fixed;
+  top: 20px;
+  right: 20px; /* Move to rightmost corner */
+  z-index: 9998; /* Slightly lower than flows button */
+}
+
+.floating-hamburger-btn {
+  width: 36px; /* Reduced from 56px (about 2cm smaller) */
+  height: 36px; /* Reduced from 56px (about 2cm smaller) */
+  background: #3b82f6; /* Match flow button blue */
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); /* Updated shadow color */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.floating-hamburger-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); /* Updated shadow color */
+  background: #2563eb; /* Darker blue on hover to match flow button */
+}
+
+.floating-hamburger-btn.active {
+  transform: rotate(180deg) scale(1.1);
+  background: #2563eb; /* Use darker blue instead of red for consistency */
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4); /* Updated shadow color */
+}
+
+.floating-hamburger-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}
+
+.floating-hamburger-menu {
+  position: absolute;
+  top: 70px;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  min-width: 200px;
+  overflow: hidden;
+  animation: slideInFromTop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.floating-menu-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+}
+
+.floating-menu-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.floating-menu-items {
+  padding: 8px;
+}
+
+.floating-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.floating-menu-item:hover {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #1f2937;
+  transform: translateX(4px);
+}
+
+.floating-menu-item.active {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.floating-menu-item.active:hover {
+  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+}
+
+.floating-hamburger-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: -1;
+}
+
+/* Responsive adjustments for floating menu */
+@media (max-width: 768px) {
+  .floating-hamburger-container {
+    top: 15px;
+    right: 15px; /* Keep in rightmost corner */
+  }
+  
+  .floating-hamburger-btn {
+    width: 32px; /* Smaller on mobile */
+    height: 32px; /* Smaller on mobile */
+  }
+  
+  .floating-hamburger-menu {
+    min-width: 180px;
+    top: 50px; /* Adjust for smaller button */
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-hamburger-container {
+    right: 12px; /* Small margin from edge */
+  }
+  
+  .floating-hamburger-btn {
+    width: 28px; /* Even smaller for very small screens */
+    height: 28px;
+  }
+  
+  .floating-hamburger-menu {
+    top: 42px; /* Adjust for smaller button */
+  }
 }
