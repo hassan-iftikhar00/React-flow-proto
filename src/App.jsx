@@ -4,6 +4,8 @@ import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
+
+import IVRConfig from "./pages/IVRConfig"; 
 import FloatingHamburger from "./components/FloatingHamburger";
 import "./styles.css";
 
@@ -11,11 +13,12 @@ export default function App() {
   const [active, setActive] = useState("dashboard"); // default page = Dashboard
   const [theme, setTheme] = useState("light"); // default theme
 
+  // Apply theme to <html> tag
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // For FlowBuilder and FlowEditor
+  // For FlowBuilder and FlowEditor actions
   const [flowAction, setFlowAction] = useState(null);
   const [isFlowsSidebarOpen, setIsFlowsSidebarOpen] = useState(false);
 
@@ -25,9 +28,8 @@ export default function App() {
 
   const handleLoadFlow = (flow) => {
     console.log("Loading flow in editor:", flow);
-    // Switch to flows page to show the editor
     setActive("flows");
-    // You can add flow loading logic here
+    // TODO: add flow loading logic here
   };
 
   const handleOpenFlowsSidebar = () => {
@@ -36,10 +38,17 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Theme toggle moved to navbar or can be removed */}
+
+      {/* Sticky Navbar */}
+      <div className="navbar-wrapper">
+        <Navbar theme={theme} setTheme={setTheme} setActive={setActive} />
+      </div>
+
+      {/* Main content below navbar */}
       <div className="main-content">
+
         {/* Show navbar only when NOT in flows mode */}
-        {active !== "flows" && <Navbar theme={theme} setTheme={setTheme} />}
+        {active !== "flows" && <Navbar theme={theme} setTheme={setTheme} onLoadFlow={handleLoadFlow} currentPage={active} />}
 
         {/* Show floating hamburger only when in flows mode */}
         {active === "flows" && (
@@ -64,7 +73,8 @@ export default function App() {
           />
         )}
 
-        {/* Dashboard page */}
+
+        {/* Switch pages */}
         {active === "dashboard" && (
           <div className="welcome-page">
             <div className="welcome-content">
@@ -78,7 +88,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Flows page (separate full editor) */}
         {active === "flows" && (
           <div className="flow-page">
             <NodeSidebar onAddNode={handleAddNode} />
@@ -86,8 +95,13 @@ export default function App() {
           </div>
         )}
 
-        {/* FlowBuilder page (if you want it separately) */}
         {active === "flowbuilder" && <FlowBuilder />}
+
+        {active === "ivrconfig" && (
+          <div className="ivrconfig-page">
+            <IVRConfig />
+          </div>
+        )}
       </div>
     </div>
   );
