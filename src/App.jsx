@@ -4,7 +4,7 @@ import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
-
+import { ArrowLeft } from "lucide-react";
 import IVRConfig from "./pages/IVRConfig";
 import FloatingHamburger from "./components/FloatingHamburger";
 import "./styles.css";
@@ -36,6 +36,10 @@ export default function App() {
     setIsFlowsSidebarOpen(true);
   };
 
+  const handleBackToDashboard = () => {
+    setActive("dashboard");
+  };
+
   return (
     <div className="app-container">
       {/* Main content */}
@@ -49,17 +53,29 @@ export default function App() {
             onLoadFlow={handleLoadFlow}
             currentPage={active}
           />
+          
+          {/* Back button in header when in canvas mode */}
+          {active === "flows" && (
+            <button 
+              className="header-back-btn"
+              onClick={handleBackToDashboard}
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          )}
         </div>
 
         {/* Show floating hamburger only when in flows mode */}
-        {active === "flows" && (
+        {/* Hamburger removed from canvas page as requested */}
+        {/* {active === "flows" && (
           <FloatingHamburger
             onNavigate={setActive}
             currentPage={active}
             onOpenFlowsSidebar={handleOpenFlowsSidebar}
             isFlowsSidebarOpen={isFlowsSidebarOpen}
           />
-        )}
+        )} */}
 
         {/* Dashboard is now always available as a sidebar */}
         {active !== "flows" && (
