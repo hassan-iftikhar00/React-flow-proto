@@ -23,7 +23,7 @@ export default function Sidebar({ active, setActive, theme, setTheme }) {
     {
       title: '🔧 System',
       items: [
-        { key: 'ivr-config', label: 'IVR Config', Icon: Settings },
+        { key: 'ivrconfig', label: 'IVR Config', Icon: Settings }, // <-- FIXED key
         { key: 'dnis', label: 'DNIS', Icon: Phone },
         { key: 'fields-mapping', label: 'Fields Mapping', Icon: FileText },
         { key: 'language', label: 'Language', Icon: Languages },
