@@ -658,6 +658,13 @@ body,
   color: var(--text-color);
 }
 
+/* Terminator node styling */
+.terminator-node {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef3c7, #fffbe6);
+  color: var(--text-color);
+}
+
 /* Config Panel */
 .config-panel {
   position: absolute;

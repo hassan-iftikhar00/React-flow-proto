@@ -430,3 +430,33 @@ export function EndNode({ data }) {
     </div>
   );
 }
+
+export function TerminatorNode({ data }) {
+  return (
+    <div className="node terminator-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
+      <strong>🚦 Terminator</strong>
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "#555" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "#555" }}
+      />
+    </div>
+  );
+}

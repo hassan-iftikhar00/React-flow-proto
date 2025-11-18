@@ -10,6 +10,7 @@ const nodeTypes = [
   { type: "stt", label: "STT", icon: "🎙️" },
   { type: "set", label: "Set Variable", icon: "⚙️" },
   { type: "end", label: "End", icon: "⏹" },
+  { type: "terminator", label: "Terminator", icon: "🚦" }, // <-- Added Terminator option
 ];
 
 export default function NodeSidebar({ onAddNode }) {
