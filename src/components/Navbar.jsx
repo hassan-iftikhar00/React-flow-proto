@@ -3,43 +3,46 @@ import { Bell, UserCircle, Search, Sun, Moon, Settings } from "lucide-react";
 
 export default function Navbar({ theme, setTheme, setActive }) {
   return (
-    <div className="navbar">
-      {/* Left side */}
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <div style={{ fontWeight: 700 }}>IVR Flow Builder</div>
-        <div className="search-box">
-          <Search size={14} />
-          <input placeholder="Search flows, nodes, interactions..." />
-        </div>
+    <>
+      {/* Main navbar content (left side only) */}
+      <div className="navbar">
+        {/* Left side */}
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{ fontWeight: 700 }}>IVR Flow Builder</div>
+          <div className="search-box">
+            <Search size={14} />
+            <input placeholder="Search flows, nodes, interactions..." />
+          </div>
 
-        {/* 👇 IVR Config button */}
-        <button
-          onClick={() => setActive("ivrconfig")}
-          style={{
-            marginLeft: 16,
-            padding: "6px 12px",
-            background: "var(--primary-color, #1976d2)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 14,
-            fontWeight: 500,
-            transition: "0.2s",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
-          onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
-        >
-          <Settings size={16} />
-          IVR Config
-        </button>
+          {/* 👇 IVR Config button */}
+          <button
+            onClick={() => setActive("ivrconfig")}
+            style={{
+              marginLeft: 16,
+              padding: "6px 12px",
+              background: "var(--primary-color, #1976d2)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              transition: "0.2s",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
+            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            <Settings size={16} />
+            IVR Config
+          </button>
+        </div>
       </div>
 
-      {/* Right side */}
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      {/* Right side icons - positioned independently */}
+      <div className="navbar-right-icons">
         <button
           className="theme-toggle-btn-nav"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
@@ -47,9 +50,9 @@ export default function Navbar({ theme, setTheme, setActive }) {
         >
           {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
         </button>
-        <Bell size={18} />
-        <UserCircle size={24} />
+        <Bell size={18} className="navbar-icon" />
+        <UserCircle size={24} className="navbar-icon" />
       </div>
-    </div>
+    </>
   );
 }

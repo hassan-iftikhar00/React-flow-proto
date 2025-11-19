@@ -126,8 +126,100 @@ body,
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 20px;
+  margin-right: 140px; /* Add right margin to prevent overlap with right icons */
+  /* Remove justify-content: space-between since we're positioning right icons separately */
+}
+
+/* Right side icons positioned independently */
+.navbar-right-icons {
+  position: absolute;
+  top: 0;
+  right: 0; /* Changed from 20px to 0 to start from edge */
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1003; /* Higher than back button */
+  background: var(--navbar-bg);
+  padding: 0 20px; /* Add padding on both sides */
+  border-bottom: 1px solid var(--border-color); /* Match navbar border */
+  border-radius: 0; /* Ensure no border radius */
+  min-width: fit-content; /* Ensure it wraps content properly */
+  box-sizing: border-box; /* Include padding in width calculation */
+  /* Ensure seamless background integration */
+  box-shadow: -5px 0 5px var(--navbar-bg); /* Blend shadow to left */
+}
+
+.navbar-icon {
+  cursor: pointer;
+  color: var(--text-color);
+  transition: color 0.2s ease;
+  flex-shrink: 0; /* Prevent icons from shrinking */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-icon:hover {
+  color: var(--accent);
+}
+
+/* Ensure navbar maintains space-between behavior even with back button */
+.navbar > div:last-child {
+  margin-left: auto; /* Force right side to the rightmost corner */
+}
+
+/* Navbar wrapper for positioning back button */
+.navbar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Header Back Button */
+.header-back-btn {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+  z-index: 1002;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Adjust navbar content when back button is present */
+.navbar-wrapper:has(.header-back-btn) .navbar {
+  padding-left: 80px; /* Make room for back button */
+}
+
+.header-back-btn:hover {
+  background: var(--accent);
+  transform: translateY(-50%) translateX(-3px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4);
+}
+
+.header-back-btn:active {
+  transform: translateY(-50%) translateX(-1px) scale(0.98);
+}
+
+.header-back-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.header-back-btn:hover svg {
+  transform: translateX(-1px);
 }
 .search-box {
   display: flex;
@@ -563,6 +655,13 @@ body,
 .end-node {
   border-color: #6b7280;
   background: var(--end-node-bg);
+  color: var(--text-color);
+}
+
+/* Terminator node styling */
+.terminator-node {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef3c7, #fffbe6);
   color: var(--text-color);
 }
 
@@ -2643,7 +2742,11 @@ body,
   color: var(--text-color);
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0; /* Prevent button from shrinking */
+  min-width: auto;
+  height: auto;
 }
 
 .theme-toggle-btn-nav:hover {
