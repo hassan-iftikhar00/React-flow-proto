@@ -121,13 +121,21 @@ export function MenuNode({ data, style }) {
         <Trash2 size={16} />
       </button>
       <strong style={textStyle}>📋 Menu</strong>
-      <ul>
-        {(data.options || []).map((o, i) => (
-          <li key={i} style={textStyle}>
-            {o.key}: {o.label}
-          </li>
-        ))}
-      </ul>
+      <div style={{ ...textStyle, fontSize: "11px", marginTop: "4px" }}>
+        {data.promptText || "No prompt set"}
+      </div>
+      {data.timeout && (
+        <div
+          style={{
+            ...textStyle,
+            fontSize: "10px",
+            opacity: 0.7,
+            marginTop: "2px",
+          }}
+        >
+          Timeout: {data.timeout}s
+        </div>
+      )}
 
       <Handle
         type="target"

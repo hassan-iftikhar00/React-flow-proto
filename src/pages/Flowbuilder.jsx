@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import NodeSidebar from "../components/NodeSidebar";
 import FlowEditor from "../components/FlowEditor";
 
-export default function FlowBuilder() {
+export default function FlowBuilder({ currentFlowId }) {
   const [flowAction, setFlowAction] = useState(null);
 
   const handleAddNode = (type) => {
@@ -12,7 +12,11 @@ export default function FlowBuilder() {
   return (
     <div className="flow-page">
       <NodeSidebar onAddNode={handleAddNode} />
-      <FlowEditor flowAction={flowAction} setFlowAction={setFlowAction} />
+      <FlowEditor
+        flowAction={flowAction}
+        setFlowAction={setFlowAction}
+        currentFlowId={currentFlowId}
+      />
     </div>
   );
 }

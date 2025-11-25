@@ -3,7 +3,7 @@
   padding: 40px;
   background-color: #f0f8ff; /* light sky blue background */
   min-height: 100vh;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
 }
 
 /* ===== Subtitle ===== */
@@ -28,10 +28,11 @@
 .ivr-paper {
   padding: 30px;
   border-radius: 12px;
-  background: linear-gradient(145deg, #e0f7ff, #90caf9);
+  background: #ffffff;
   color: #0e1a2b;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
 }
 
 /* Hover effect on Paper */

@@ -4,11 +4,10 @@ import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
-import { ArrowLeft } from "lucide-react";
 import IVRConfig from "./pages/IVRConfig";
 import FieldsMapping from "./pages/FieldsMapping";
-import DNISConfig from "./pages/DNISConfig";   // ⭐ NEW IMPORT
-import FloatingHamburger from "./components/FloatingHamburger";
+import DNISConfig from "./pages/DNISConfig"; // ⭐ NEW IMPORT
+import { ArrowLeft } from "lucide-react";
 
 import {
   Dialog,
@@ -28,12 +27,15 @@ export default function App() {
 
   const [openConfig, setOpenConfig] = useState(false);
   const [openMapping, setOpenMapping] = useState(false);
-  const [openDNIS, setOpenDNIS] = useState(false);  // ⭐ NEW STATE
+  const [openDNIS, setOpenDNIS] = useState(false); // ⭐ NEW STATE
 
   // Popup
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
+  const [currentFlowId, setCurrentFlowId] = useState(null); // Track current flow being edited
+
+  // Apply theme to <html> tag
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
@@ -43,25 +45,24 @@ export default function App() {
   };
 
   const handleLoadFlow = (flow) => {
-    console.log("Loading flow:", flow);
+    console.log("Loading flow in editor:", flow);
+    setCurrentFlowId(flow.id); // Set the current flow ID
     setActive("flows");
+  };
+
+  const handleBackToDashboard = () => {
+    setActive("dashboard");
+    setCurrentFlowId(null);
   };
 
   const showPopup = (message) => {
     setPopupMessage(message);
     setPopupOpen(true);
-    setTimeout(() => setPopupOpen(false), 3000);
-  };
-
-  const handleBackToDashboard = () => {
-    setActive("dashboard");
   };
 
   return (
     <div className="app-container">
-      
       <div className="main-content">
-
         {/* Navbar */}
         <div className="navbar-wrapper">
           <Navbar
@@ -70,13 +71,13 @@ export default function App() {
             setActive={setActive}
             currentPage={active}
             onOpenConfig={() => setOpenConfig(true)}
+            onOpenDNIS={() => setOpenDNIS(true)}
             onOpenMapping={() => setOpenMapping(true)}
-            onOpenDNIS={() => setOpenDNIS(true)}       // ⭐ NEW
           />
-          
+
           {/* Back button in header when in canvas mode */}
           {active === "flows" && (
-            <button 
+            <button
               className="header-back-btn"
               onClick={handleBackToDashboard}
               title="Back to Dashboard"
@@ -85,9 +86,8 @@ export default function App() {
             </button>
           )}
         </div>
-
         {/* Floating Hamburger */}
-//         {active === "flows" && (
+
         {/* Show floating hamburger only when in flows mode */}
         {/* Hamburger removed from canvas page as requested */}
         {/* {active === "flows" && (
@@ -98,59 +98,60 @@ export default function App() {
             isFlowsSidebarOpen={isFlowsSidebarOpen}
           />
 //         )} */}
-
-        {/* Dashboard */}
-        {active !== "flows" && (
-          <Dashboard onLoadFlow={handleLoadFlow} currentPage={active} />
-        )}
-
-        {active === "flows" && (
-          <Dashboard
-            onLoadFlow={handleLoadFlow}
-            currentPage={active}
-            isFlowsSidebarOpen={isFlowsSidebarOpen}
-            setIsFlowsSidebarOpen={setIsFlowsSidebarOpen}
-          />
-        )}
-
-        {/* Welcome Page */}
-        {active === "dashboard" && (
-          <div className="welcome-page">
-            <div className="welcome-content">
-              <h1>Welcome to Ascend BPO IVR Flow Builder</h1>
-              <p>Use the Flow Manager to create and manage your conversation flows.</p>
-              <p>Click the "Flows" button in the top-left to get started.</p>
-            </div>
-          </div>
-        )}
-
+        {/* Switch pages */}
+        {active === "dashboard" && <Dashboard onLoadFlow={handleLoadFlow} />}
         {/* Flow Editor */}
         {active === "flows" && (
           <div className="flow-page">
             <NodeSidebar onAddNode={handleAddNode} />
-            <FlowEditor flowAction={flowAction} setFlowAction={setFlowAction} />
+            <FlowEditor
+              flowAction={flowAction}
+              setFlowAction={setFlowAction}
+              currentFlowId={currentFlowId}
+            />
           </div>
         )}
-
-        {active === "flowbuilder" && <FlowBuilder />}
+        {active === "flowbuilder" && (
+          <FlowBuilder currentFlowId={currentFlowId} />
+        )}
+        {active === "ivrconfig" && (
+          <div className="ivrconfig-page">
+            <IVRConfig />
+          </div>
+        )}
       </div>
 
       {/* IVR Config Modal */}
-      <Dialog open={openConfig} onClose={() => setOpenConfig(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openConfig}
+        onClose={() => setOpenConfig(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogContent sx={{ p: 0 }}>
           <IVRConfig showPopup={showPopup} />
         </DialogContent>
       </Dialog>
 
       {/* Fields Mapping Modal */}
-      <Dialog open={openMapping} onClose={() => setOpenMapping(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openMapping}
+        onClose={() => setOpenMapping(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogContent sx={{ p: 0 }}>
           <FieldsMapping showPopup={showPopup} />
         </DialogContent>
       </Dialog>
 
       {/* ⭐ DNIS Configuration Modal */}
-      <Dialog open={openDNIS} onClose={() => setOpenDNIS(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openDNIS}
+        onClose={() => setOpenDNIS(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogContent sx={{ p: 0 }}>
           <DNISConfig showPopup={showPopup} />
         </DialogContent>

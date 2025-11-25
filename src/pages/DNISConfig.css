@@ -1,12 +1,15 @@
 :root {
-  --primary: hsl(180, 100%, 61%);
-  --primary-dark: #011113;
-  --text-primary: #000000;
-  --bg-light: #F6F9FC;
+  --primary: #06b6d4;
+  --primary-dark: #0891b2;
+  --primary-light: #ecfeff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --bg-light: #f8fafc;
   --bg-card: #ffffff;
-  --border: #E5ECF1;
-  --btn-red: #D32F2F;
-  --btn-blue: #0288D1;
+  --border: #e2e8f0;
+  --btn-red: #ef4444;
+  --btn-blue: #3b82f6;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* MAIN WRAPPER */
@@ -20,25 +23,25 @@
 .section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--primary);
-  padding: 12px 18px;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  padding: 16px 24px;
   color: white;
   font-weight: 600;
-  font-size: 16px;
-  border-radius: 10px 10px 0 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  font-size: 17px;
+  border-radius: 12px 12px 0 0;
+  box-shadow: var(--shadow);
 }
 
 /* CARDS */
 .dnis-card,
 .logs-card {
   background: var(--bg-card);
-  padding: 22px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-top: none;
-  border-radius: 0 0 10px 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  border-radius: 0 0 12px 12px;
+  box-shadow: var(--shadow);
 }
 
 /* ENABLE CHECKBOX */
@@ -66,7 +69,7 @@
 }
 
 .req {
-  color: #D9322E;
+  color: #d9322e;
 }
 
 /* INPUTS */
@@ -110,26 +113,31 @@ textarea {
   border: none;
   cursor: pointer;
   font-weight: 600;
-  transition: 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .clear-btn:hover {
-  background: #b32727;
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .save-btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   padding: 10px 24px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  transition: 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
 }
 
 .save-btn:hover {
-  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
 }
 
 /* SEARCH BOX */
@@ -157,11 +165,12 @@ textarea {
 }
 
 .dnis-table th {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
-  padding: 12px;
+  padding: 14px;
   text-align: left;
   font-size: 14px;
+  font-weight: 600;
 }
 
 .dnis-table td {
@@ -195,11 +204,11 @@ textarea {
 }
 
 .edit-btn:hover {
-  background: #E0F7FA;
+  background: #e0f7fa;
 }
 
 .delete-btn:hover {
-  background: #FDEEEE;
+  background: #fdeeee;
 }
 
 .edit-btn svg {
@@ -251,31 +260,35 @@ textarea {
   border: none;
   cursor: pointer;
   font-weight: 600;
-  transition: 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .clear-btn:hover {
-  background: #b32727;
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .save-btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   padding: 10px 24px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  transition: 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
 }
 
 .save-btn:hover {
-  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
 }
 
 /* SEARCH BOX */
 .search-box {
-  width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -388,11 +401,11 @@ textarea {
 }
 
 .edit-btn:hover {
-  background: #E0F7FA;
+  background: #e0f7fa;
 }
 
 .delete-btn:hover {
-  background: #FDEEEE;
+  background: #fdeeee;
 }
 
 .edit-btn svg {

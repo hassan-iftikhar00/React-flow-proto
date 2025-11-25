@@ -24,17 +24,30 @@ import {
   EndNode,
   TerminatorNode,
 } from "./CustomNode";
+import {
+  useLocalStorage,
+  getLocalStorageItem,
+  setLocalStorageItem,
+} from "../hooks/useLocalStorage";
+import { Settings, X } from "lucide-react";
+import IVRInputConfig from "./IVRInputConfig";
 
-let id = 5;
-const getId = () => `${id++}`;
+// Load the last used ID from localStorage
+let id = parseInt(getLocalStorageItem("flowEditor_lastNodeId", "5"));
+const getId = () => {
+  const newId = `${id++}`;
+  setLocalStorageItem("flowEditor_lastNodeId", id.toString());
+  return newId;
+};
 
-const initialNodes = [
+const defaultInitialNodes = [
   {
     id: "1",
     type: "play",
     data: {
       label: "Start",
       text: "Welcome to the call flow",
+      br: true, // Default BR value
     },
     position: { x: 100, y: 50 },
   },
@@ -49,7 +62,7 @@ const initialNodes = [
   },
 ];
 
-const initialEdges = [
+const defaultInitialEdges = [
   {
     id: "edge-1-2",
     source: "1",
@@ -73,10 +86,19 @@ const nodeTypes = {
   terminator: TerminatorNode,
 };
 
-function FlowEditorContent({ flowAction, setFlowAction }) {
+function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
   const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Load nodes and edges from localStorage based on current flow ID
+  const getStorageKey = (suffix) =>
+    currentFlowId ? `flow_${currentFlowId}_${suffix}` : `flowEditor_${suffix}`;
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    getLocalStorageItem(getStorageKey("nodes"), defaultInitialNodes)
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    getLocalStorageItem(getStorageKey("edges"), defaultInitialEdges)
+  );
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
   const lastNodeIdRef = useRef(null);
@@ -112,6 +134,31 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
+  // Auto-save nodes and edges to localStorage whenever they change
+  useEffect(() => {
+    setLocalStorageItem(getStorageKey("nodes"), nodes);
+  }, [nodes, currentFlowId]);
+
+  useEffect(() => {
+    setLocalStorageItem(getStorageKey("edges"), edges);
+  }, [edges, currentFlowId]);
+
+  // Load flow data when currentFlowId changes
+  useEffect(() => {
+    if (currentFlowId) {
+      const savedNodes = getLocalStorageItem(
+        getStorageKey("nodes"),
+        defaultInitialNodes
+      );
+      const savedEdges = getLocalStorageItem(
+        getStorageKey("edges"),
+        defaultInitialEdges
+      );
+      setNodes(savedNodes);
+      setEdges(savedEdges);
+    }
+  }, [currentFlowId]);
+
   // add edge
   const onConnect = useCallback(
     (params) =>
@@ -143,9 +190,24 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
       const getDefaultData = (type) => {
         switch (type) {
           case "play":
-            return { text: "Enter your prompt here" };
+            return {
+              text: "Enter your prompt here",
+              br: true, // Default BR value for new play nodes
+            };
           case "menu":
-            return { options: [{ key: "1", label: "Option 1" }] };
+            return {
+              promptText: "Please select an option",
+              timeout: "3",
+              trackInvalid: false,
+              trackNoResponse: false,
+              invalidUseStandardMessage: false,
+              invalidAction: "repeat",
+              invalidGotoTarget: "",
+              noResponseUseStandardMessage: false,
+              noResponseAction: "repeat",
+              noResponseGotoTarget: "",
+              options: [{ key: "1", label: "Option 1" }],
+            };
           case "collect":
             return { variable: "userInput" };
           case "decision":
@@ -195,26 +257,33 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
   }, [flowAction, setNodes, setFlowAction, setEdges, nodes]);
 
   // Handle node deletion
-  const handleDeleteNode = useCallback((nodeId) => {
-    setNodes((nds) => {
-      const filteredNodes = nds.filter((node) => node.id !== nodeId);
-      // Update lastNodeIdRef to the most recently added node (excluding hardcoded nodes)
-      if (filteredNodes.length > 2) {
-        // Find the last added node (after hardcoded ones)
-        const lastAddedNode = filteredNodes.slice(2).at(-1);
-        lastNodeIdRef.current = lastAddedNode ? lastAddedNode.id : filteredNodes[1].id;
-      } else {
-        // If only hardcoded nodes remain, set to Decision node
-        lastNodeIdRef.current = filteredNodes[1]?.id;
+  const handleDeleteNode = useCallback(
+    (nodeId) => {
+      setNodes((nds) => {
+        const filteredNodes = nds.filter((node) => node.id !== nodeId);
+        // Update lastNodeIdRef to the most recently added node (excluding hardcoded nodes)
+        if (filteredNodes.length > 2) {
+          // Find the last added node (after hardcoded ones)
+          const lastAddedNode = filteredNodes.slice(2).at(-1);
+          lastNodeIdRef.current = lastAddedNode
+            ? lastAddedNode.id
+            : filteredNodes[1].id;
+        } else {
+          // If only hardcoded nodes remain, set to Decision node
+          lastNodeIdRef.current = filteredNodes[1]?.id;
+        }
+        return filteredNodes;
+      });
+      setEdges((eds) =>
+        eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+      );
+      // Clear selection if the deleted node was selected
+      if (selectedNode?.id === nodeId) {
+        setSelectedNode(null);
       }
-      return filteredNodes;
-    });
-    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
-    // Clear selection if the deleted node was selected
-    if (selectedNode?.id === nodeId) {
-      setSelectedNode(null);
-    }
-  }, [setNodes, setEdges, selectedNode]);
+    },
+    [setNodes, setEdges, selectedNode]
+  );
 
   // Update nodes to include delete handler
   const nodesWithDeleteHandler = nodes.map((node) => ({
@@ -487,177 +556,260 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
         {selectedNode && (
           <div className="config-panel">
             <div className="config-header">
-              <h4>⚙️ Configure {selectedNode.type}</h4>
+              <h4>
+                <Settings /> Configure {selectedNode.type.toUpperCase()}
+              </h4>
               <button
                 className="config-close-btn"
                 onClick={() => setSelectedNode(null)}
                 title="Close"
               >
-                ✕
+                <X />
               </button>
             </div>
+            <div className="config-body">
+              {(selectedNode.type === "play" ||
+                selectedNode.type === "terminator") && (
+                <>
+                  <label>Prompt Text</label>
+                  <input
+                    type="text"
+                    placeholder="Enter the prompt text..."
+                    value={selectedNode.data.text || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, text: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
 
-            {(selectedNode.type === "play" || selectedNode.type === "terminator") && (
-              <>
-                <label>Prompt Text:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.text || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? { ...n, data: { ...n.data, text: e.target.value } }
-                          : n
-                      )
-                    )
-                  }
-                />
-              </>
-            )}
+                  {/* BR Field for Play Node */}
+                  {selectedNode.type === "play" && (
+                    <>
+                      <label>BR (Barge-In)</label>
+                      <select
+                        value={
+                          selectedNode.data.br !== undefined
+                            ? selectedNode.data.br.toString()
+                            : "true"
+                        }
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      br: e.target.value === "true",
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      >
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                      </select>
+                    </>
+                  )}
+                </>
+              )}
 
-            {selectedNode.type === "collect" && (
-              <>
-                <label>Variable Name:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.variable || ""}
-                  onChange={(e) =>
+              {/* Enhanced Menu Node Configuration */}
+              {selectedNode.type === "menu" && (
+                <IVRInputConfig
+                  nodeId={selectedNode.id}
+                  nodeData={selectedNode.data}
+                  onDataChange={(newData) =>
                     setNodes((nds) =>
                       nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? {
-                              ...n,
-                              data: { ...n.data, variable: e.target.value },
-                            }
-                          : n
+                        n.id === selectedNode.id ? { ...n, data: newData } : n
                       )
                     )
                   }
+                  promptLabel="Prompt Text"
+                  promptPlaceholder="Enter menu prompt text..."
                 />
-              </>
-            )}
+              )}
 
-            {selectedNode.type === "decision" && (
-              <>
-                <label>Condition:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.condition || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? {
-                              ...n,
-                              data: { ...n.data, condition: e.target.value },
-                            }
-                          : n
+              {selectedNode.type === "collect" && (
+                <>
+                  <label>Variable Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter variable name..."
+                    value={selectedNode.data.variable || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, variable: e.target.value },
+                              }
+                            : n
+                        )
                       )
-                    )
-                  }
-                />
-              </>
-            )}
+                    }
+                    style={{ marginBottom: "15px" }}
+                  />
 
-            {selectedNode.type === "transfer" && (
-              <>
-                <label>Phone Number:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.number || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? {
-                              ...n,
-                              data: { ...n.data, number: e.target.value },
-                            }
-                          : n
+                  <IVRInputConfig
+                    nodeId={selectedNode.id}
+                    nodeData={selectedNode.data}
+                    onDataChange={(newData) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? { ...n, data: { ...n.data, ...newData } }
+                            : n
+                        )
                       )
-                    )
-                  }
-                />
-              </>
-            )}
+                    }
+                    showInputLength={true}
+                    promptLabel="Collection Prompt"
+                    promptPlaceholder="Enter prompt for input collection..."
+                  />
+                </>
+              )}
 
-            {selectedNode.type === "tts" && (
-              <>
-                <label>Text to Speak:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.text || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? { ...n, data: { ...n.data, text: e.target.value } }
-                          : n
+              {selectedNode.type === "decision" && (
+                <>
+                  <label>Condition:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.condition || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, condition: e.target.value },
+                              }
+                            : n
+                        )
                       )
-                    )
-                  }
-                />
-              </>
-            )}
+                    }
+                  />
+                </>
+              )}
 
-            {selectedNode.type === "stt" && (
-              <>
-                <label>Store Speech in Variable:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.variable || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? {
-                              ...n,
-                              data: { ...n.data, variable: e.target.value },
-                            }
-                          : n
+              {selectedNode.type === "transfer" && (
+                <>
+                  <label>Phone Number:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.number || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, number: e.target.value },
+                              }
+                            : n
+                        )
                       )
-                    )
-                  }
-                />
-              </>
-            )}
+                    }
+                  />
+                </>
+              )}
 
-            {selectedNode.type === "set" && (
-              <>
-                <label>Variable Name:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.variable || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? {
-                              ...n,
-                              data: { ...n.data, variable: e.target.value },
-                            }
-                          : n
+              {selectedNode.type === "tts" && (
+                <>
+                  <label>Text to Speak:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.text || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, text: e.target.value },
+                              }
+                            : n
+                        )
                       )
-                    )
-                  }
-                />
-                <label>Value:</label>
-                <input
-                  type="text"
-                  value={selectedNode.data.value || ""}
-                  onChange={(e) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? { ...n, data: { ...n.data, value: e.target.value } }
-                          : n
+                    }
+                  />
+                </>
+              )}
+
+              {selectedNode.type === "stt" && (
+                <>
+                  <label>Store Speech in Variable:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.variable || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, variable: e.target.value },
+                              }
+                            : n
+                        )
                       )
-                    )
-                  }
-                />
-              </>
-            )}
+                    }
+                  />
+                </>
+              )}
+
+              {selectedNode.type === "set" && (
+                <>
+                  <label>Variable Name:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.variable || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, variable: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+                  <label>Value:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.value || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, value: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+                </>
+              )}
+            </div>{" "}
+            {/* config-body */}
           </div>
         )}
       </div>
@@ -666,12 +818,17 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
 }
 
 // Main FlowEditor component wrapped with ReactFlowProvider
-export default function FlowEditor({ flowAction, setFlowAction }) {
+export default function FlowEditor({
+  flowAction,
+  setFlowAction,
+  currentFlowId,
+}) {
   return (
     <ReactFlowProvider>
       <FlowEditorContent
         flowAction={flowAction}
         setFlowAction={setFlowAction}
+        currentFlowId={currentFlowId}
       />
     </ReactFlowProvider>
   );

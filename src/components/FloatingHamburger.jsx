@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
-import { Menu, X, Home, Workflow, FolderOpen } from 'lucide-react';
+import React, { useState } from "react";
+import { Menu, X, Home, Workflow, FolderOpen } from "lucide-react";
 
-export default function FloatingHamburger({ onNavigate, currentPage, onOpenFlowsSidebar, isFlowsSidebarOpen }) {
+export default function FloatingHamburger({
+  onNavigate,
+  currentPage,
+  onOpenFlowsSidebar,
+  isFlowsSidebarOpen,
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -26,8 +31,8 @@ export default function FloatingHamburger({ onNavigate, currentPage, onOpenFlows
       {!isFlowsSidebarOpen && (
         <>
           {/* Floating hamburger button */}
-          <button 
-            className={`floating-hamburger-btn ${isOpen ? 'active' : ''}`}
+          <button
+            className={`floating-hamburger-btn ${isOpen ? "active" : ""}`}
             onClick={toggleMenu}
             title="Navigation Menu"
           >
@@ -42,22 +47,19 @@ export default function FloatingHamburger({ onNavigate, currentPage, onOpenFlows
               </div>
               <div className="floating-menu-items">
                 <button
-                  className="floating-menu-item"
-                  onClick={handleOpenFlows}
-                >
-                  <FolderOpen size={18} />
-                  <span>Flow Manager</span>
-                </button>
-                <button
-                  className={`floating-menu-item ${currentPage === 'dashboard' ? 'active' : ''}`}
-                  onClick={() => handleNavigation('dashboard')}
+                  className={`floating-menu-item ${
+                    currentPage === "dashboard" ? "active" : ""
+                  }`}
+                  onClick={() => handleNavigation("dashboard")}
                 >
                   <Home size={18} />
                   <span>Dashboard</span>
                 </button>
                 <button
-                  className={`floating-menu-item ${currentPage === 'flows' ? 'active' : ''}`}
-                  onClick={() => handleNavigation('flows')}
+                  className={`floating-menu-item ${
+                    currentPage === "flows" ? "active" : ""
+                  }`}
+                  onClick={() => handleNavigation("flows")}
                 >
                   <Workflow size={18} />
                   <span>Flow Builder</span>
@@ -68,7 +70,7 @@ export default function FloatingHamburger({ onNavigate, currentPage, onOpenFlows
 
           {/* Backdrop overlay */}
           {isOpen && (
-            <div 
+            <div
               className="floating-hamburger-backdrop"
               onClick={() => setIsOpen(false)}
             />

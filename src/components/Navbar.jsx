@@ -15,34 +15,32 @@ export default function Navbar({
   setTheme,
   setActive,
   onOpenConfig,
-  onOpenDNIS,       // ✅ added
+  onOpenDNIS, // ✅ added
   onOpenMapping,
 }) {
   return (
     <div className="navbar">
       {/* Left side */}
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <div style={{ fontWeight: 700 }}>IVR Flow Builder</div>
-
-        {/* Search */}
-        <div className="search-box">
-          <Search size={14} />
-          <input placeholder="Search flows, nodes, interactions..." />
-        </div>
+      <div className="navbar-left">
+        <img
+          src="/favicon.png"
+          alt="logo"
+          width={102}
+          height={102}
+          className="navbar-logo"
+        />
+        <div className="navbar-title">IVR Flow Builder</div>
 
         {/* Buttons Group */}
-        <div style={{ display: "flex", gap: 8, marginLeft: 16 }}>
+        <div className="navbar-buttons">
           {/* IVR Config */}
           <button onClick={onOpenConfig} className="nav-action-btn ivr-btn">
             <Settings size={16} />
             IVR Config
           </button>
 
-          {/* DNIS Config – FIXED */}
-          <button
-            onClick={onOpenDNIS}        // ✅ Corrected handler
-            className="nav-action-btn mapping-btn"
-          >
+          {/* DNIS Config */}
+          <button onClick={onOpenDNIS} className="nav-action-btn mapping-btn">
             <Map size={16} />
             DNIS Config
           </button>
@@ -54,46 +52,17 @@ export default function Navbar({
           >
             <Map size={16} />
             Fields Mapping
-    <>
-      {/* Main navbar content (left side only) */}
-      <div className="navbar">
-        {/* Left side */}
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ fontWeight: 700 }}>IVR Flow Builder</div>
-          <div className="search-box">
-            <Search size={14} />
-            <input placeholder="Search flows, nodes, interactions..." />
-          </div>
-
-          {/* 👇 IVR Config button */}
-          <button
-            onClick={() => setActive("ivrconfig")}
-            style={{
-              marginLeft: 16,
-              padding: "6px 12px",
-              background: "var(--primary-color, #1976d2)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 14,
-              fontWeight: 500,
-              transition: "0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <Settings size={16} />
-            IVR Config
           </button>
         </div>
       </div>
 
-      {/* Right side icons - positioned independently */}
-      <div className="navbar-right-icons">
+      {/* Right side */}
+      <div className="navbar-right">
+        {/* Search */}
+        <div className="search-box">
+          <Search size={14} />
+          <input placeholder="Search flows, nodes, interactions..." />
+        </div>
         <button
           className="theme-toggle-btn-nav"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
@@ -102,10 +71,9 @@ export default function Navbar({
           {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
-  
         <Bell size={18} className="navbar-icon" />
         <UserCircle size={24} className="navbar-icon" />
       </div>
-    </>
+    </div>
   );
 }

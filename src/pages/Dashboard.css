@@ -1,3 +1,53 @@
+/* Dashboard Main Layout */
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 70px);
+  background: var(--bg-color);
+}
+
+.dashboard-container {
+  flex: 1;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.dashboard-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Dashboard Toolbar */
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
 /* Sidebar Toggle Button */
 .sidebar-toggle-btn {
   position: fixed;
@@ -224,9 +274,9 @@
 
 /* Flows Grid */
 .flows-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
   margin-bottom: 32px;
 }
 
