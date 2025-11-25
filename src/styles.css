@@ -15,6 +15,305 @@
   --button-bg: #f8fafc;
   --clean-border: #e2e8eb;
   --clean-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, Inter var, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  background: #f3f6fb;
+}
+
+/* Sidebar */
+.rf-sidebar {
+  width: var(--nav-width);
+  background: var(--sidebar-bg);
+  color: #e6eef7;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #0b1220;
+}
+.rf-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.rf-logo {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent), #0891b2);
+  border-radius: 8px;
+  display: inline-block;
+}
+.rf-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0;
+}
+.rf-role-switch {
+  display: flex;
+  padding: 12px;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+.rf-role-switch button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.rf-role-switch button.active {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.rf-sidebar-list {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+}
+.rf-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.rf-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+}
+.rf-sidebar-item.active {
+  background: linear-gradient(
+    90deg,
+    rgba(6, 182, 212, 0.12),
+    rgba(8, 145, 178, 0.06)
+  );
+  color: #fff;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.navbar {
+  height: 64px;
+  background: var(--navbar-bg);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin-right: 140px; /* Add right margin to prevent overlap with right icons */
+  /* Remove justify-content: space-between since we're positioning right icons separately */
+}
+
+/* Right side icons positioned independently */
+.navbar-right-icons {
+  position: absolute;
+  top: 0;
+  right: 0; /* Changed from 20px to 0 to start from edge */
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1003; /* Higher than back button */
+  background: var(--navbar-bg);
+  padding: 0 20px; /* Add padding on both sides */
+  border-bottom: 1px solid var(--border-color); /* Match navbar border */
+  border-radius: 0; /* Ensure no border radius */
+  min-width: fit-content; /* Ensure it wraps content properly */
+  box-sizing: border-box; /* Include padding in width calculation */
+  /* Ensure seamless background integration */
+  box-shadow: -5px 0 5px var(--navbar-bg); /* Blend shadow to left */
+}
+
+.navbar-icon {
+  cursor: pointer;
+  color: var(--text-color);
+  transition: color 0.2s ease;
+  flex-shrink: 0; /* Prevent icons from shrinking */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-icon:hover {
+  color: var(--accent);
+}
+
+/* Ensure navbar maintains space-between behavior even with back button */
+.navbar > div:last-child {
+  margin-left: auto; /* Force right side to the rightmost corner */
+}
+
+/* Navbar wrapper for positioning back button */
+.navbar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Header Back Button */
+.header-back-btn {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+  z-index: 1002;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Adjust navbar content when back button is present */
+.navbar-wrapper:has(.header-back-btn) .navbar {
+  padding-left: 80px; /* Make room for back button */
+}
+
+.header-back-btn:hover {
+  background: var(--accent);
+  transform: translateY(-50%) translateX(-3px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4);
+}
+
+.header-back-btn:active {
+  transform: translateY(-50%) translateX(-1px) scale(0.98);
+}
+
+.header-back-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.header-back-btn:hover svg {
+  transform: translateX(-1px);
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--search-bg);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+.search-box input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  padding: 6px;
+  color: var(--text-color);
+}
+
+/* Flow page */
+.flow-page {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  overflow: hidden;
+  padding: 16px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 100vh; /* Full viewport height when in flows mode */
+}
+
+/* When in flows mode, remove any extra spacing */
+.main-content:has(.flow-page) {
+  height: 100vh;
+  padding: 0;
+}
+.node-sidebar {
+  width: 220px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.node-sidebar h3 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: var(--text-color);
+}
+.node-item {
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--button-secondary-bg);
+  border: 1px dashed var(--border-color);
+  cursor: grab;
+  color: var(--text-color);
+}
+.node-item:active {
+  cursor: grabbing;
+}
+
+/* Canvas container */
+.flow-container {
+  flex: 1;
+  min-height: 480px;
+  background: var(--canvas-bg);
+  position: relative;
+  overflow: hidden;
+  margin-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Right utility bar: small buttons */
+.util-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+.btn.ghost {
+  background: transparent;
+  color: #0f172a;
+  border: 1px solid #eef3f7;
+}
 
   --text-color: #0f172a;
   --bg-color: #f3f6fb;
@@ -469,6 +768,14 @@ body,
 /* ---------------------------
    Config panel (floating)
    --------------------------- */
+/* Terminator node styling */
+.terminator-node {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef3c7, #fffbe6);
+  color: var(--text-color);
+}
+
+/* Config Panel */
 .config-panel {
   position: absolute;
   top: 20px;
@@ -1752,7 +2059,11 @@ body,
   color: var(--text-color);
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0; /* Prevent button from shrinking */
+  min-width: auto;
+  height: auto;
 }
 
 .theme-toggle-btn-nav:hover {

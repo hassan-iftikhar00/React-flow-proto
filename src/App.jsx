@@ -4,6 +4,7 @@ import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
+import { ArrowLeft } from "lucide-react";
 import IVRConfig from "./pages/IVRConfig";
 import FieldsMapping from "./pages/FieldsMapping";
 import DNISConfig from "./pages/DNISConfig";   // ⭐ NEW IMPORT
@@ -52,6 +53,10 @@ export default function App() {
     setTimeout(() => setPopupOpen(false), 3000);
   };
 
+  const handleBackToDashboard = () => {
+    setActive("dashboard");
+  };
+
   return (
     <div className="app-container">
       
@@ -68,17 +73,31 @@ export default function App() {
             onOpenMapping={() => setOpenMapping(true)}
             onOpenDNIS={() => setOpenDNIS(true)}       // ⭐ NEW
           />
+          
+          {/* Back button in header when in canvas mode */}
+          {active === "flows" && (
+            <button 
+              className="header-back-btn"
+              onClick={handleBackToDashboard}
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          )}
         </div>
 
         {/* Floating Hamburger */}
-        {active === "flows" && (
+//         {active === "flows" && (
+        {/* Show floating hamburger only when in flows mode */}
+        {/* Hamburger removed from canvas page as requested */}
+        {/* {active === "flows" && (
           <FloatingHamburger
             onNavigate={setActive}
             currentPage={active}
             onOpenFlowsSidebar={() => setIsFlowsSidebarOpen(true)}
             isFlowsSidebarOpen={isFlowsSidebarOpen}
           />
-        )}
+//         )} */}
 
         {/* Dashboard */}
         {active !== "flows" && (

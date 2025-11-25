@@ -22,6 +22,7 @@ import {
   STTNode,
   SetVariableNode,
   EndNode,
+  TerminatorNode,
 } from "./CustomNode";
 
 let id = 5;
@@ -69,6 +70,7 @@ const nodeTypes = {
   stt: STTNode,
   set: SetVariableNode,
   end: EndNode,
+  terminator: TerminatorNode,
 };
 
 function FlowEditorContent({ flowAction, setFlowAction }) {
@@ -77,6 +79,15 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
+  const lastNodeIdRef = useRef(null);
+
+  // On initial mount, set lastNodeIdRef to the hardcoded Decision node's id
+  useEffect(() => {
+    if (nodes.length >= 2) {
+      // Decision node is the second node in initialNodes
+      lastNodeIdRef.current = nodes[1].id;
+    }
+  }, []);
 
   // Get the currently selected element (node or edge)
   const selectedElement = selectedNode
@@ -120,6 +131,14 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
   // 🆕 sidebar click -> add node
   useEffect(() => {
     if (flowAction?.action === "add" && flowAction?.type) {
+      // Prevent adding nodes if Terminator or End node exists
+      const hasTerminatorOrEnd = nodes.some(
+        (n) => n.type === "terminator" || n.type === "end"
+      );
+      if (hasTerminatorOrEnd) {
+        setFlowAction(null);
+        return;
+      }
       // Create appropriate default data based on node type
       const getDefaultData = (type) => {
         switch (type) {
@@ -139,6 +158,8 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
             return { variable: "speechText" };
           case "set":
             return { variable: "myVariable", value: "myValue" };
+          case "terminator":
+            return { label: "Terminator" };
           default:
             return {};
         }
@@ -150,14 +171,44 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
         position: { x: 250, y: 100 },
         data: getDefaultData(flowAction.type),
       };
-      setNodes((nds) => nds.concat(newNode));
+
+      setNodes((nds) => {
+        // Connect to Decision node for the first added node
+        let updatedNodes = nds.concat(newNode);
+        if (lastNodeIdRef.current) {
+          setEdges((eds) =>
+            eds.concat({
+              id: `edge-${lastNodeIdRef.current}-${newNode.id}`,
+              source: lastNodeIdRef.current,
+              target: newNode.id,
+              animated: true,
+              markerEnd: { type: MarkerType.Arrow },
+              style: { stroke: "#06b6d4", strokeWidth: 2 },
+            })
+          );
+        }
+        lastNodeIdRef.current = newNode.id;
+        return updatedNodes;
+      });
       setFlowAction(null); // reset action
     }
-  }, [flowAction, setNodes, setFlowAction]);
+  }, [flowAction, setNodes, setFlowAction, setEdges, nodes]);
 
   // Handle node deletion
   const handleDeleteNode = useCallback((nodeId) => {
-    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setNodes((nds) => {
+      const filteredNodes = nds.filter((node) => node.id !== nodeId);
+      // Update lastNodeIdRef to the most recently added node (excluding hardcoded nodes)
+      if (filteredNodes.length > 2) {
+        // Find the last added node (after hardcoded ones)
+        const lastAddedNode = filteredNodes.slice(2).at(-1);
+        lastNodeIdRef.current = lastAddedNode ? lastAddedNode.id : filteredNodes[1].id;
+      } else {
+        // If only hardcoded nodes remain, set to Decision node
+        lastNodeIdRef.current = filteredNodes[1]?.id;
+      }
+      return filteredNodes;
+    });
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
     // Clear selection if the deleted node was selected
     if (selectedNode?.id === nodeId) {
@@ -446,7 +497,7 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
               </button>
             </div>
 
-            {selectedNode.type === "play" && (
+            {(selectedNode.type === "play" || selectedNode.type === "terminator") && (
               <>
                 <label>Prompt Text:</label>
                 <input
