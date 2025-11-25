@@ -1,0 +1,138 @@
+/* ===== Container ===== */
+.ivr-container {
+  padding: 40px;
+  background-color: #f0f8ff; /* light sky blue background */
+  min-height: 100vh;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* ===== Subtitle ===== */
+.ivr-subtitle {
+  margin-bottom: 25px;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* ===== Stepper ===== */
+.ivr-stepper .MuiStepLabel-label {
+  color: #0e1a2b; /* dark text */
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.ivr-stepper .MuiStepLabel-label.Mui-completed {
+  color: #0288d1; /* sky blue for completed step */
+}
+
+/* ===== Paper / Card ===== */
+.ivr-paper {
+  padding: 30px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #e0f7ff, #90caf9);
+  color: #0e1a2b;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Hover effect on Paper */
+.ivr-paper:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== TextField & Select ===== */
+.ivr-paper .MuiFormControl-root,
+.ivr-paper .MuiTextField-root {
+  margin-bottom: 18px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+}
+
+.ivr-paper .MuiInputBase-input {
+  color: #0e1a2b; /* input text */
+}
+
+.ivr-paper .MuiInputLabel-root {
+  color: #0e1a2b; /* label text */
+  font-weight: 500;
+}
+
+.ivr-paper .MuiFilledInput-root {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.ivr-paper .MuiSelect-select {
+  color: #0e1a2b;
+}
+
+/* ===== Buttons ===== */
+.ivr-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.ivr-button-group {
+  display: flex;
+  gap: 15px;
+}
+
+/* Button styles */
+.ivr-paper .MuiButton-root {
+  text-transform: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.ivr-paper .MuiButton-root:hover {
+  opacity: 0.95;
+  transform: translateY(-2px);
+}
+
+/* ===== Dialog Popup ===== */
+.MuiDialog-paper {
+  border-radius: 12px;
+}
+
+.MuiDialogTitle-root {
+  font-weight: 600;
+  color: #0288d1;
+}
+
+.MuiDialogContent-root {
+  font-size: 14px;
+  color: #0e1a2b;
+}
+
+/* ===== Table Styles ===== */
+.ivr-paper .MuiTableCell-root {
+  padding: 10px 15px;
+  font-size: 0.9rem;
+}
+
+.ivr-paper .MuiTableHead-root .MuiTableCell-root {
+  background-color: #b3e5fc; /* sky-blue table header */
+  font-weight: 600;
+  color: #0e1a2b;
+}
+
+.ivr-paper .MuiTableRow-root:hover {
+  background-color: rgba(0, 131, 255, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+/* Sort label customization */
+.MuiTableSortLabel-root.Mui-active {
+  color: #0288d1 !important;
+}
+
+.MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon {
+  color: #0288d1 !important;
+}
+
+/* Multi-select checkbox styling */
+.MuiListItemText-primary {
+  font-size: 0.9rem;
+  color: #0e1a2b;
+}

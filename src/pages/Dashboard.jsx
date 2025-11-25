@@ -3,7 +3,6 @@ import {
   Play,
   Edit3,
   Copy,
-  Trash2,
   Plus,
   Search,
   Filter,
@@ -17,16 +16,22 @@ import {
 } from "lucide-react";
 import "./Dashboard.css";
 
-export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen, setIsFlowsSidebarOpen }) {
+export default function Dashboard({
+  onLoadFlow,
+  currentPage,
+  isFlowsSidebarOpen,
+  setIsFlowsSidebarOpen,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Use external state if provided, otherwise use internal state
-  const actualIsSidebarOpen = isFlowsSidebarOpen !== undefined ? isFlowsSidebarOpen : isSidebarOpen;
+  // External vs local state
+  const actualIsSidebarOpen =
+    isFlowsSidebarOpen !== undefined ? isFlowsSidebarOpen : isSidebarOpen;
   const actualSetIsSidebarOpen = setIsFlowsSidebarOpen || setIsSidebarOpen;
 
-  // Determine button position based on current page
+  // Determine if canvas mode
   const isCanvasActive = currentPage === "flows";
 
   // Sample flows data
@@ -34,7 +39,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
     {
       id: 1,
       name: "Customer Support IVR",
-      description: "Main customer support flow with menu options and routing",
+      description: "Main support flow with routing & menu options",
       status: "active",
       lastModified: "2 hours ago",
       created: "Sep 15, 2025",
@@ -45,7 +50,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
     {
       id: 2,
       name: "Appointment Booking",
-      description: "Automated appointment scheduling with calendar integration",
+      description: "Automated scheduling with calendar integration",
       status: "draft",
       lastModified: "1 day ago",
       created: "Sep 20, 2025",
@@ -56,8 +61,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
     {
       id: 3,
       name: "Payment Processing Flow",
-      description:
-        "Secure payment processing with validation and confirmations",
+      description: "Secure payment processing with validations",
       status: "active",
       lastModified: "3 days ago",
       created: "Sep 10, 2025",
@@ -67,6 +71,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
     },
   ]);
 
+  // Filtered search
   const filteredFlows = flows.filter(
     (flow) =>
       flow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,7 +83,6 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
     if (onLoadFlow) {
       onLoadFlow(flow);
     }
-    // Close sidebar after loading flow
     actualSetIsSidebarOpen(false);
     console.log("Loading flow:", flow.name);
   };
@@ -98,7 +102,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
 
   return (
     <>
-      {/* Toggle Button - Only visible when NOT in canvas mode */}
+      {/* Toggle Button */}
       {!isCanvasActive && (
         <button
           className={`sidebar-toggle-btn ${
@@ -111,6 +115,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
           <span>Flows</span>
         </button>
       )}
+
       {/* Overlay */}
       {actualIsSidebarOpen && (
         <div
@@ -118,10 +123,11 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
           onClick={() => actualSetIsSidebarOpen(false)}
         />
       )}
-      {/* Sliding Sidebar */}
+
+      {/* Sidebar */}
       <div className={`flows-sidebar ${actualIsSidebarOpen ? "open" : ""}`}>
         <div className="flows-container">
-          {/* Header Section */}
+          {/* Header */}
           <div className="flows-header">
             <div className="flows-header-content">
               <h1 className="flows-title">Flow Manager</h1>
@@ -130,21 +136,20 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
               </p>
             </div>
             <div className="header-actions">
-              <button className="btn-primary">
+              <button className="btn-primary pulse">
                 <Plus size={20} />
                 New Flow
               </button>
               <button
                 className="close-btn"
                 onClick={() => actualSetIsSidebarOpen(false)}
-                title="Close"
               >
                 <X size={20} />
               </button>
             </div>
           </div>
 
-          {/* Search and Filter Section */}
+          {/* Toolbar */}
           <div className="flows-toolbar">
             <div className="search-container">
               <Search className="search-icon" size={20} />
@@ -167,13 +172,12 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
           {/* Flows Grid */}
           <div className="flows-grid">
             {filteredFlows.map((flow) => (
-              <div key={flow.id} className="flow-card">
+              <div key={flow.id} className="flow-card fade-in">
                 <div className="flow-card-header">
                   <div className="flow-status">
                     {getStatusIcon(flow.status)}
                     <span className={`status-text ${flow.status}`}>
-                      {flow.status.charAt(0).toUpperCase() +
-                        flow.status.slice(1)}
+                      {flow.status.charAt(0).toUpperCase() + flow.status.slice(1)}
                     </span>
                   </div>
                   <button className="flow-menu-btn">
@@ -198,7 +202,7 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
 
                   <div className="flow-tags">
                     {flow.tags.map((tag, index) => (
-                      <span key={index} className="flow-tag">
+                      <span key={index} className="flow-tag bounce">
                         {tag}
                       </span>
                     ))}
@@ -216,14 +220,13 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
                     <button
                       className="btn-action"
                       onClick={() => handleLoadFlow(flow)}
-                      title="Edit Flow"
                     >
                       <Edit3 size={16} />
                     </button>
-                    <button className="btn-action" title="Run Flow">
+                    <button className="btn-action">
                       <Play size={16} />
                     </button>
-                    <button className="btn-action" title="Duplicate">
+                    <button className="btn-action">
                       <Copy size={16} />
                     </button>
                   </div>
@@ -234,14 +237,12 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
 
           {/* Empty State */}
           {filteredFlows.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-state-content">
-                <h3>No flows found</h3>
-                <p>
-                  Try adjusting your search terms or create a new flow to get
-                  started.
-                </p>
-              </div>
+            <div className="empty-state fade-in">
+              <h3>No flows found</h3>
+              <p>
+                Try adjusting your search terms or create a new flow to get
+                started.
+              </p>
             </div>
           )}
         </div>
@@ -249,4 +250,3 @@ export default function Dashboard({ onLoadFlow, currentPage, isFlowsSidebarOpen,
     </>
   );
 }
-
