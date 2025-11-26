@@ -1150,7 +1150,7 @@ body,
   border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 10000;
   min-width: 140px;
   padding: 6px;
   backdrop-filter: blur(12px);
@@ -1221,7 +1221,7 @@ body,
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 10000;
   min-width: 260px;
   backdrop-filter: blur(12px);
   animation: paletteSlideIn 0.3s ease-out;
