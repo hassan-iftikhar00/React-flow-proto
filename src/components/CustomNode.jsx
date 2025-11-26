@@ -151,6 +151,266 @@ export function MenuNode({ data, style }) {
   );
 }
 
+export function WaitNode({ data, style }) {
+  const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
+
+  const createGradient = (color) => {
+    if (!color) return "transparent";
+    const lightColor = color + "20";
+    return `linear-gradient(135deg, ${color}, ${lightColor}, rgba(255, 255, 255, 0.9))`;
+  };
+
+  const nodeStyle = {
+    ...style,
+    ...data.style,
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    backgroundColor: backgroundColor,
+    "--custom-bg": backgroundColor || "transparent",
+    "--gradient-bg": createGradient(backgroundColor),
+  };
+
+  const textStyle = {
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    background: "transparent",
+  };
+
+  return (
+    <div
+      className={`node wait-node ${backgroundColor ? "custom-bg" : ""}`}
+      style={nodeStyle}
+    >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
+      <strong style={textStyle}>⏳ Wait</strong>
+      <div style={textStyle}>{data.time ? `${data.time}s` : "No time set"}</div>
+
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "#555" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "#555" }}
+      />
+    </div>
+  );
+}
+
+export function DDTMFNode({ data, style }) {
+  const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
+
+  const createGradient = (color) => {
+    if (!color) return "transparent";
+    const lightColor = color + "20";
+    return `linear-gradient(135deg, ${color}, ${lightColor}, rgba(255, 255, 255, 0.9))`;
+  };
+
+  const nodeStyle = {
+    ...style,
+    ...data.style,
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    backgroundColor: backgroundColor,
+    "--custom-bg": backgroundColor || "transparent",
+    "--gradient-bg": createGradient(backgroundColor),
+  };
+
+  const textStyle = {
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    background: "transparent",
+  };
+
+  return (
+    <div
+      className={`node ddtmf-node ${backgroundColor ? "custom-bg" : ""}`}
+      style={nodeStyle}
+    >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
+      <strong style={textStyle}>🔢 DDTMF</strong>
+      <div style={textStyle}>{data.mapping || "No mapping set"}</div>
+
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "#555" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "#555" }}
+      />
+    </div>
+  );
+}
+
+export function DTMFNode({ data, style }) {
+  const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
+
+  const createGradient = (color) => {
+    if (!color) return "transparent";
+    const lightColor = color + "20";
+    return `linear-gradient(135deg, ${color}, ${lightColor}, rgba(255, 255, 255, 0.9))`;
+  };
+
+  const nodeStyle = {
+    ...style,
+    ...data.style,
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    backgroundColor: backgroundColor,
+    "--custom-bg": backgroundColor || "transparent",
+    "--gradient-bg": createGradient(backgroundColor),
+  };
+
+  const textStyle = {
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    background: "transparent",
+  };
+
+  return (
+    <div
+      className={`node dtmf-node ${backgroundColor ? "custom-bg" : ""}`}
+      style={nodeStyle}
+    >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
+      <strong style={textStyle}>🔢 DTMF</strong>
+      <div style={textStyle}>{data.dtmfValue || "No DTMF set"}</div>
+
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "#555" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "#555" }}
+      />
+    </div>
+  );
+}
+
+export function RecordNode({ data, style }) {
+  const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
+
+  const createGradient = (color) => {
+    if (!color) return "transparent";
+    const lightColor = color + "20";
+    return `linear-gradient(135deg, ${color}, ${lightColor}, rgba(255, 255, 255, 0.9))`;
+  };
+
+  const nodeStyle = {
+    ...style,
+    ...data.style,
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    backgroundColor: backgroundColor,
+    "--custom-bg": backgroundColor || "transparent",
+    "--gradient-bg": createGradient(backgroundColor),
+  };
+
+  const textStyle = {
+    fontWeight: data.style?.fontWeight || style?.fontWeight,
+    fontStyle: data.style?.fontStyle || style?.fontStyle,
+    textDecoration: data.style?.textDecoration || style?.textDecoration,
+    fontSize: data.style?.fontSize || style?.fontSize,
+    color: data.style?.color || style?.color,
+    background: "transparent",
+  };
+
+  return (
+    <div
+      className={`node record-node ${backgroundColor ? "custom-bg" : ""}`}
+      style={nodeStyle}
+    >
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
+      <strong style={textStyle}>🎙 Record</strong>
+      <div style={textStyle}>{data.recordText || "Recording..."}</div>
+
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "#555" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "#555" }}
+      />
+    </div>
+  );
+}
+
 export function CollectNode({ data, style }) {
   const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
 
@@ -363,7 +623,39 @@ export function STTNode({ data }) {
         <Trash2 size={16} />
       </button>
       <strong>🎙️ Speech-to-Text</strong>
-      <div>Variable: {data.variable || "speechText"}</div>
+      <div>{data.promptText || "Enter prompt"}</div>
+
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "#555" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "#555" }}
+      />
+    </div>
+  );
+}
+
+export function ISSTNode({ data }) {
+  return (
+    <div className="node istt-node">
+      <button
+        className="delete-node-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (data.onDelete) {
+            data.onDelete(data.id);
+          }
+        }}
+        title="Delete node"
+      >
+        <Trash2 size={16} />
+      </button>
+      <strong>🎤 ISTT</strong>
+      <div>{data.promptText || "Enter prompt"}</div>
 
       <Handle
         type="target"

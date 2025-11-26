@@ -28,6 +28,7 @@ export default function App() {
   const [openConfig, setOpenConfig] = useState(false);
   const [openMapping, setOpenMapping] = useState(false);
   const [openDNIS, setOpenDNIS] = useState(false); // ⭐ NEW STATE
+  const [fieldsMappingList, setFieldsMappingList] = useState([]);
 
   // Popup
   const [popupOpen, setPopupOpen] = useState(false);
@@ -108,6 +109,7 @@ export default function App() {
               flowAction={flowAction}
               setFlowAction={setFlowAction}
               currentFlowId={currentFlowId}
+              fieldsMappingList={fieldsMappingList}
             />
           </div>
         )}
@@ -141,7 +143,10 @@ export default function App() {
         fullWidth
       >
         <DialogContent sx={{ p: 0 }}>
-          <FieldsMapping showPopup={showPopup} />
+          <FieldsMapping
+            showPopup={showPopup}
+            onListChange={setFieldsMappingList}
+          />
         </DialogContent>
       </Dialog>
 

@@ -4,13 +4,14 @@ const nodeTypes = [
   { type: "play", label: "Play Prompt", icon: "🎵" },
   { type: "menu", label: "Menu", icon: "📋" },
   { type: "collect", label: "Collect Input", icon: "⌨️" },
-  { type: "decision", label: "Decision", icon: "🔀" },
-  { type: "transfer", label: "Transfer Call", icon: "📞" },
+  { type: "record", label: "Record", icon: "🎙️" },
+  { type: "dtmf", label: "DTMF", icon: "🔢" },
+  { type: "ddtmf", label: "DDTMF", icon: "🔣" },
+  { type: "wait", label: "Wait", icon: "⏳" },
   { type: "tts", label: "TTS", icon: "🗣️" },
   { type: "stt", label: "STT", icon: "🎙️" },
-  { type: "set", label: "Set Variable", icon: "⚙️" },
-  { type: "end", label: "End", icon: "⏹" },
-  { type: "terminator", label: "Terminator", icon: "🚦" }, // <-- Added Terminator option
+  { type: "istt", label: "ISTT", icon: "🎤" },
+  { type: "terminator", label: "Terminator", icon: "🚦" },
 ];
 
 export default function NodeSidebar({ onAddNode }) {

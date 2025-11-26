@@ -298,6 +298,7 @@ body,
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
 }
 .node-sidebar h3 {
   margin: 0 0 6px 0;

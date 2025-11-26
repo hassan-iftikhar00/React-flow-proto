@@ -24,7 +24,10 @@ import {
   DialogActions,
 } from "@mui/material";
 
-export default function FieldsMapping() {
+export default function FieldsMapping({
+  showPopup: externalShowPopup,
+  onListChange,
+}) {
   const [form, setForm] = useState({
     mappingName: "",
     sourceField: "",
@@ -48,6 +51,13 @@ export default function FieldsMapping() {
   // Multi-select filters
   const [sourceFilter, setSourceFilter] = useState([]);
   const sourceFields = ["MemberName", "MemberID", "AccountNumber", "ClaimID"];
+
+  // Export list whenever it changes
+  React.useEffect(() => {
+    if (onListChange) {
+      onListChange(list);
+    }
+  }, [list, onListChange]);
 
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -93,12 +103,16 @@ export default function FieldsMapping() {
   };
 
   const onDelete = (index) => {
-    showPopup("⚠️ Delete", "Are you sure you want to delete this mapping?", () => {
-      const copy = [...list];
-      copy.splice(index, 1);
-      setList(copy);
-      closePopup();
-    });
+    showPopup(
+      "⚠️ Delete",
+      "Are you sure you want to delete this mapping?",
+      () => {
+        const copy = [...list];
+        copy.splice(index, 1);
+        setList(copy);
+        closePopup();
+      }
+    );
   };
 
   const onClear = () => {
@@ -109,14 +123,18 @@ export default function FieldsMapping() {
   // Sorting
   const requestSort = (key) => {
     let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "asc")
+      direction = "desc";
     setSortConfig({ key, direction });
   };
 
   // Filter + Search
   const filteredList = list.filter((item) => {
-    const matchesSearch = item.mappingName.toLowerCase().includes(search.toLowerCase());
-    const matchesSource = sourceFilter.length === 0 || sourceFilter.includes(item.sourceField);
+    const matchesSearch = item.mappingName
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    const matchesSource =
+      sourceFilter.length === 0 || sourceFilter.includes(item.sourceField);
     return matchesSearch && matchesSource;
   });
 
@@ -137,7 +155,10 @@ export default function FieldsMapping() {
   // Pagination
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = sortedList.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentRecords = sortedList.slice(
+    indexOfFirstRecord,
+    indexOfLastRecord
+  );
   const totalPages = Math.ceil(sortedList.length / recordsPerPage);
 
   return (
@@ -167,7 +188,9 @@ export default function FieldsMapping() {
           >
             <MenuItem value="">Select</MenuItem>
             {sourceFields.map((f) => (
-              <MenuItem key={f} value={f}>{f}</MenuItem>
+              <MenuItem key={f} value={f}>
+                {f}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -225,15 +248,30 @@ export default function FieldsMapping() {
             <TableHead>
               <TableRow>
                 <TableCell onClick={() => requestSort("mappingName")}>
-                  Mapping Name {sortConfig.key === "mappingName" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  Mapping Name{" "}
+                  {sortConfig.key === "mappingName"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </TableCell>
                 <TableCell>Data Type</TableCell>
                 <TableCell>Sample Data</TableCell>
                 <TableCell onClick={() => requestSort("sourceField")}>
-                  Source Field {sortConfig.key === "sourceField" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  Source Field{" "}
+                  {sortConfig.key === "sourceField"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </TableCell>
                 <TableCell onClick={() => requestSort("showInDesigner")}>
-                  Show in Designer {sortConfig.key === "showInDesigner" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  Show in Designer{" "}
+                  {sortConfig.key === "showInDesigner"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </TableCell>
                 <TableCell style={{ textAlign: "center" }}>Actions</TableCell>
               </TableRow>
@@ -297,7 +335,9 @@ export default function FieldsMapping() {
               </Button>
             ))}
             <Button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
             >
               Next
@@ -315,11 +355,15 @@ export default function FieldsMapping() {
         <DialogActions>
           {popup.onConfirm ? (
             <>
-              <Button onClick={() => popup.onConfirm()} color="error">Yes</Button>
+              <Button onClick={() => popup.onConfirm()} color="error">
+                Yes
+              </Button>
               <Button onClick={closePopup}>No</Button>
             </>
           ) : (
-            <Button onClick={closePopup} autoFocus>OK</Button>
+            <Button onClick={closePopup} autoFocus>
+              OK
+            </Button>
           )}
         </DialogActions>
       </Dialog>

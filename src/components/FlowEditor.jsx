@@ -16,12 +16,13 @@ import {
   PlayNode,
   MenuNode,
   CollectNode,
-  DecisionNode,
-  TransferNode,
+  RecordNode,
+  DTMFNode,
+  DDTMFNode,
+  WaitNode,
   TTSNode,
   STTNode,
-  SetVariableNode,
-  EndNode,
+  ISSTNode,
   TerminatorNode,
 } from "./CustomNode";
 import {
@@ -51,42 +52,30 @@ const defaultInitialNodes = [
     },
     position: { x: 100, y: 50 },
   },
-  {
-    id: "2",
-    type: "decision",
-    data: {
-      label: "Decision",
-      condition: "Check user input",
-    },
-    position: { x: 100, y: 200 },
-  },
 ];
 
-const defaultInitialEdges = [
-  {
-    id: "edge-1-2",
-    source: "1",
-    target: "2",
-    animated: true,
-    markerEnd: { type: MarkerType.Arrow },
-    style: { stroke: "#06b6d4", strokeWidth: 2 },
-  },
-];
+const defaultInitialEdges = [];
 
 const nodeTypes = {
   play: PlayNode,
   menu: MenuNode,
   collect: CollectNode,
-  decision: DecisionNode,
-  transfer: TransferNode,
+  record: RecordNode,
+  dtmf: DTMFNode,
+  ddtmf: DDTMFNode,
+  wait: WaitNode,
   tts: TTSNode,
   stt: STTNode,
-  set: SetVariableNode,
-  end: EndNode,
+  istt: ISSTNode,
   terminator: TerminatorNode,
 };
 
-function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
+function FlowEditorContent({
+  flowAction,
+  setFlowAction,
+  currentFlowId,
+  fieldsMappingList = [],
+}) {
   const reactFlowWrapper = useRef(null);
 
   // Load nodes and edges from localStorage based on current flow ID
@@ -103,11 +92,21 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
   const [selectedEdge, setSelectedEdge] = useState(null);
   const lastNodeIdRef = useRef(null);
 
-  // On initial mount, set lastNodeIdRef to the hardcoded Decision node's id
+  // Update selectedNode when nodes change to reflect current data
   useEffect(() => {
-    if (nodes.length >= 2) {
-      // Decision node is the second node in initialNodes
-      lastNodeIdRef.current = nodes[1].id;
+    if (selectedNode) {
+      const updatedNode = nodes.find((n) => n.id === selectedNode.id);
+      if (updatedNode) {
+        setSelectedNode(updatedNode);
+      }
+    }
+  }, [nodes]);
+
+  // On initial mount, set lastNodeIdRef to the first node
+  useEffect(() => {
+    if (nodes.length >= 1) {
+      // First node (Play node)
+      lastNodeIdRef.current = nodes[0].id;
     }
   }, []);
 
@@ -210,16 +209,30 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
             };
           case "collect":
             return { variable: "userInput" };
-          case "decision":
-            return { condition: "Enter condition" };
-          case "transfer":
-            return { number: "Enter phone number" };
           case "tts":
             return { text: "Text to convert to speech" };
           case "stt":
-            return { variable: "speechText" };
-          case "set":
-            return { variable: "myVariable", value: "myValue" };
+            return {
+              promptText: "",
+              promptText2: "",
+              aiPromptEnabled: false,
+              addDefaultFlowField: "",
+              addAlternativeFlowField: "",
+              defaultFlowDynamic: false,
+              defaultFlow: "",
+              alternativeFlowDynamic: false,
+              alternativeFlow: "",
+              maxLength: "10",
+            };
+          case "istt":
+            return {
+              promptText: "",
+              promptText2: "",
+              aiPrompt:
+                'You are an intelligent assistant integrated into a medical billing IVR automation system.You receive transcribed audio from an insurance IVR during claim status retrieval, and patient and claim information is already verified. Analyze the transcription and determine the correct action.  If the IVR provides the status of a claim—such as paid, denied, in review, or rejected—even if it includes multiple line items under the same claim, return: recordClaimStatus().  If the IVR indicates that multiple separate claims were found and begins listing them individually(e.g., different claim dates or billed amounts), return: recordMultipleClaimStatuses().  If the IVR found multiple claims and requests a selection based on billed amount(e.g., "Press 1 for $450"), return: selectClaimByBilledAmount().If the IVR requests the billed amount or other input(e.g., "Please enter the billed amount"), return: passBilledAmount().If the IVR states that the claim status cannot be provided due to restrictions(e.g., provider or patient request), return: logRestrictedStatus().For any other situation, return: disconnectCallOnInvalidEntry().',
+              maxLength: "10",
+              maxSilence: "3",
+            };
           case "terminator":
             return { label: "Terminator" };
           default:
@@ -235,7 +248,7 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
       };
 
       setNodes((nds) => {
-        // Connect to Decision node for the first added node
+        // Connect to last added node
         let updatedNodes = nds.concat(newNode);
         if (lastNodeIdRef.current) {
           setEdges((eds) =>
@@ -261,16 +274,16 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
     (nodeId) => {
       setNodes((nds) => {
         const filteredNodes = nds.filter((node) => node.id !== nodeId);
-        // Update lastNodeIdRef to the most recently added node (excluding hardcoded nodes)
-        if (filteredNodes.length > 2) {
+        // Update lastNodeIdRef to the most recently added node
+        if (filteredNodes.length > 1) {
           // Find the last added node (after hardcoded ones)
-          const lastAddedNode = filteredNodes.slice(2).at(-1);
+          const lastAddedNode = filteredNodes.slice(1).at(-1);
           lastNodeIdRef.current = lastAddedNode
             ? lastAddedNode.id
-            : filteredNodes[1].id;
-        } else {
-          // If only hardcoded nodes remain, set to Decision node
-          lastNodeIdRef.current = filteredNodes[1]?.id;
+            : filteredNodes[0].id;
+        } else if (filteredNodes.length === 1) {
+          // If only one node remains, set to that node
+          lastNodeIdRef.current = filteredNodes[0]?.id;
         }
         return filteredNodes;
       });
@@ -632,7 +645,9 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
                   onDataChange={(newData) =>
                     setNodes((nds) =>
                       nds.map((n) =>
-                        n.id === selectedNode.id ? { ...n, data: newData } : n
+                        n.id === selectedNode.id
+                          ? { ...n, data: { ...n.data, ...newData } }
+                          : n
                       )
                     )
                   }
@@ -682,7 +697,563 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
                 </>
               )}
 
-              {selectedNode.type === "decision" && (
+              {selectedNode.type === "record" && (
+                <>
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.dynamic || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      dynamic: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Dynamic
+                    </label>
+                  </div>
+
+                  <label>Record Text</label>
+                  <input
+                    type="text"
+                    placeholder="Enter record text..."
+                    value={selectedNode.data.recordText || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, recordText: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>BR (Barge-In)</label>
+                  <select
+                    value={
+                      selectedNode.data.br !== undefined
+                        ? selectedNode.data.br.toString()
+                        : "true"
+                    }
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  br: e.target.value === "true",
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+
+                  <label>Max Length (seconds)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="300"
+                    placeholder="Enter max recording length..."
+                    value={selectedNode.data.maxLength || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, maxLength: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Silence (seconds)</label>
+                  <select
+                    value={selectedNode.data.silence || "3"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, silence: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="3">3 seconds</option>
+                    <option value="4">4 seconds</option>
+                    <option value="5">5 seconds</option>
+                    <option value="6">6 seconds</option>
+                    <option value="7">7 seconds</option>
+                  </select>
+
+                  <label>Beep</label>
+                  <select
+                    value={
+                      selectedNode.data.beep !== undefined
+                        ? selectedNode.data.beep.toString()
+                        : "true"
+                    }
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  beep: e.target.value === "true",
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                  </select>
+
+                  <label>Play Back</label>
+                  <select
+                    value={
+                      selectedNode.data.playBack !== undefined
+                        ? selectedNode.data.playBack.toString()
+                        : "true"
+                    }
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  playBack: e.target.value === "true",
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                  </select>
+                </>
+              )}
+
+              {selectedNode.type === "dtmf" && (
+                <>
+                  <label>Prompt Text</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Enter prompt text..."
+                    value={selectedNode.data.promptText || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, promptText: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.convertToKeypunch || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      convertToKeypunch: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Convert to Keypunch
+                    </label>
+                  </div>
+
+                  <label>DTMF</label>
+                  <input
+                    type="text"
+                    placeholder="Enter DTMF value (e.g., 01265)..."
+                    value={selectedNode.data.dtmfValue || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, dtmfValue: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+                </>
+              )}
+
+              {selectedNode.type === "ddtmf" && (
+                <>
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.convertToKeypunch || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      convertToKeypunch: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Convert to Keypunch
+                    </label>
+                  </div>
+
+                  <label>Dial Pad Type</label>
+                  <select
+                    value={selectedNode.data.dialPadType || "Standard"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  dialPadType: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="Standard">Standard</option>
+                    <option value="Classic">Classic</option>
+                  </select>
+
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.multiTap || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      multiTap: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Multi-Tap
+                    </label>
+                  </div>
+
+                  <label>Mapping</label>
+                  <select
+                    value={selectedNode.data.mapping || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, mapping: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="">Select mapping...</option>
+                    {fieldsMappingList.map((mapping, index) => (
+                      <option key={index} value={mapping.mappingName}>
+                        {mapping.mappingName}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label>String Function</label>
+                  <select
+                    value={selectedNode.data.stringFunction || "None"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  stringFunction: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="None">None</option>
+                    <option value="Substring">Substring</option>
+                  </select>
+
+                  <div style={{ marginBottom: "10px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.removeAlphabets || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      removeAlphabets: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Remove Alphabets
+                    </label>
+                  </div>
+
+                  <div style={{ marginBottom: "10px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.removeDigits || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      removeDigits: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Remove Digits
+                    </label>
+                  </div>
+
+                  <div style={{ marginBottom: "10px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.removeSpecialChars || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      removeSpecialChars: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Remove Special Characters
+                    </label>
+                  </div>
+
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.appendHashKey || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      appendHashKey: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Append # key
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {selectedNode.type === "wait" && (
+                <>
+                  <label>Prompt Text</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Enter prompt text..."
+                    value={selectedNode.data.promptText || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, promptText: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Time (seconds)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    placeholder="Enter wait time (1-999s)..."
+                    value={selectedNode.data.time || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, time: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+                </>
+              )}
+
+              {/* {selectedNode.type === "decision" && (
                 <>
                   <label>Condition:</label>
                   <input
@@ -702,65 +1273,376 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
                     }
                   />
                 </>
-              )}
-
-              {selectedNode.type === "transfer" && (
-                <>
-                  <label>Phone Number:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.number || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, number: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-                </>
-              )}
+              )} */}
 
               {selectedNode.type === "tts" && (
                 <>
-                  <label>Text to Speak:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.text || ""}
+                  <div style={{ marginBottom: "15px" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.dynamic || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      dynamic: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      Dynamic
+                    </label>
+                  </div>
+
+                  <label>TTS Text</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Enter TTS text..."
+                    value={selectedNode.data.ttsText || ""}
                     onChange={(e) =>
                       setNodes((nds) =>
                         nds.map((n) =>
                           n.id === selectedNode.id
                             ? {
                                 ...n,
-                                data: { ...n.data, text: e.target.value },
+                                data: { ...n.data, ttsText: e.target.value },
                               }
                             : n
                         )
                       )
                     }
                   />
+
+                  <label>Variable</label>
+                  <select
+                    value={selectedNode.data.variable || "DD|4"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, variable: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="DD|4">DD|4</option>
+                    <option value="W|1">W|1</option>
+                    <option value="W|2">W|2</option>
+                    <option value="T|3">T|3</option>
+                    <option value="DD|4">DD|4</option>
+                    <option value="W|5">W|5</option>
+                    <option value="TTS|6">TTS|6</option>
+                  </select>
+
+                  <label>Type</label>
+                  <select
+                    value={selectedNode.data.type || "Ordinal"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, type: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="Ordinal">Ordinal</option>
+                    <option value="Ordinal (only alphabet)">
+                      Ordinal (only alphabet)
+                    </option>
+                    <option value="Ordinal (only numeric)">
+                      Ordinal (only numeric)
+                    </option>
+                    <option value="Date">Date</option>
+                    <option value="Time">Time</option>
+                    <option value="Free Text">Free Text</option>
+                    <option value="Amount">Amount</option>
+                    <option value="Percentage">Percentage</option>
+                  </select>
+
+                  <label>Input Text</label>
+                  <input
+                    type="text"
+                    placeholder="Enter input text..."
+                    value={selectedNode.data.inputText || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, inputText: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>String Function</label>
+                  <select
+                    value={selectedNode.data.stringFunction || "None"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  stringFunction: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  >
+                    <option value="None">None</option>
+                    <option value="Substring">Substring</option>
+                  </select>
                 </>
               )}
 
               {selectedNode.type === "stt" && (
                 <>
-                  <label>Store Speech in Variable:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.variable || ""}
+                  <label>Prompt Text:</label>
+                  <textarea
+                    rows="3"
+                    value={selectedNode.data.promptText || ""}
                     onChange={(e) =>
                       setNodes((nds) =>
                         nds.map((n) =>
                           n.id === selectedNode.id
                             ? {
                                 ...n,
-                                data: { ...n.data, variable: e.target.value },
+                                data: { ...n.data, promptText: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Prompt Text:</label>
+                  <textarea
+                    rows="3"
+                    value={selectedNode.data.promptText2 || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  promptText2: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+                    Flow Decision Based On
+                  </h4>
+
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={selectedNode.data.aiPromptEnabled || false}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    aiPromptEnabled: e.target.checked,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+                    AI Prompt
+                  </label>
+
+                  <h4 style={{ marginTop: "15px", marginBottom: "10px" }}>
+                    AI Prompt
+                  </h4>
+
+                  <label>Add Default Flow Field Text:</label>
+                  <textarea
+                    rows="3"
+                    value={selectedNode.data.addDefaultFlowField || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  addDefaultFlowField: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Add Alternative Flow Field Text:</label>
+                  <textarea
+                    rows="3"
+                    value={selectedNode.data.addAlternativeFlowField || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  addAlternativeFlowField: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={selectedNode.data.defaultFlowDynamic || false}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    defaultFlowDynamic: e.target.checked,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+                    Dynamic
+                  </label>
+
+                  <label>Default Flow:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.defaultFlow || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  defaultFlow: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedNode.data.alternativeFlowDynamic || false
+                      }
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    alternativeFlowDynamic: e.target.checked,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+                    Dynamic
+                  </label>
+
+                  <label>Alternative Flow:</label>
+                  <input
+                    type="text"
+                    value={selectedNode.data.alternativeFlow || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  alternativeFlow: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Max Length (seconds):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={selectedNode.data.maxLength || "10"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, maxLength: e.target.value },
                               }
                             : n
                         )
@@ -770,36 +1652,97 @@ function FlowEditorContent({ flowAction, setFlowAction, currentFlowId }) {
                 </>
               )}
 
-              {selectedNode.type === "set" && (
+              {selectedNode.type === "istt" && (
                 <>
-                  <label>Variable Name:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.variable || ""}
+                  <label>Prompt Text:</label>
+                  <textarea
+                    rows="3"
+                    value={selectedNode.data.promptText || ""}
                     onChange={(e) =>
                       setNodes((nds) =>
                         nds.map((n) =>
                           n.id === selectedNode.id
                             ? {
                                 ...n,
-                                data: { ...n.data, variable: e.target.value },
+                                data: { ...n.data, promptText: e.target.value },
                               }
                             : n
                         )
                       )
                     }
                   />
-                  <label>Value:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.value || ""}
+
+                  <label>Prompt Text:</label>
+                  <textarea
+                    rows="3"
+                    value={selectedNode.data.promptText2 || ""}
                     onChange={(e) =>
                       setNodes((nds) =>
                         nds.map((n) =>
                           n.id === selectedNode.id
                             ? {
                                 ...n,
-                                data: { ...n.data, value: e.target.value },
+                                data: {
+                                  ...n.data,
+                                  promptText2: e.target.value,
+                                },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>AI Prompt:</label>
+                  <textarea
+                    rows="8"
+                    value={selectedNode.data.aiPrompt || ""}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, aiPrompt: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Max Length (seconds):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={selectedNode.data.maxLength || "10"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, maxLength: e.target.value },
+                              }
+                            : n
+                        )
+                      )
+                    }
+                  />
+
+                  <label>Max Silence (seconds):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={selectedNode.data.maxSilence || "3"}
+                    onChange={(e) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: { ...n.data, maxSilence: e.target.value },
                               }
                             : n
                         )
@@ -822,6 +1765,7 @@ export default function FlowEditor({
   flowAction,
   setFlowAction,
   currentFlowId,
+  fieldsMappingList,
 }) {
   return (
     <ReactFlowProvider>
@@ -829,6 +1773,7 @@ export default function FlowEditor({
         flowAction={flowAction}
         setFlowAction={setFlowAction}
         currentFlowId={currentFlowId}
+        fieldsMappingList={fieldsMappingList}
       />
     </ReactFlowProvider>
   );
