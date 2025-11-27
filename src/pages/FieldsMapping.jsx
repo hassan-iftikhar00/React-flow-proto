@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./FieldsMapping.css";
 import {
   Box,
@@ -35,7 +36,7 @@ export default function FieldsMapping({
   });
 
   const [editingIndex, setEditingIndex] = useState(null);
-  const [list, setList] = useState([]);
+  const [list, setList] = useLocalStorage("fieldsMapping_list", []);
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);

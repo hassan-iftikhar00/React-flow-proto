@@ -30,6 +30,7 @@ import {
   TableSortLabel,
 } from "@mui/material";
 import { Save, Clear, ArrowBack, ArrowForward } from "@mui/icons-material";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./IVRConfig.css";
 
 const steps = ["General", "Routing", "Database", "API", "Advanced"];
@@ -66,7 +67,7 @@ export default function IVRConfig() {
     businessHoursTo: "",
   });
   const [editingLogIndex, setEditingLogIndex] = useState(null);
-  const [ivrLogs, setIvrLogs] = useState([]);
+  const [ivrLogs, setIvrLogs] = useLocalStorage("ivrConfig_logs", []);
   const [popup, setPopup] = useState({ open: false, title: "", message: "" });
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({

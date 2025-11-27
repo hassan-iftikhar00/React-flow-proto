@@ -37,6 +37,7 @@ import {
   Scan,
   Spline,
   ChevronRight,
+  History,
 } from "lucide-react";
 
 export default function Toolbar({
@@ -57,6 +58,7 @@ export default function Toolbar({
   onAddShape,
   onAddLabel,
   onAddArrow,
+  onShowVersionHistory,
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -538,6 +540,15 @@ export default function Toolbar({
             category="Edit"
             priority="critical"
             className="redo-btn"
+          />
+          <TooltipButton
+            icon={History}
+            title="Version History"
+            description="View and restore previous versions of this flow"
+            onClick={onShowVersionHistory}
+            shortcut="Ctrl H"
+            category="Edit"
+            priority="critical"
           />
         </div>
       </div>

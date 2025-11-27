@@ -31,7 +31,9 @@ import {
   setLocalStorageItem,
 } from "../hooks/useLocalStorage";
 import { Settings, X } from "lucide-react";
+import { GearIcon, XCircleIcon } from "@phosphor-icons/react";
 import IVRInputConfig from "./IVRInputConfig";
+import VersionHistory from "./VersionHistory";
 
 // Load the last used ID from localStorage
 let id = parseInt(getLocalStorageItem("flowEditor_lastNodeId", "5"));
@@ -102,13 +104,20 @@ function FlowEditorContent({
     }
   }, [nodes]);
 
-  // On initial mount, set lastNodeIdRef to the first node
+  // On initial mount, set lastNodeIdRef to the last node in the flow
   useEffect(() => {
     if (nodes.length >= 1) {
-      // First node (Play node)
-      lastNodeIdRef.current = nodes[0].id;
+      // Set to the last node instead of first - this is where user is working
+      lastNodeIdRef.current = nodes[nodes.length - 1].id;
     }
   }, []);
+
+  // Update lastNodeIdRef when user selects a node (they're working on that part of flow)
+  useEffect(() => {
+    if (selectedNode) {
+      lastNodeIdRef.current = selectedNode.id;
+    }
+  }, [selectedNode]);
 
   // Get the currently selected element (node or edge)
   const selectedElement = selectedNode
@@ -132,11 +141,45 @@ function FlowEditorContent({
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const lastSaveRef = useRef(Date.now());
+
+  // Function to save version snapshot
+  const saveVersionSnapshot = useCallback(
+    (message = "Auto-saved") => {
+      if (!currentFlowId) return;
+
+      const historyKey = `flow_${currentFlowId}_history`;
+      const existingVersions = getLocalStorageItem(historyKey, []);
+
+      const newVersion = {
+        id: `v_${Date.now()}`,
+        timestamp: Date.now(),
+        nodes: JSON.parse(JSON.stringify(nodes)),
+        edges: JSON.parse(JSON.stringify(edges)),
+        message: message,
+        user: "Current User", // Can be replaced with actual user from auth
+      };
+
+      // Keep last 50 versions
+      const updatedVersions = [newVersion, ...existingVersions].slice(0, 50);
+      setLocalStorageItem(historyKey, updatedVersions);
+    },
+    [nodes, edges, currentFlowId]
+  );
 
   // Auto-save nodes and edges to localStorage whenever they change
   useEffect(() => {
     setLocalStorageItem(getStorageKey("nodes"), nodes);
-  }, [nodes, currentFlowId]);
+
+    // Auto-save version snapshot every 2 minutes or on significant changes
+    const now = Date.now();
+    if (now - lastSaveRef.current > 120000 && nodes.length > 0) {
+      // 2 minutes
+      saveVersionSnapshot();
+      lastSaveRef.current = now;
+    }
+  }, [nodes, currentFlowId, saveVersionSnapshot]);
 
   useEffect(() => {
     setLocalStorageItem(getStorageKey("edges"), edges);
@@ -205,7 +248,9 @@ function FlowEditorContent({
               noResponseUseStandardMessage: false,
               noResponseAction: "repeat",
               noResponseGotoTarget: "",
-              options: [{ key: "1", label: "Option 1" }],
+              options: [
+                { id: 1, key: "1", label: "Option 1", targetNodeId: "" },
+              ],
             };
           case "collect":
             return { variable: "userInput" };
@@ -232,6 +277,7 @@ function FlowEditorContent({
                 'You are an intelligent assistant integrated into a medical billing IVR automation system.You receive transcribed audio from an insurance IVR during claim status retrieval, and patient and claim information is already verified. Analyze the transcription and determine the correct action.  If the IVR provides the status of a claim—such as paid, denied, in review, or rejected—even if it includes multiple line items under the same claim, return: recordClaimStatus().  If the IVR indicates that multiple separate claims were found and begins listing them individually(e.g., different claim dates or billed amounts), return: recordMultipleClaimStatuses().  If the IVR found multiple claims and requests a selection based on billed amount(e.g., "Press 1 for $450"), return: selectClaimByBilledAmount().If the IVR requests the billed amount or other input(e.g., "Please enter the billed amount"), return: passBilledAmount().If the IVR states that the claim status cannot be provided due to restrictions(e.g., provider or patient request), return: logRestrictedStatus().For any other situation, return: disconnectCallOnInvalidEntry().',
               maxLength: "10",
               maxSilence: "3",
+              functions: [{ id: 1, name: "Function 1", targetNodeId: "" }],
             };
           case "terminator":
             return { label: "Terminator" };
@@ -240,10 +286,23 @@ function FlowEditorContent({
         }
       };
 
+      // Calculate position for new node based on last selected node
+      let newPosition = { x: 250, y: 100 };
+      if (lastNodeIdRef.current) {
+        const lastNode = nodes.find((n) => n.id === lastNodeIdRef.current);
+        if (lastNode) {
+          // Place new node below and slightly to the right of the last node
+          newPosition = {
+            x: lastNode.position.x + 50,
+            y: lastNode.position.y + 150,
+          };
+        }
+      }
+
       const newNode = {
         id: getId(),
         type: flowAction.type,
-        position: { x: 250, y: 100 },
+        position: newPosition,
         data: getDefaultData(flowAction.type),
       };
 
@@ -265,9 +324,26 @@ function FlowEditorContent({
         lastNodeIdRef.current = newNode.id;
         return updatedNodes;
       });
+
+      // Save snapshot when adding new node
+      setTimeout(
+        () => saveVersionSnapshot(`Added ${flowAction.type} node`),
+        100
+      );
+
+      // Automatically select the new node to open config panel
+      setSelectedNode(newNode);
+
       setFlowAction(null); // reset action
     }
-  }, [flowAction, setNodes, setFlowAction, setEdges, nodes]);
+  }, [
+    flowAction,
+    setNodes,
+    setFlowAction,
+    setEdges,
+    nodes,
+    saveVersionSnapshot,
+  ]);
 
   // Handle node deletion
   const handleDeleteNode = useCallback(
@@ -290,12 +366,35 @@ function FlowEditorContent({
       setEdges((eds) =>
         eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
       );
+      // Save snapshot when deleting node
+      setTimeout(() => saveVersionSnapshot(`Deleted node`), 100);
       // Clear selection if the deleted node was selected
       if (selectedNode?.id === nodeId) {
         setSelectedNode(null);
       }
     },
-    [setNodes, setEdges, selectedNode]
+    [setNodes, setEdges, selectedNode, saveVersionSnapshot]
+  );
+
+  // Handle restore version
+  const handleRestoreVersion = useCallback(
+    (version) => {
+      setNodes(version.nodes);
+      setEdges(version.edges);
+      setSelectedNode(null);
+      setSelectedEdge(null);
+      // Save a new snapshot marking the restoration
+      setTimeout(
+        () =>
+          saveVersionSnapshot(
+            `Restored version from ${new Date(
+              version.timestamp
+            ).toLocaleString()}`
+          ),
+        100
+      );
+    },
+    [setNodes, setEdges, saveVersionSnapshot]
   );
 
   // Update nodes to include delete handler
@@ -517,6 +616,13 @@ function FlowEditorContent({
         onAddShape={handleAddShape}
         onAddLabel={handleAddLabel}
         onAddArrow={handleAddArrow}
+        onShowVersionHistory={() => {
+          console.log(
+            "Version History button clicked, current state:",
+            showVersionHistory
+          );
+          setShowVersionHistory(true);
+        }}
       />
       <div className="flow-container" ref={reactFlowWrapper}>
         <ReactFlow
@@ -565,19 +671,45 @@ function FlowEditorContent({
           )}
         </ReactFlow>
 
+        {/* Version History Panel */}
+        {showVersionHistory && (
+          <VersionHistory
+            currentFlowId={currentFlowId}
+            onRestore={handleRestoreVersion}
+            onClose={() => {
+              console.log("Closing Version History");
+              setShowVersionHistory(false);
+            }}
+          />
+        )}
+        {console.log(
+          "Rendering FlowEditor, showVersionHistory:",
+          showVersionHistory
+        )}
+
         {/* Enhanced config panel */}
         {selectedNode && (
           <div className="config-panel">
             <div className="config-header">
               <h4>
-                <Settings /> Configure {selectedNode.type.toUpperCase()}
+                <GearIcon
+                  size={24}
+                  color="#AA96DA"
+                  weight="duotone"
+                  style={{
+                    display: "inline-block",
+                    verticalAlign: "middle",
+                    marginRight: "8px",
+                  }}
+                />
+                Configure {selectedNode.type.toUpperCase()}
               </h4>
               <button
                 className="config-close-btn"
                 onClick={() => setSelectedNode(null)}
                 title="Close"
               >
-                <X />
+                <XCircleIcon size={20} color="#FF6B6B" weight="duotone" />
               </button>
             </div>
             <div className="config-body">
@@ -639,21 +771,205 @@ function FlowEditorContent({
 
               {/* Enhanced Menu Node Configuration */}
               {selectedNode.type === "menu" && (
-                <IVRInputConfig
-                  nodeId={selectedNode.id}
-                  nodeData={selectedNode.data}
-                  onDataChange={(newData) =>
-                    setNodes((nds) =>
-                      nds.map((n) =>
-                        n.id === selectedNode.id
-                          ? { ...n, data: { ...n.data, ...newData } }
-                          : n
+                <>
+                  <IVRInputConfig
+                    nodeId={selectedNode.id}
+                    nodeData={selectedNode.data}
+                    onDataChange={(newData) =>
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? { ...n, data: { ...n.data, ...newData } }
+                            : n
+                        )
                       )
-                    )
-                  }
-                  promptLabel="Prompt Text"
-                  promptPlaceholder="Enter menu prompt text..."
-                />
+                    }
+                    promptLabel="Prompt Text"
+                    promptPlaceholder="Enter menu prompt text..."
+                  />
+
+                  <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+                    Menu Options
+                  </h4>
+
+                  {(selectedNode.data.options || []).map((option, index) => (
+                    <div
+                      key={option.id}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        marginBottom: "10px",
+                        background: "#f8fafc",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        <strong>Option {option.key}</strong>
+                        <button
+                          onClick={() => {
+                            const newOptions = selectedNode.data.options.filter(
+                              (o) => o.id !== option.id
+                            );
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        options: newOptions,
+                                      },
+                                    }
+                                  : n
+                              )
+                            );
+                          }}
+                          style={{
+                            padding: "4px 8px",
+                            background: "#fee",
+                            border: "1px solid #fcc",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <label>Key (Number):</label>
+                      <input
+                        type="text"
+                        value={option.key || ""}
+                        onChange={(e) => {
+                          const newOptions = [...selectedNode.data.options];
+                          newOptions[index].key = e.target.value;
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: { ...n.data, options: newOptions },
+                                  }
+                                : n
+                            )
+                          );
+                        }}
+                        style={{ marginBottom: "8px" }}
+                      />
+
+                      <label>Label:</label>
+                      <input
+                        type="text"
+                        value={option.label || ""}
+                        onChange={(e) => {
+                          const newOptions = [...selectedNode.data.options];
+                          newOptions[index].label = e.target.value;
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: { ...n.data, options: newOptions },
+                                  }
+                                : n
+                            )
+                          );
+                        }}
+                        style={{ marginBottom: "8px" }}
+                      />
+
+                      <label>Target Node:</label>
+                      <select
+                        value={option.targetNodeId || ""}
+                        onChange={(e) => {
+                          const newOptions = [...selectedNode.data.options];
+                          newOptions[index].targetNodeId = e.target.value;
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: { ...n.data, options: newOptions },
+                                  }
+                                : n
+                            )
+                          );
+                        }}
+                      >
+                        <option value="">Select target node...</option>
+                        {nodes
+                          .filter((n) => n.id !== selectedNode.id)
+                          .map((n, idx) => (
+                            <option key={n.id} value={n.id}>
+                              {idx + 1}. {n.type.toUpperCase()} -{" "}
+                              {n.data.text ||
+                                n.data.promptText ||
+                                n.data.variable ||
+                                n.data.label ||
+                                "Node"}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={() => {
+                      const options = selectedNode.data.options || [];
+                      const newId =
+                        options.length > 0
+                          ? Math.max(...options.map((o) => o.id)) + 1
+                          : 1;
+                      const newKey = String(
+                        options.length > 0
+                          ? Math.max(
+                              ...options.map((o) => parseInt(o.key) || 0)
+                            ) + 1
+                          : 1
+                      );
+                      const newOption = {
+                        id: newId,
+                        key: newKey,
+                        label: `Option ${newKey}`,
+                        targetNodeId: "",
+                      };
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  options: [...options, newOption],
+                                },
+                              }
+                            : n
+                        )
+                      );
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      background: "#06b6d4",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                      marginTop: "10px",
+                    }}
+                  >
+                    + Add Menu Option
+                  </button>
+                </>
               )}
 
               {selectedNode.type === "collect" && (
@@ -1749,6 +2065,143 @@ function FlowEditorContent({
                       )
                     }
                   />
+
+                  <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+                    Function Routing
+                  </h4>
+
+                  {(selectedNode.data.functions || []).map((func, index) => (
+                    <div
+                      key={func.id}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        marginBottom: "10px",
+                        background: "#f8fafc",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        <strong>{func.name}</strong>
+                        {selectedNode.data.functions.length > 1 && (
+                          <button
+                            onClick={() => {
+                              const newFunctions =
+                                selectedNode.data.functions.filter(
+                                  (f) => f.id !== func.id
+                                );
+                              setNodes((nds) =>
+                                nds.map((n) =>
+                                  n.id === selectedNode.id
+                                    ? {
+                                        ...n,
+                                        data: {
+                                          ...n.data,
+                                          functions: newFunctions,
+                                        },
+                                      }
+                                    : n
+                                )
+                              );
+                            }}
+                            style={{
+                              padding: "4px 8px",
+                              background: "#fee",
+                              border: "1px solid #fcc",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <label>Target Node:</label>
+                      <select
+                        value={func.targetNodeId || ""}
+                        onChange={(e) => {
+                          const newFunctions = [...selectedNode.data.functions];
+                          newFunctions[index].targetNodeId = e.target.value;
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      functions: newFunctions,
+                                    },
+                                  }
+                                : n
+                            )
+                          );
+                        }}
+                      >
+                        <option value="">Select target node...</option>
+                        {nodes
+                          .filter((n) => n.id !== selectedNode.id)
+                          .map((n, idx) => (
+                            <option key={n.id} value={n.id}>
+                              {idx + 1}. {n.type.toUpperCase()} -{" "}
+                              {n.data.text ||
+                                n.data.promptText ||
+                                n.data.variable ||
+                                n.data.label ||
+                                "Node"}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={() => {
+                      const functions = selectedNode.data.functions || [];
+                      const newId =
+                        functions.length > 0
+                          ? Math.max(...functions.map((f) => f.id)) + 1
+                          : 1;
+                      const newFunction = {
+                        id: newId,
+                        name: `Function ${newId}`,
+                        targetNodeId: "",
+                      };
+                      setNodes((nds) =>
+                        nds.map((n) =>
+                          n.id === selectedNode.id
+                            ? {
+                                ...n,
+                                data: {
+                                  ...n.data,
+                                  functions: [...functions, newFunction],
+                                },
+                              }
+                            : n
+                        )
+                      );
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      background: "#06b6d4",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                      marginTop: "10px",
+                    }}
+                  >
+                    + Add Function
+                  </button>
                 </>
               )}
             </div>{" "}

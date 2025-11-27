@@ -11,12 +11,12 @@ export default function FlowBuilder({ currentFlowId }) {
 
   return (
     <div className="flow-page">
-      <NodeSidebar onAddNode={handleAddNode} />
       <FlowEditor
         flowAction={flowAction}
         setFlowAction={setFlowAction}
         currentFlowId={currentFlowId}
       />
+      <NodeSidebar onAddNode={handleAddNode} />
     </div>
   );
 }

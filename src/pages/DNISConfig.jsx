@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Pencil, Trash2, ChevronDown } from "lucide-react";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./DNISConfig.css";
 import {
   Dialog,
@@ -21,7 +22,7 @@ export default function DNISConfig() {
   });
 
   const [editingIndex, setEditingIndex] = useState(null);
-  const [records, setRecords] = useState([]);
+  const [records, setRecords] = useLocalStorage("dnisConfig_records", []);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,8 +51,7 @@ export default function DNISConfig() {
   const showPopup = (title, message, onConfirm = null) =>
     setPopup({ open: true, title, message, onConfirm });
 
-  const closePopup = () =>
-    setPopup({ ...popup, open: false, onConfirm: null });
+  const closePopup = () => setPopup({ ...popup, open: false, onConfirm: null });
 
   // Save or update record
   const onSave = () => {
@@ -118,7 +118,12 @@ export default function DNISConfig() {
   // Filter records
   const filteredRecords = useMemo(() => {
     return records.filter((rec) => {
-      const matchesSearch = [rec.dnis, rec.appName, rec.environment, rec.remarks]
+      const matchesSearch = [
+        rec.dnis,
+        rec.appName,
+        rec.environment,
+        rec.remarks,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -150,14 +155,18 @@ export default function DNISConfig() {
 
   const requestSort = (key) => {
     let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "asc")
+      direction = "desc";
     setSortConfig({ key, direction });
   };
 
   // Pagination
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = sortedRecords.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentRecords = sortedRecords.slice(
+    indexOfFirstRecord,
+    indexOfLastRecord
+  );
   const totalPages = Math.ceil(sortedRecords.length / recordsPerPage);
 
   return (
@@ -296,17 +305,37 @@ export default function DNISConfig() {
             <thead>
               <tr>
                 <th onClick={() => requestSort("appName")}>
-                  App Name {sortConfig.key === "appName" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  App Name{" "}
+                  {sortConfig.key === "appName"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </th>
                 <th onClick={() => requestSort("dnis")}>
-                  DNIS {sortConfig.key === "dnis" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  DNIS{" "}
+                  {sortConfig.key === "dnis"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </th>
                 <th>Status</th>
                 <th onClick={() => requestSort("environment")}>
-                  Environment {sortConfig.key === "environment" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  Environment{" "}
+                  {sortConfig.key === "environment"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </th>
                 <th onClick={() => requestSort("remarks")}>
-                  Remarks {sortConfig.key === "remarks" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                  Remarks{" "}
+                  {sortConfig.key === "remarks"
+                    ? sortConfig.direction === "asc"
+                      ? "▲"
+                      : "▼"
+                    : ""}
                 </th>
                 <th style={{ textAlign: "center" }}>Actions</th>
               </tr>
@@ -322,7 +351,7 @@ export default function DNISConfig() {
                 currentRecords.map((rec, index) => (
                   <tr
                     key={indexOfFirstRecord + index}
-                    className={(index % 2 === 0 ? "even-row" : "odd-row")}
+                    className={index % 2 === 0 ? "even-row" : "odd-row"}
                   >
                     <td>{rec.appName}</td>
                     <td>{rec.dnis}</td>
