@@ -1,10 +1,17 @@
 import React, { useState } from "react";
-import { Pencil, Trash2, ChevronDown, CheckCircle, XCircle } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  ChevronDown,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./DNISConfig.css";
 
 export default function DNISConfig() {
   const [enable, setEnable] = useState(false);
-  const [data, setData] = useState([]);
+  const [data, setData] = useLocalStorage("dnisConfig_data", []);
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
   const [envDropdown, setEnvDropdown] = useState(false);
   const [selectedDNISIndex, setSelectedDNISIndex] = useState(null);
@@ -24,7 +31,7 @@ export default function DNISConfig() {
     const updatedData = [...data];
     updatedData[selectedDNISIndex] = {
       ...updatedData[selectedDNISIndex],
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     };
     setData(updatedData);
   };
@@ -69,7 +76,8 @@ export default function DNISConfig() {
   };
 
   // Filtered data based on selected filter
-  const filteredData = filter === "All" ? data : data.filter(d => d.environment === filter);
+  const filteredData =
+    filter === "All" ? data : data.filter((d) => d.environment === filter);
 
   return (
     <div className="dnis-container">
@@ -77,14 +85,22 @@ export default function DNISConfig() {
 
       {alert.show && (
         <div className={`alert ${alert.type}`}>
-          {alert.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+          {alert.type === "success" ? (
+            <CheckCircle size={20} />
+          ) : (
+            <XCircle size={20} />
+          )}
           <span>{alert.message}</span>
         </div>
       )}
 
       <div className="toggle-row">
         <label className="switch">
-          <input type="checkbox" checked={enable} onChange={() => setEnable(!enable)} />
+          <input
+            type="checkbox"
+            checked={enable}
+            onChange={() => setEnable(!enable)}
+          />
           <span className="slider"></span>
         </label>
         <span className="toggle-text">Enable DNIS Configuration</span>
@@ -94,18 +110,32 @@ export default function DNISConfig() {
         <div className="split-container">
           {/* Left Panel */}
           <div className="left-panel">
-            <button className="open-btn" onClick={handleAddNew}>Add New DNIS</button>
+            <button className="open-btn" onClick={handleAddNew}>
+              Add New DNIS
+            </button>
 
             {/* Filter Dropdown */}
             {data.length > 0 && (
-              <div className={`custom-dropdown ${filterDropdown ? "show-options" : ""}`} style={{ margin: "16px 0" }}>
-                <div className="selected" onClick={() => setFilterDropdown(!filterDropdown)}>
+              <div
+                className={`custom-dropdown ${
+                  filterDropdown ? "show-options" : ""
+                }`}
+                style={{ margin: "16px 0" }}
+              >
+                <div
+                  className="selected"
+                  onClick={() => setFilterDropdown(!filterDropdown)}
+                >
                   <span>{filter}</span>
                   <ChevronDown size={16} />
                 </div>
                 <div className="options">
                   {filters.map((f, i) => (
-                    <div key={i} className="option" onClick={() => selectFilter(f)}>
+                    <div
+                      key={i}
+                      className="option"
+                      onClick={() => selectFilter(f)}
+                    >
                       {f}
                     </div>
                   ))}
@@ -129,15 +159,28 @@ export default function DNISConfig() {
                     <tr
                       key={index}
                       className="fade-row"
-                      style={{ background: selectedDNISIndex === index ? "#e4e8ff" : "transparent" }}
+                      style={{
+                        background:
+                          selectedDNISIndex === index
+                            ? "#e4e8ff"
+                            : "transparent",
+                      }}
                     >
                       <td>{row.dnis}</td>
                       <td>{row.appName}</td>
                       <td>{row.environment}</td>
                       <td>{row.remarks}</td>
                       <td className="actions">
-                        <Pencil size={18} className="edit" onClick={() => setSelectedDNISIndex(index)} />
-                        <Trash2 size={18} className="delete" onClick={() => handleDelete(index)} />
+                        <Pencil
+                          size={18}
+                          className="edit"
+                          onClick={() => setSelectedDNISIndex(index)}
+                        />
+                        <Trash2
+                          size={18}
+                          className="delete"
+                          onClick={() => handleDelete(index)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -165,14 +208,28 @@ export default function DNISConfig() {
                   onChange={handleChange}
                 />
 
-                <div className={`custom-dropdown ${envDropdown ? "show-options" : ""}`}>
-                  <div className="selected" onClick={() => setEnvDropdown(!envDropdown)}>
-                    <span>{data[selectedDNISIndex].environment || "Select Environment *"}</span>
+                <div
+                  className={`custom-dropdown ${
+                    envDropdown ? "show-options" : ""
+                  }`}
+                >
+                  <div
+                    className="selected"
+                    onClick={() => setEnvDropdown(!envDropdown)}
+                  >
+                    <span>
+                      {data[selectedDNISIndex].environment ||
+                        "Select Environment *"}
+                    </span>
                     <ChevronDown size={16} />
                   </div>
                   <div className="options">
                     {environments.map((env, i) => (
-                      <div key={i} className="option" onClick={() => selectEnvironment(env)}>
+                      <div
+                        key={i}
+                        className="option"
+                        onClick={() => selectEnvironment(env)}
+                      >
                         {env}
                       </div>
                     ))}
@@ -186,7 +243,11 @@ export default function DNISConfig() {
                   onChange={handleChange}
                 />
 
-                <button type="button" className="submit-btn" onClick={handleSave}>
+                <button
+                  type="button"
+                  className="submit-btn"
+                  onClick={handleSave}
+                >
                   Save / Update
                 </button>
               </div>

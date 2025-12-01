@@ -3850,6 +3850,9 @@ body,
   justify-content: center;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   overflow: hidden;
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 transparent !important;
+  overflow-y: auto;
 }
 
 .login-background {
