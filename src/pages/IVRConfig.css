@@ -1,139 +1,253 @@
-/* ===== Container ===== */
+/* -----------------------------------------------------
+   ROOT VARIABLES (EASY GLOBAL CUSTOMIZATION)
+------------------------------------------------------ */
+:root {
+  --aurora-1: #547cff;
+  --aurora-2: #8ba4ff;
+  --aurora-3: #d9e2ff;
+  --dark-text: #0f1320;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.28);
+}
+
+/* -----------------------------------------------------
+   CONTAINER – FLOATING AURORA GLASS
+------------------------------------------------------ */
 .ivr-container {
-  padding: 40px;
-  background-color: #f0f8ff; /* light sky blue background */
+  font-family: 'Poppins', sans-serif;
+  padding: 36px;
   min-height: 100vh;
-  font-family: "Roboto", sans-serif;
+  background: linear-gradient(135deg, var(--aurora-3), #ffffff);
+  position: relative;
+  overflow: hidden;
 }
 
-/* ===== Subtitle ===== */
+/* Floating aurora lights */
+.ivr-container::before,
+.ivr-container::after {
+  content: "";
+  position: absolute;
+  width: 45%;
+  height: 45%;
+  background: radial-gradient(circle at center,
+    rgba(84, 124, 255, 0.45),
+    transparent 70%
+  );
+  filter: blur(60px);
+  animation: floatAurora 10s ease-in-out infinite alternate;
+}
+
+.ivr-container::before {
+  top: -5%;
+  left: -5%;
+}
+
+.ivr-container::after {
+  bottom: -5%;
+  right: -5%;
+  animation-delay: 1.5s;
+}
+
+@keyframes floatAurora {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -20px) scale(1.14); }
+}
+
+/* -----------------------------------------------------
+   TITLE TEXT – SIGNATURE GRADIENT
+------------------------------------------------------ */
+.ivr-container h5 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: linear-gradient(90deg, #3e4fff, #738aff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 5px;
+}
+
 .ivr-subtitle {
-  margin-bottom: 25px;
-  color: #555;
-  font-size: 0.95rem;
+  font-size: 15px;
+  color: #4c5060;
+  opacity: 0.85;
 }
 
-/* ===== Stepper ===== */
+/* -----------------------------------------------------
+   STEP-BY-STEP WIZARD – CYBER NEON ENERGY
+------------------------------------------------------ */
+
+.ivr-stepper .MuiStepIcon-root {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #d3d2d2, #ffffff);
+  color: #4e66ff !important;
+  border: 2px solid rgba(78, 102, 255, 0.35);
+  box-shadow:
+    inset 0 0 12px rgba(78, 102, 255, 0.18),
+    0 4px 14px rgba(78, 102, 255, 0.25);
+  transition: 0.3s ease;
+}
+
+.ivr-stepper .MuiStepIcon-root.Mui-active {
+  background: linear-gradient(135deg, #4e66ff, #6b7dff) !important;
+  color: #5c96d8 !important;
+  box-shadow:
+    0 0 24px rgba(78, 102, 255, 0.65),
+    inset 0 0 16px rgba(255,255,255,0.2);
+  border-color: #4e66ff;
+  transform: scale(1.1);
+}
+
+.ivr-stepper .MuiStepIcon-root.Mui-completed {
+  background: #d6ddff !important;
+  color: #4e66ff !important;
+  box-shadow: inset 0 0 12px rgba(78, 102, 255, 0.15);
+}
+
 .ivr-stepper .MuiStepLabel-label {
-  color: #0e1a2b; /* dark text */
+  color: #5c5f75 !important;
   font-weight: 600;
-  font-size: 0.95rem;
 }
 
-.ivr-stepper .MuiStepLabel-label.Mui-completed {
-  color: #0288d1; /* sky blue for completed step */
-}
-
-/* ===== Paper / Card ===== */
+/* -----------------------------------------------------
+   FORM CARD – LIQUID GLASS + DEPTH SHADOW
+------------------------------------------------------ */
 .ivr-paper {
-  padding: 30px;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #0e1a2b;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
+  padding: 32px;
+  margin-top: 28px;
+  border-radius: 24px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    8px 8px 24px rgba(0,0,0,0.08),
+    -4px -4px 16px rgba(255,255,255,0.6);
+  backdrop-filter: blur(14px) saturate(160%);
+  transition: 0.3s ease;
 }
 
-/* Hover effect on Paper */
 .ivr-paper:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow:
+    12px 12px 28px rgba(0,0,0,0.1),
+    -6px -6px 20px rgba(255,255,255,0.75);
 }
 
-/* ===== TextField & Select ===== */
-.ivr-paper .MuiFormControl-root,
-.ivr-paper .MuiTextField-root {
-  margin-bottom: 18px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 6px;
+/* -----------------------------------------------------
+   LIQUID INPUT FIELDS (COMPLETELY UNIQUE)
+------------------------------------------------------ */
+.MuiFilledInput-root {
+  background: rgba(243, 246, 255, 0.82) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(78, 102, 255, 0.22) !important;
+  padding-left: 14px !important;
+  backdrop-filter: blur(6px);
+  box-shadow:
+    inset 4px 4px 10px rgba(181, 191, 230, 0.4),
+    inset -3px -3px 12px rgba(255,255,255,0.7);
+  transition: 0.3s ease;
 }
 
-.ivr-paper .MuiInputBase-input {
-  color: #0e1a2b; /* input text */
+.MuiFilledInput-root:hover {
+  border-color: #4e66ff !important;
+  box-shadow:
+    inset 4px 4px 12px rgba(160,170,220,0.45),
+    inset -4px -4px 14px rgba(255,255,255,0.9);
 }
 
-.ivr-paper .MuiInputLabel-root {
-  color: #0e1a2b; /* label text */
+.MuiFilledInput-root.Mui-focused {
+  box-shadow:
+    0 0 18px rgba(78, 102, 255, 0.45),
+    inset 0 0 12px rgba(255,255,255,0.3);
+  border-color: #4e66ff !important;
+  background: rgba(231, 236, 255, 0.95) !important;
+}
+
+/* Label */
+.MuiInputLabel-root {
+  color: #68708a !important;
   font-weight: 500;
 }
 
-.ivr-paper .MuiFilledInput-root {
-  background-color: rgba(255, 255, 255, 0.8);
+.MuiInputLabel-root.Mui-focused {
+  color: #4e66ff !important;
 }
 
-.ivr-paper .MuiSelect-select {
-  color: #0e1a2b;
+/* -----------------------------------------------------
+   BUTTONS – SOFT GLOW GRADIENT
+------------------------------------------------------ */
+.MuiButton-containedPrimary {
+  background: linear-gradient(135deg, #4b61ff, #738aff) !important;
+  border-radius: 16px !important;
+  padding: 10px 26px !important;
+  font-weight: 600 !important;
+  box-shadow:
+    0 6px 18px rgba(78, 102, 255, 0.3),
+    inset 0 0 10px rgba(255,255,255,0.25);
+  transition: 0.25s;
 }
 
-/* ===== Buttons ===== */
-.ivr-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 30px;
-}
-
-.ivr-button-group {
-  display: flex;
-  gap: 15px;
-}
-
-/* Button styles */
-.ivr-paper .MuiButton-root {
-  text-transform: none;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.ivr-paper .MuiButton-root:hover {
-  opacity: 0.95;
+.MuiButton-containedPrimary:hover {
+  background: linear-gradient(135deg, #3e53ef, #677bff) !important;
+  box-shadow:
+    0 10px 24px rgba(78, 102, 255, 0.45),
+    inset 0 0 16px rgba(255,255,255,0.3);
   transform: translateY(-2px);
 }
 
-/* ===== Dialog Popup ===== */
-.MuiDialog-paper {
-  border-radius: 12px;
+.MuiButton-outlined {
+  border-radius: 16px !important;
+  color: #4e66ff !important;
+  border-color: #4e66ff !important;
 }
 
-.MuiDialogTitle-root {
+/* -----------------------------------------------------
+   TABLE – CRYSTAL GLASS LOOK
+------------------------------------------------------ */
+.MuiTableContainer-root {
+  border-radius: 22px !important;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow:
+    6px 6px 18px rgba(0,0,0,0.06),
+    -6px -6px 18px rgba(255,255,255,0.6);
+}
+
+.MuiTableRow-root:hover {
+  background: rgba(78, 102, 255, 0.06);
+}
+
+/* -----------------------------------------------------
+   TOASTS – KEEP COLORS BUT GIVE PREMIUM LOOK
+------------------------------------------------------ */
+.toast-container {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 99999;
+}
+
+.toast {
+  padding: 16px 26px;
+  border-radius: 30px;
   font-weight: 600;
-  color: #0288d1;
+  color: white;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+  transform: translateX(120%);
+  opacity: 0;
+  backdrop-filter: blur(8px) brightness(1.1);
+  animation: slideIn 0.45s forwards, fadeOut 0.5s 3s forwards;
 }
 
-.MuiDialogContent-root {
-  font-size: 14px;
-  color: #0e1a2b;
+.toast-success { background: rgba(76, 175, 80, 0.95); }
+.toast-error   { background: rgba(244, 67, 54, 0.95); }
+.toast-warning { background: rgba(255, 152, 0, 0.95); }
+
+@keyframes slideIn {
+  to { opacity: 1; transform: translateX(0); }
 }
 
-/* ===== Table Styles ===== */
-.ivr-paper .MuiTableCell-root {
-  padding: 10px 15px;
-  font-size: 0.9rem;
-}
-
-.ivr-paper .MuiTableHead-root .MuiTableCell-root {
-  background-color: #b3e5fc; /* sky-blue table header */
-  font-weight: 600;
-  color: #0e1a2b;
-}
-
-.ivr-paper .MuiTableRow-root:hover {
-  background-color: rgba(0, 131, 255, 0.1);
-  transition: background-color 0.3s ease;
-}
-
-/* Sort label customization */
-.MuiTableSortLabel-root.Mui-active {
-  color: #0288d1 !important;
-}
-
-.MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon {
-  color: #0288d1 !important;
-}
-
-/* Multi-select checkbox styling */
-.MuiListItemText-primary {
-  font-size: 0.9rem;
-  color: #0e1a2b;
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(120%); }
 }
