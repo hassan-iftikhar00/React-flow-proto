@@ -1,6 +1,6 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
-import { Trash2 } from "lucide-react";
+import { Trash2, MessageCircle } from "lucide-react";
 import {
   PlayIcon,
   ListBulletsIcon,
@@ -14,6 +14,25 @@ import {
   RobotIcon,
   XCircleIcon,
 } from "@phosphor-icons/react";
+
+// Comment Badge Component
+function CommentBadge({ count, onClick }) {
+  if (!count || count === 0) return null;
+
+  return (
+    <div
+      className="node-comment-badge"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (onClick) onClick();
+      }}
+      title={`${count} comment${count !== 1 ? "s" : ""} - Click to view`}
+    >
+      <MessageCircle size={12} />
+      <span>{count}</span>
+    </div>
+  );
+}
 
 export function PlayNode({ data, style }) {
   const backgroundColor = data.style?.backgroundColor || style?.backgroundColor;
@@ -66,6 +85,17 @@ export function PlayNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+
+      {/* Comment Badge */}
+      <CommentBadge
+        count={data.commentCount}
+        onClick={() => {
+          if (data.onCommentClick) {
+            data.onCommentClick();
+          }
+        }}
+      />
+
       <strong style={textStyle}>
         <PlayIcon
           size={18}
@@ -80,6 +110,26 @@ export function PlayNode({ data, style }) {
         Play Prompt
       </strong>
       <div style={textStyle}>{data.text || "No prompt set"}</div>
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
 
       {/* Input / Output */}
       <Handle
@@ -147,6 +197,7 @@ export function MenuNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>
         <ListBulletsIcon
           size={18}
@@ -286,6 +337,7 @@ export function WaitNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>
         <TimerIcon
           size={18}
@@ -363,6 +415,7 @@ export function DDTMFNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>
         <ChartBarIcon
           size={18}
@@ -440,6 +493,7 @@ export function DTMFNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>
         <HashIcon
           size={18}
@@ -517,6 +571,7 @@ export function RecordNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>🎙 Record</strong>
       <div style={textStyle}>{data.recordText || "Recording..."}</div>
 
@@ -583,6 +638,7 @@ export function CollectNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>⌨ Collect Input</strong>
       <div style={textStyle}>Variable: {data.variable || "var1"}</div>
 
@@ -713,6 +769,7 @@ export function TTSNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong>
         <SpeakerHighIcon
           size={18}
@@ -757,6 +814,7 @@ export function STTNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong>
         <WaveformIcon
           size={18}
@@ -803,6 +861,7 @@ export function ISSTNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong>
         <RobotIcon
           size={18}
@@ -955,6 +1014,7 @@ export function TerminatorNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong>
         <XCircleIcon
           size={18}

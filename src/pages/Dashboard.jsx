@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Play,
   Edit3,
@@ -14,15 +16,18 @@ import {
   Calendar,
   Menu,
   X,
+  User,
 } from "lucide-react";
 import "./Dashboard.css";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
-export default function Dashboard({ onLoadFlow }) {
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
 
-  // Sample flows data - now stored in localStorage
+  // Sample flows data - now stored in localStorage with user tracking
   const defaultFlows = [
     {
       id: 1,
@@ -31,9 +36,20 @@ export default function Dashboard({ onLoadFlow }) {
       status: "active",
       lastModified: new Date().toISOString(),
       created: "Sep 15, 2025",
+      createdAt: new Date(Date.now() - 7776000000).toISOString(), // 90 days ago
       nodes: 12,
       connections: 8,
       tags: ["Support", "IVR", "Production"],
+      createdBy: {
+        id: "john.doe",
+        name: "John Doe",
+        email: "john.doe@company.com",
+      },
+      lastModifiedBy: {
+        id: "sarah.smith",
+        name: "Sarah Smith",
+        email: "sarah.smith@company.com",
+      },
     },
     {
       id: 2,
@@ -42,9 +58,20 @@ export default function Dashboard({ onLoadFlow }) {
       status: "draft",
       lastModified: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
       created: "Sep 20, 2025",
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
       nodes: 8,
       connections: 6,
       tags: ["Booking", "Calendar", "Draft"],
+      createdBy: {
+        id: "sarah.smith",
+        name: "Sarah Smith",
+        email: "sarah.smith@company.com",
+      },
+      lastModifiedBy: {
+        id: "sarah.smith",
+        name: "Sarah Smith",
+        email: "sarah.smith@company.com",
+      },
     },
     {
       id: 3,
@@ -53,9 +80,20 @@ export default function Dashboard({ onLoadFlow }) {
       status: "active",
       lastModified: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
       created: "Sep 10, 2025",
+      createdAt: new Date(Date.now() - 259200000).toISOString(),
       nodes: 15,
       connections: 12,
       tags: ["Payment", "Security", "Production"],
+      createdBy: {
+        id: "john.doe",
+        name: "John Doe",
+        email: "john.doe@company.com",
+      },
+      lastModifiedBy: {
+        id: "john.doe",
+        name: "John Doe",
+        email: "john.doe@company.com",
+      },
     },
   ];
 
@@ -83,37 +121,61 @@ export default function Dashboard({ onLoadFlow }) {
   };
 
   const handleCreateNewFlow = () => {
+    const now = new Date().toISOString();
     const newFlow = {
       id: Date.now(),
       name: `New Flow ${flows.length + 1}`,
       description: "A new IVR flow",
       status: "draft",
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       created: new Date().toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       }),
+      createdAt: now,
       nodes: 0,
       connections: 0,
       tags: ["Draft"],
+      createdBy: {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+      },
+      lastModifiedBy: {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+      },
     };
     setFlows([...flows, newFlow]);
     handleLoadFlow(newFlow);
   };
 
   const handleDuplicateFlow = (flow) => {
+    const now = new Date().toISOString();
     const duplicatedFlow = {
       ...flow,
       id: Date.now(),
       name: `${flow.name} (Copy)`,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
       created: new Date().toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       }),
+      createdAt: now,
       status: "draft",
+      createdBy: {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+      },
+      lastModifiedBy: {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+      },
     };
     setFlows([...flows, duplicatedFlow]);
   };
@@ -125,16 +187,24 @@ export default function Dashboard({ onLoadFlow }) {
   };
 
   const handleLoadFlow = (flow) => {
-    // Update the flow's last modified time
+    // Update the flow's last modified time and modifier
     const updatedFlows = flows.map((f) =>
-      f.id === flow.id ? { ...f, lastModified: new Date().toISOString() } : f
+      f.id === flow.id
+        ? {
+            ...f,
+            lastModified: new Date().toISOString(),
+            lastModifiedBy: {
+              id: currentUser.id,
+              name: currentUser.name,
+              email: currentUser.email,
+            },
+          }
+        : f
     );
     setFlows(updatedFlows);
 
     setSelectedFlow(flow);
-    if (onLoadFlow) {
-      onLoadFlow(flow);
-    }
+    navigate(`/flows/${flow.id}`);
     console.log("Loading flow:", flow.name);
   };
 
@@ -174,9 +244,7 @@ export default function Dashboard({ onLoadFlow }) {
         <div className="dashboard-toolbar">
           <div className="search-container">
             <Search className="search-icon" size={20} />
-            <inputIVR
-              Flow
-              Dashboard
+            <input
               type="text"
               placeholder="Search flows..."
               value={searchTerm}
@@ -238,6 +306,25 @@ export default function Dashboard({ onLoadFlow }) {
                     <Calendar size={14} />
                     <span>Modified {getRelativeTime(flow.lastModified)}</span>
                   </div>
+                  {flow.createdBy && (
+                    <div className="meta-item user-info">
+                      <User size={14} />
+                      <span title={`Created by ${flow.createdBy.name}`}>
+                        {flow.createdBy.name}
+                      </span>
+                    </div>
+                  )}
+                  {flow.lastModifiedBy &&
+                    flow.lastModifiedBy.id !== flow.createdBy?.id && (
+                      <div className="meta-item user-info">
+                        <User size={14} />
+                        <span
+                          title={`Last modified by ${flow.lastModifiedBy.name}`}
+                        >
+                          Edited by {flow.lastModifiedBy.name.split(" ")[0]}
+                        </span>
+                      </div>
+                    )}
                 </div>
                 <div className="flow-actions">
                   <button

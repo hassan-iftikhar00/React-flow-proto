@@ -1,13 +1,6 @@
 import React from "react";
-import {
-  Bell,
-  UserCircle,
-  Search,
-  Sun,
-  Moon,
-  Settings,
-  Map,
-} from "lucide-react";
+import { Bell, Search, Sun, Moon, Settings, Map } from "lucide-react";
+import UserProfile from "./UserProfile";
 import "./Navbar.css";
 
 export default function Navbar({
@@ -59,10 +52,7 @@ export default function Navbar({
       {/* Right side */}
       <div className="navbar-right">
         {/* Search */}
-        <div className="search-box">
-          <Search size={14} />
-          <input placeholder="Search flows, nodes, interactions..." />
-        </div>
+
         <button
           className="theme-toggle-btn-nav"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
@@ -72,7 +62,7 @@ export default function Navbar({
         </button>
 
         <Bell size={18} className="navbar-icon" />
-        <UserCircle size={24} className="navbar-icon" />
+        <UserProfile />
       </div>
     </div>
   );

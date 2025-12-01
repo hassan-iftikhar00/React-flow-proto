@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -34,6 +35,11 @@ import { Settings, X } from "lucide-react";
 import { GearIcon, XCircleIcon } from "@phosphor-icons/react";
 import IVRInputConfig from "./IVRInputConfig";
 import VersionHistory from "./VersionHistory";
+import FlowAnalytics from "./FlowAnalytics";
+import ActivityLog from "./ActivityLog";
+import CommentsPanel from "./CommentsPanel";
+import InlineSearch from "./InlineSearch";
+import { getNodeCommentCount } from "../utils/commentStorage";
 
 // Load the last used ID from localStorage
 let id = parseInt(getLocalStorageItem("flowEditor_lastNodeId", "5"));
@@ -77,8 +83,11 @@ function FlowEditorContent({
   setFlowAction,
   currentFlowId,
   fieldsMappingList = [],
+  initialSelectedNodeId = null,
 }) {
+  const { currentUser } = useAuth();
   const reactFlowWrapper = useRef(null);
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   // Load nodes and edges from localStorage based on current flow ID
   const getStorageKey = (suffix) =>
@@ -93,6 +102,24 @@ function FlowEditorContent({
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
   const lastNodeIdRef = useRef(null);
+
+  // Auto-select node from URL parameter
+  useEffect(() => {
+    if (initialSelectedNodeId && nodes.length > 0 && fitView) {
+      const nodeToSelect = nodes.find((n) => n.id === initialSelectedNodeId);
+      if (nodeToSelect) {
+        setSelectedNode(nodeToSelect);
+        // Center and zoom to the node
+        setTimeout(() => {
+          fitView({
+            padding: 0.3,
+            nodes: [nodeToSelect],
+            duration: 500,
+          });
+        }, 100);
+      }
+    }
+  }, [initialSelectedNodeId, nodes, fitView]);
 
   // Update selectedNode when nodes change to reflect current data
   useEffect(() => {
@@ -134,7 +161,6 @@ function FlowEditorContent({
         ...(edges.find((e) => e.id === selectedEdge.id) || {}),
       }
     : null;
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   // Toolbar state
   const [showGrid, setShowGrid] = useState(true);
@@ -142,6 +168,11 @@ function FlowEditorContent({
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [configTab, setConfigTab] = useState("config"); // "config" or "comments"
   const lastSaveRef = useRef(Date.now());
 
   // Function to save version snapshot
@@ -200,6 +231,28 @@ function FlowEditorContent({
       setEdges(savedEdges);
     }
   }, [currentFlowId]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + F: Open search
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+
+      // ESC: Close search/panels
+      if (e.key === "Escape") {
+        setShowSearch(false);
+        setShowVersionHistory(false);
+        setShowAnalytics(false);
+        setShowActivityLog(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // add edge
   const onConnect = useCallback(
@@ -303,7 +356,21 @@ function FlowEditorContent({
         id: getId(),
         type: flowAction.type,
         position: newPosition,
-        data: getDefaultData(flowAction.type),
+        data: {
+          ...getDefaultData(flowAction.type),
+          createdBy: {
+            id: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+          },
+          createdAt: new Date().toISOString(),
+          lastModifiedBy: {
+            id: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+          },
+          lastModifiedAt: new Date().toISOString(),
+        },
       };
 
       setNodes((nds) => {
@@ -376,6 +443,26 @@ function FlowEditorContent({
     [setNodes, setEdges, selectedNode, saveVersionSnapshot]
   );
 
+  // Handle node selection from search
+  const handleSearchNodeSelect = useCallback(
+    (node) => {
+      setSelectedNode(node);
+      setSelectedEdge(null);
+
+      // Center the node in view
+      if (fitView && node.position) {
+        setTimeout(() => {
+          fitView({
+            padding: 0.3,
+            nodes: [node],
+            duration: 500,
+          });
+        }, 100);
+      }
+    },
+    [fitView]
+  );
+
   // Handle restore version
   const handleRestoreVersion = useCallback(
     (version) => {
@@ -404,6 +491,14 @@ function FlowEditorContent({
       ...node.data,
       id: node.id,
       onDelete: handleDeleteNode,
+      commentCount: currentFlowId
+        ? getNodeCommentCount(currentFlowId, node.id)
+        : 0,
+      onCommentClick: () => {
+        setSelectedNode(node);
+        setSelectedEdge(null);
+        setConfigTab("comments");
+      },
     },
   }));
 
@@ -532,6 +627,12 @@ function FlowEditorContent({
                     ...node.data.style,
                     ...updates,
                   },
+                  lastModifiedBy: {
+                    id: currentUser.id,
+                    name: currentUser.name,
+                    email: currentUser.email,
+                  },
+                  lastModifiedAt: new Date().toISOString(),
                 },
               }
             : node
@@ -623,6 +724,13 @@ function FlowEditorContent({
           );
           setShowVersionHistory(true);
         }}
+        onShowAnalytics={() => setShowAnalytics(true)}
+        onShowActivityLog={() => {
+          console.log("Activity Log button clicked!");
+          setShowActivityLog(true);
+          console.log("showActivityLog state:", showActivityLog);
+        }}
+        onShowSearch={() => setShowSearch(true)}
       />
       <div className="flow-container" ref={reactFlowWrapper}>
         <ReactFlow
@@ -657,9 +765,28 @@ function FlowEditorContent({
           {showMiniMap && (
             <MiniMap
               nodeStrokeWidth={3}
+              nodeColor={(node) => {
+                const colors = {
+                  play: "#10b981",
+                  menu: "#3b82f6",
+                  collect: "#f59e0b",
+                  record: "#ef4444",
+                  dtmf: "#8b5cf6",
+                  ddtmf: "#ec4899",
+                  wait: "#6366f1",
+                  tts: "#14b8a6",
+                  stt: "#06b6d4",
+                  istt: "#f97316",
+                  terminator: "#64748b",
+                };
+                return colors[node.type] || "#64748b";
+              }}
               style={{
-                height: 100,
-                width: 150,
+                height: 150,
+                width: 200,
+                border: "1px solid #334155",
+                borderRadius: "8px",
+                background: "#0f172a",
               }}
               pannable
               zoomable
@@ -687,136 +814,122 @@ function FlowEditorContent({
           showVersionHistory
         )}
 
+        {/* Analytics Panel */}
+        {showAnalytics && (
+          <FlowAnalytics
+            currentFlowId={currentFlowId}
+            nodes={nodes}
+            edges={edges}
+            onClose={() => setShowAnalytics(false)}
+          />
+        )}
+
+        {/* Activity Log Panel */}
+        {showActivityLog && (
+          <div className="analytics-overlay">
+            <div className="analytics-panel">
+              <div className="analytics-header">
+                <h3>Activity Log</h3>
+                <button
+                  onClick={() => setShowActivityLog(false)}
+                  className="close-analytics-btn"
+                  title="Close Activity Log"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="analytics-content">
+                <ActivityLog nodes={nodes} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Inline Search */}
+        {showSearch && (
+          <InlineSearch
+            currentFlowId={currentFlowId}
+            onNodeSelect={handleSearchNodeSelect}
+            onClose={() => setShowSearch(false)}
+          />
+        )}
+
         {/* Enhanced config panel */}
         {selectedNode && (
           <div className="config-panel">
             <div className="config-header">
-              <h4>
-                <GearIcon
-                  size={24}
-                  color="#AA96DA"
-                  weight="duotone"
-                  style={{
-                    display: "inline-block",
-                    verticalAlign: "middle",
-                    marginRight: "8px",
-                  }}
-                />
-                Configure {selectedNode.type.toUpperCase()}
-              </h4>
+              <div className="config-tabs">
+                <button
+                  className={`config-tab ${
+                    configTab === "config" ? "active" : ""
+                  }`}
+                  onClick={() => setConfigTab("config")}
+                >
+                  <GearIcon size={18} weight="duotone" />
+                  Settings
+                </button>
+                <button
+                  className={`config-tab ${
+                    configTab === "comments" ? "active" : ""
+                  }`}
+                  onClick={() => setConfigTab("comments")}
+                >
+                  <Settings size={18} />
+                  Comments
+                  {getNodeCommentCount(currentFlowId, selectedNode.id) > 0 && (
+                    <span className="comment-badge">
+                      {getNodeCommentCount(currentFlowId, selectedNode.id)}
+                    </span>
+                  )}
+                </button>
+              </div>
               <button
                 className="config-close-btn"
-                onClick={() => setSelectedNode(null)}
+                onClick={() => {
+                  setSelectedNode(null);
+                  setConfigTab("config");
+                }}
                 title="Close"
               >
-                <XCircleIcon size={20} color="#FF6B6B" weight="duotone" />
+                <XCircleIcon size={24} color="#FF6B6B" weight="duotone" />
               </button>
             </div>
-            <div className="config-body">
-              {(selectedNode.type === "play" ||
-                selectedNode.type === "terminator") && (
-                <>
-                  <label>Prompt Text</label>
-                  <input
-                    type="text"
-                    placeholder="Enter the prompt text..."
-                    value={selectedNode.data.text || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, text: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
 
-                  {/* BR Field for Play Node */}
-                  {selectedNode.type === "play" && (
-                    <>
-                      <label>BR (Barge-In)</label>
-                      <select
-                        value={
-                          selectedNode.data.br !== undefined
-                            ? selectedNode.data.br.toString()
-                            : "true"
-                        }
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      br: e.target.value === "true",
-                                    },
-                                  }
-                                : n
-                            )
+            {configTab === "config" && (
+              <div className="config-body">
+                {(selectedNode.type === "play" ||
+                  selectedNode.type === "terminator") && (
+                  <>
+                    <label>Prompt Text</label>
+                    <input
+                      type="text"
+                      placeholder="Enter the prompt text..."
+                      value={selectedNode.data.text || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, text: e.target.value },
+                                }
+                              : n
                           )
-                        }
-                      >
-                        <option value="true">Enabled</option>
-                        <option value="false">Disabled</option>
-                      </select>
-                    </>
-                  )}
-                </>
-              )}
-
-              {/* Enhanced Menu Node Configuration */}
-              {selectedNode.type === "menu" && (
-                <>
-                  <IVRInputConfig
-                    nodeId={selectedNode.id}
-                    nodeData={selectedNode.data}
-                    onDataChange={(newData) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? { ...n, data: { ...n.data, ...newData } }
-                            : n
                         )
-                      )
-                    }
-                    promptLabel="Prompt Text"
-                    promptPlaceholder="Enter menu prompt text..."
-                  />
+                      }
+                    />
 
-                  <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
-                    Menu Options
-                  </h4>
-
-                  {(selectedNode.data.options || []).map((option, index) => (
-                    <div
-                      key={option.id}
-                      style={{
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "8px",
-                        padding: "12px",
-                        marginBottom: "10px",
-                        background: "#f8fafc",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        <strong>Option {option.key}</strong>
-                        <button
-                          onClick={() => {
-                            const newOptions = selectedNode.data.options.filter(
-                              (o) => o.id !== option.id
-                            );
+                    {/* BR Field for Play Node */}
+                    {selectedNode.type === "play" && (
+                      <>
+                        <label>BR (Barge-In)</label>
+                        <select
+                          value={
+                            selectedNode.data.br !== undefined
+                              ? selectedNode.data.br.toString()
+                              : "true"
+                          }
+                          onChange={(e) =>
                             setNodes((nds) =>
                               nds.map((n) =>
                                 n.id === selectedNode.id
@@ -824,752 +937,853 @@ function FlowEditorContent({
                                       ...n,
                                       data: {
                                         ...n.data,
-                                        options: newOptions,
+                                        br: e.target.value === "true",
                                       },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        >
+                          <option value="true">Enabled</option>
+                          <option value="false">Disabled</option>
+                        </select>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Enhanced Menu Node Configuration */}
+                {selectedNode.type === "menu" && (
+                  <>
+                    <IVRInputConfig
+                      nodeId={selectedNode.id}
+                      nodeData={selectedNode.data}
+                      onDataChange={(newData) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    ...newData,
+                                    lastModifiedBy: {
+                                      id: currentUser.id,
+                                      name: currentUser.name,
+                                      email: currentUser.email,
+                                    },
+                                    lastModifiedAt: new Date().toISOString(),
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                      promptLabel="Prompt Text"
+                      promptPlaceholder="Enter menu prompt text..."
+                    />
+
+                    <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+                      Menu Options
+                    </h4>
+
+                    {(selectedNode.data.options || []).map((option, index) => (
+                      <div
+                        key={option.id}
+                        style={{
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "8px",
+                          padding: "12px",
+                          marginBottom: "10px",
+                          background: "#f8fafc",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          <strong>Option {option.key}</strong>
+                          <button
+                            onClick={() => {
+                              const newOptions =
+                                selectedNode.data.options.filter(
+                                  (o) => o.id !== option.id
+                                );
+                              setNodes((nds) =>
+                                nds.map((n) =>
+                                  n.id === selectedNode.id
+                                    ? {
+                                        ...n,
+                                        data: {
+                                          ...n.data,
+                                          options: newOptions,
+                                        },
+                                      }
+                                    : n
+                                )
+                              );
+                            }}
+                            style={{
+                              padding: "4px 8px",
+                              background: "#fee",
+                              border: "1px solid #fcc",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <label>Key (Number):</label>
+                        <input
+                          type="text"
+                          value={option.key || ""}
+                          onChange={(e) => {
+                            const newOptions = [...selectedNode.data.options];
+                            newOptions[index].key = e.target.value;
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: { ...n.data, options: newOptions },
                                     }
                                   : n
                               )
                             );
                           }}
-                          style={{
-                            padding: "4px 8px",
-                            background: "#fee",
-                            border: "1px solid #fcc",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "12px",
+                          style={{ marginBottom: "8px" }}
+                        />
+
+                        <label>Label:</label>
+                        <input
+                          type="text"
+                          value={option.label || ""}
+                          onChange={(e) => {
+                            const newOptions = [...selectedNode.data.options];
+                            newOptions[index].label = e.target.value;
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: { ...n.data, options: newOptions },
+                                    }
+                                  : n
+                              )
+                            );
+                          }}
+                          style={{ marginBottom: "8px" }}
+                        />
+
+                        <label>Target Node:</label>
+                        <select
+                          value={option.targetNodeId || ""}
+                          onChange={(e) => {
+                            const newOptions = [...selectedNode.data.options];
+                            newOptions[index].targetNodeId = e.target.value;
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: { ...n.data, options: newOptions },
+                                    }
+                                  : n
+                              )
+                            );
                           }}
                         >
-                          Remove
-                        </button>
+                          <option value="">Select target node...</option>
+                          {nodes
+                            .filter((n) => n.id !== selectedNode.id)
+                            .map((n, idx) => (
+                              <option key={n.id} value={n.id}>
+                                {idx + 1}. {n.type.toUpperCase()} -{" "}
+                                {n.data.text ||
+                                  n.data.promptText ||
+                                  n.data.variable ||
+                                  n.data.label ||
+                                  "Node"}
+                              </option>
+                            ))}
+                        </select>
                       </div>
+                    ))}
 
-                      <label>Key (Number):</label>
-                      <input
-                        type="text"
-                        value={option.key || ""}
-                        onChange={(e) => {
-                          const newOptions = [...selectedNode.data.options];
-                          newOptions[index].key = e.target.value;
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: { ...n.data, options: newOptions },
-                                  }
-                                : n
-                            )
-                          );
-                        }}
-                        style={{ marginBottom: "8px" }}
-                      />
+                    <button
+                      onClick={() => {
+                        const options = selectedNode.data.options || [];
+                        const newId =
+                          options.length > 0
+                            ? Math.max(...options.map((o) => o.id)) + 1
+                            : 1;
+                        const newKey = String(
+                          options.length > 0
+                            ? Math.max(
+                                ...options.map((o) => parseInt(o.key) || 0)
+                              ) + 1
+                            : 1
+                        );
+                        const newOption = {
+                          id: newId,
+                          key: newKey,
+                          label: `Option ${newKey}`,
+                          targetNodeId: "",
+                        };
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    options: [...options, newOption],
+                                  },
+                                }
+                              : n
+                          )
+                        );
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        background: "#06b6d4",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                        marginTop: "10px",
+                      }}
+                    >
+                      + Add Menu Option
+                    </button>
+                  </>
+                )}
 
-                      <label>Label:</label>
-                      <input
-                        type="text"
-                        value={option.label || ""}
-                        onChange={(e) => {
-                          const newOptions = [...selectedNode.data.options];
-                          newOptions[index].label = e.target.value;
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: { ...n.data, options: newOptions },
-                                  }
-                                : n
-                            )
-                          );
-                        }}
-                        style={{ marginBottom: "8px" }}
-                      />
+                {selectedNode.type === "collect" && (
+                  <>
+                    <label>Variable Name</label>
+                    <input
+                      type="text"
+                      placeholder="Enter variable name..."
+                      value={selectedNode.data.variable || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, variable: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                      style={{ marginBottom: "15px" }}
+                    />
 
-                      <label>Target Node:</label>
-                      <select
-                        value={option.targetNodeId || ""}
-                        onChange={(e) => {
-                          const newOptions = [...selectedNode.data.options];
-                          newOptions[index].targetNodeId = e.target.value;
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: { ...n.data, options: newOptions },
-                                  }
-                                : n
-                            )
-                          );
+                    <IVRInputConfig
+                      nodeId={selectedNode.id}
+                      nodeData={selectedNode.data}
+                      onDataChange={(newData) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? { ...n, data: { ...n.data, ...newData } }
+                              : n
+                          )
+                        )
+                      }
+                      showInputLength={true}
+                      promptLabel="Collection Prompt"
+                      promptPlaceholder="Enter prompt for input collection..."
+                    />
+                  </>
+                )}
+
+                {selectedNode.type === "record" && (
+                  <>
+                    <div style={{ marginBottom: "15px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
                         }}
                       >
-                        <option value="">Select target node...</option>
-                        {nodes
-                          .filter((n) => n.id !== selectedNode.id)
-                          .map((n, idx) => (
-                            <option key={n.id} value={n.id}>
-                              {idx + 1}. {n.type.toUpperCase()} -{" "}
-                              {n.data.text ||
-                                n.data.promptText ||
-                                n.data.variable ||
-                                n.data.label ||
-                                "Node"}
-                            </option>
-                          ))}
-                      </select>
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.dynamic || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        dynamic: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Dynamic
+                      </label>
                     </div>
-                  ))}
 
-                  <button
-                    onClick={() => {
-                      const options = selectedNode.data.options || [];
-                      const newId =
-                        options.length > 0
-                          ? Math.max(...options.map((o) => o.id)) + 1
-                          : 1;
-                      const newKey = String(
-                        options.length > 0
-                          ? Math.max(
-                              ...options.map((o) => parseInt(o.key) || 0)
-                            ) + 1
-                          : 1
-                      );
-                      const newOption = {
-                        id: newId,
-                        key: newKey,
-                        label: `Option ${newKey}`,
-                        targetNodeId: "",
-                      };
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  options: [...options, newOption],
-                                },
-                              }
-                            : n
-                        )
-                      );
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      background: "#06b6d4",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: "500",
-                      marginTop: "10px",
-                    }}
-                  >
-                    + Add Menu Option
-                  </button>
-                </>
-              )}
-
-              {selectedNode.type === "collect" && (
-                <>
-                  <label>Variable Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter variable name..."
-                    value={selectedNode.data.variable || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, variable: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                    style={{ marginBottom: "15px" }}
-                  />
-
-                  <IVRInputConfig
-                    nodeId={selectedNode.id}
-                    nodeData={selectedNode.data}
-                    onDataChange={(newData) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? { ...n, data: { ...n.data, ...newData } }
-                            : n
-                        )
-                      )
-                    }
-                    showInputLength={true}
-                    promptLabel="Collection Prompt"
-                    promptPlaceholder="Enter prompt for input collection..."
-                  />
-                </>
-              )}
-
-              {selectedNode.type === "record" && (
-                <>
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.dynamic || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      dynamic: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
+                    <label>Record Text</label>
+                    <input
+                      type="text"
+                      placeholder="Enter record text..."
+                      value={selectedNode.data.recordText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    recordText: e.target.value,
+                                  },
+                                }
+                              : n
                           )
-                        }
-                      />
-                      Dynamic
-                    </label>
-                  </div>
-
-                  <label>Record Text</label>
-                  <input
-                    type="text"
-                    placeholder="Enter record text..."
-                    value={selectedNode.data.recordText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, recordText: e.target.value },
-                              }
-                            : n
                         )
-                      )
-                    }
-                  />
+                      }
+                    />
 
-                  <label>BR (Barge-In)</label>
-                  <select
-                    value={
-                      selectedNode.data.br !== undefined
-                        ? selectedNode.data.br.toString()
-                        : "true"
-                    }
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  br: e.target.value === "true",
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="true">Enabled</option>
-                    <option value="false">Disabled</option>
-                  </select>
-
-                  <label>Max Length (seconds)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="300"
-                    placeholder="Enter max recording length..."
-                    value={selectedNode.data.maxLength || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, maxLength: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Silence (seconds)</label>
-                  <select
-                    value={selectedNode.data.silence || "3"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, silence: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="3">3 seconds</option>
-                    <option value="4">4 seconds</option>
-                    <option value="5">5 seconds</option>
-                    <option value="6">6 seconds</option>
-                    <option value="7">7 seconds</option>
-                  </select>
-
-                  <label>Beep</label>
-                  <select
-                    value={
-                      selectedNode.data.beep !== undefined
-                        ? selectedNode.data.beep.toString()
-                        : "true"
-                    }
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  beep: e.target.value === "true",
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="true">True</option>
-                    <option value="false">False</option>
-                  </select>
-
-                  <label>Play Back</label>
-                  <select
-                    value={
-                      selectedNode.data.playBack !== undefined
-                        ? selectedNode.data.playBack.toString()
-                        : "true"
-                    }
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  playBack: e.target.value === "true",
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="true">True</option>
-                    <option value="false">False</option>
-                  </select>
-                </>
-              )}
-
-              {selectedNode.type === "dtmf" && (
-                <>
-                  <label>Prompt Text</label>
-                  <textarea
-                    rows="3"
-                    placeholder="Enter prompt text..."
-                    value={selectedNode.data.promptText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, promptText: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.convertToKeypunch || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      convertToKeypunch: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
+                    <label>BR (Barge-In)</label>
+                    <select
+                      value={
+                        selectedNode.data.br !== undefined
+                          ? selectedNode.data.br.toString()
+                          : "true"
+                      }
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    br: e.target.value === "true",
+                                  },
+                                }
+                              : n
                           )
-                        }
-                      />
-                      Convert to Keypunch
-                    </label>
-                  </div>
-
-                  <label>DTMF</label>
-                  <input
-                    type="text"
-                    placeholder="Enter DTMF value (e.g., 01265)..."
-                    value={selectedNode.data.dtmfValue || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, dtmfValue: e.target.value },
-                              }
-                            : n
                         )
-                      )
-                    }
-                  />
-                </>
-              )}
-
-              {selectedNode.type === "ddtmf" && (
-                <>
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
+                      }
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.convertToKeypunch || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      convertToKeypunch: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
-                          )
-                        }
-                      />
-                      Convert to Keypunch
-                    </label>
-                  </div>
+                      <option value="true">Enabled</option>
+                      <option value="false">Disabled</option>
+                    </select>
 
-                  <label>Dial Pad Type</label>
-                  <select
-                    value={selectedNode.data.dialPadType || "Standard"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  dialPadType: e.target.value,
-                                },
-                              }
-                            : n
+                    <label>Max Length (seconds)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="300"
+                      placeholder="Enter max recording length..."
+                      value={selectedNode.data.maxLength || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    maxLength: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
                         )
-                      )
-                    }
-                  >
-                    <option value="Standard">Standard</option>
-                    <option value="Classic">Classic</option>
-                  </select>
+                      }
+                    />
 
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.multiTap || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      multiTap: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
+                    <label>Silence (seconds)</label>
+                    <select
+                      value={selectedNode.data.silence || "3"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, silence: e.target.value },
+                                }
+                              : n
                           )
-                        }
-                      />
-                      Multi-Tap
-                    </label>
-                  </div>
-
-                  <label>Mapping</label>
-                  <select
-                    value={selectedNode.data.mapping || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, mapping: e.target.value },
-                              }
-                            : n
                         )
-                      )
-                    }
-                  >
-                    <option value="">Select mapping...</option>
-                    {fieldsMappingList.map((mapping, index) => (
-                      <option key={index} value={mapping.mappingName}>
-                        {mapping.mappingName}
-                      </option>
-                    ))}
-                  </select>
+                      }
+                    >
+                      <option value="3">3 seconds</option>
+                      <option value="4">4 seconds</option>
+                      <option value="5">5 seconds</option>
+                      <option value="6">6 seconds</option>
+                      <option value="7">7 seconds</option>
+                    </select>
 
-                  <label>String Function</label>
-                  <select
-                    value={selectedNode.data.stringFunction || "None"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  stringFunction: e.target.value,
-                                },
-                              }
-                            : n
+                    <label>Beep</label>
+                    <select
+                      value={
+                        selectedNode.data.beep !== undefined
+                          ? selectedNode.data.beep.toString()
+                          : "true"
+                      }
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    beep: e.target.value === "true",
+                                  },
+                                }
+                              : n
+                          )
                         )
-                      )
-                    }
-                  >
-                    <option value="None">None</option>
-                    <option value="Substring">Substring</option>
-                  </select>
-
-                  <div style={{ marginBottom: "10px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
+                      }
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.removeAlphabets || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      removeAlphabets: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
-                          )
-                        }
-                      />
-                      Remove Alphabets
-                    </label>
-                  </div>
+                      <option value="true">True</option>
+                      <option value="false">False</option>
+                    </select>
 
-                  <div style={{ marginBottom: "10px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.removeDigits || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      removeDigits: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
+                    <label>Play Back</label>
+                    <select
+                      value={
+                        selectedNode.data.playBack !== undefined
+                          ? selectedNode.data.playBack.toString()
+                          : "true"
+                      }
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    playBack: e.target.value === "true",
+                                  },
+                                }
+                              : n
                           )
-                        }
-                      />
-                      Remove Digits
-                    </label>
-                  </div>
-
-                  <div style={{ marginBottom: "10px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.removeSpecialChars || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      removeSpecialChars: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
-                          )
-                        }
-                      />
-                      Remove Special Characters
-                    </label>
-                  </div>
-
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNode.data.appendHashKey || false}
-                        onChange={(e) =>
-                          setNodes((nds) =>
-                            nds.map((n) =>
-                              n.id === selectedNode.id
-                                ? {
-                                    ...n,
-                                    data: {
-                                      ...n.data,
-                                      appendHashKey: e.target.checked,
-                                    },
-                                  }
-                                : n
-                            )
-                          )
-                        }
-                      />
-                      Append # key
-                    </label>
-                  </div>
-                </>
-              )}
-
-              {selectedNode.type === "wait" && (
-                <>
-                  <label>Prompt Text</label>
-                  <textarea
-                    rows="3"
-                    placeholder="Enter prompt text..."
-                    value={selectedNode.data.promptText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, promptText: e.target.value },
-                              }
-                            : n
                         )
-                      )
-                    }
-                  />
+                      }
+                    >
+                      <option value="true">True</option>
+                      <option value="false">False</option>
+                    </select>
+                  </>
+                )}
 
-                  <label>Time (seconds)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    placeholder="Enter wait time (1-999s)..."
-                    value={selectedNode.data.time || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, time: e.target.value },
-                              }
-                            : n
+                {selectedNode.type === "dtmf" && (
+                  <>
+                    <label>Prompt Text</label>
+                    <textarea
+                      rows="3"
+                      placeholder="Enter prompt text..."
+                      value={selectedNode.data.promptText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    promptText: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
                         )
-                      )
-                    }
-                  />
-                </>
-              )}
+                      }
+                    />
 
-              {/* {selectedNode.type === "decision" && (
+                    <div style={{ marginBottom: "15px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.convertToKeypunch || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        convertToKeypunch: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Convert to Keypunch
+                      </label>
+                    </div>
+
+                    <label>DTMF</label>
+                    <input
+                      type="text"
+                      placeholder="Enter DTMF value (e.g., 01265)..."
+                      value={selectedNode.data.dtmfValue || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    dtmfValue: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+                  </>
+                )}
+
+                {selectedNode.type === "ddtmf" && (
+                  <>
+                    <div style={{ marginBottom: "15px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.convertToKeypunch || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        convertToKeypunch: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Convert to Keypunch
+                      </label>
+                    </div>
+
+                    <label>Dial Pad Type</label>
+                    <select
+                      value={selectedNode.data.dialPadType || "Standard"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    dialPadType: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    >
+                      <option value="Standard">Standard</option>
+                      <option value="Classic">Classic</option>
+                    </select>
+
+                    <div style={{ marginBottom: "15px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.multiTap || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        multiTap: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Multi-Tap
+                      </label>
+                    </div>
+
+                    <label>Mapping</label>
+                    <select
+                      value={selectedNode.data.mapping || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, mapping: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    >
+                      <option value="">Select mapping...</option>
+                      {fieldsMappingList.map((mapping, index) => (
+                        <option key={index} value={mapping.mappingName}>
+                          {mapping.mappingName}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label>String Function</label>
+                    <select
+                      value={selectedNode.data.stringFunction || "None"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    stringFunction: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    >
+                      <option value="None">None</option>
+                      <option value="Substring">Substring</option>
+                    </select>
+
+                    <div style={{ marginBottom: "10px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.removeAlphabets || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        removeAlphabets: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Remove Alphabets
+                      </label>
+                    </div>
+
+                    <div style={{ marginBottom: "10px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.removeDigits || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        removeDigits: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Remove Digits
+                      </label>
+                    </div>
+
+                    <div style={{ marginBottom: "10px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedNode.data.removeSpecialChars || false
+                          }
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        removeSpecialChars: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Remove Special Characters
+                      </label>
+                    </div>
+
+                    <div style={{ marginBottom: "15px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.appendHashKey || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        appendHashKey: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Append # key
+                      </label>
+                    </div>
+                  </>
+                )}
+
+                {selectedNode.type === "wait" && (
+                  <>
+                    <label>Prompt Text</label>
+                    <textarea
+                      rows="3"
+                      placeholder="Enter prompt text..."
+                      value={selectedNode.data.promptText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    promptText: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Time (seconds)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      placeholder="Enter wait time (1-999s)..."
+                      value={selectedNode.data.time || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, time: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+                  </>
+                )}
+
+                {/* {selectedNode.type === "decision" && (
                 <>
                   <label>Condition:</label>
                   <input
@@ -1591,19 +1805,212 @@ function FlowEditorContent({
                 </>
               )} */}
 
-              {selectedNode.type === "tts" && (
-                <>
-                  <div style={{ marginBottom: "15px" }}>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
+                {selectedNode.type === "tts" && (
+                  <>
+                    <div style={{ marginBottom: "15px" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNode.data.dynamic || false}
+                          onChange={(e) =>
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        dynamic: e.target.checked,
+                                      },
+                                    }
+                                  : n
+                              )
+                            )
+                          }
+                        />
+                        Dynamic
+                      </label>
+                    </div>
+
+                    <label>TTS Text</label>
+                    <textarea
+                      rows="3"
+                      placeholder="Enter TTS text..."
+                      value={selectedNode.data.ttsText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, ttsText: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Variable</label>
+                    <select
+                      value={selectedNode.data.variable || "DD|4"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, variable: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
                     >
+                      <option value="DD|4">DD|4</option>
+                      <option value="W|1">W|1</option>
+                      <option value="W|2">W|2</option>
+                      <option value="T|3">T|3</option>
+                      <option value="DD|4">DD|4</option>
+                      <option value="W|5">W|5</option>
+                      <option value="TTS|6">TTS|6</option>
+                    </select>
+
+                    <label>Type</label>
+                    <select
+                      value={selectedNode.data.type || "Ordinal"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, type: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    >
+                      <option value="Ordinal">Ordinal</option>
+                      <option value="Ordinal (only alphabet)">
+                        Ordinal (only alphabet)
+                      </option>
+                      <option value="Ordinal (only numeric)">
+                        Ordinal (only numeric)
+                      </option>
+                      <option value="Date">Date</option>
+                      <option value="Time">Time</option>
+                      <option value="Free Text">Free Text</option>
+                      <option value="Amount">Amount</option>
+                      <option value="Percentage">Percentage</option>
+                    </select>
+
+                    <label>Input Text</label>
+                    <input
+                      type="text"
+                      placeholder="Enter input text..."
+                      value={selectedNode.data.inputText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    inputText: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>String Function</label>
+                    <select
+                      value={selectedNode.data.stringFunction || "None"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    stringFunction: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    >
+                      <option value="None">None</option>
+                      <option value="Substring">Substring</option>
+                    </select>
+                  </>
+                )}
+
+                {selectedNode.type === "stt" && (
+                  <>
+                    <label>Prompt Text:</label>
+                    <textarea
+                      rows="3"
+                      value={selectedNode.data.promptText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    promptText: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Prompt Text:</label>
+                    <textarea
+                      rows="3"
+                      value={selectedNode.data.promptText2 || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    promptText2: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+                      Flow Decision Based On
+                    </h4>
+
+                    <label>
                       <input
                         type="checkbox"
-                        checked={selectedNode.data.dynamic || false}
+                        checked={selectedNode.data.aiPromptEnabled || false}
                         onChange={(e) =>
                           setNodes((nds) =>
                             nds.map((n) =>
@@ -1612,7 +2019,76 @@ function FlowEditorContent({
                                     ...n,
                                     data: {
                                       ...n.data,
-                                      dynamic: e.target.checked,
+                                      aiPromptEnabled: e.target.checked,
+                                    },
+                                  }
+                                : n
+                            )
+                          )
+                        }
+                      />
+                      AI Prompt
+                    </label>
+
+                    <h4 style={{ marginTop: "15px", marginBottom: "10px" }}>
+                      AI Prompt
+                    </h4>
+
+                    <label>Add Default Flow Field Text:</label>
+                    <textarea
+                      rows="3"
+                      value={selectedNode.data.addDefaultFlowField || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    addDefaultFlowField: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Add Alternative Flow Field Text:</label>
+                    <textarea
+                      rows="3"
+                      value={selectedNode.data.addAlternativeFlowField || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    addAlternativeFlowField: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selectedNode.data.defaultFlowDynamic || false}
+                        onChange={(e) =>
+                          setNodes((nds) =>
+                            nds.map((n) =>
+                              n.id === selectedNode.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                      ...n.data,
+                                      defaultFlowDynamic: e.target.checked,
                                     },
                                   }
                                 : n
@@ -1622,175 +2098,11 @@ function FlowEditorContent({
                       />
                       Dynamic
                     </label>
-                  </div>
 
-                  <label>TTS Text</label>
-                  <textarea
-                    rows="3"
-                    placeholder="Enter TTS text..."
-                    value={selectedNode.data.ttsText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, ttsText: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Variable</label>
-                  <select
-                    value={selectedNode.data.variable || "DD|4"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, variable: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="DD|4">DD|4</option>
-                    <option value="W|1">W|1</option>
-                    <option value="W|2">W|2</option>
-                    <option value="T|3">T|3</option>
-                    <option value="DD|4">DD|4</option>
-                    <option value="W|5">W|5</option>
-                    <option value="TTS|6">TTS|6</option>
-                  </select>
-
-                  <label>Type</label>
-                  <select
-                    value={selectedNode.data.type || "Ordinal"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, type: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="Ordinal">Ordinal</option>
-                    <option value="Ordinal (only alphabet)">
-                      Ordinal (only alphabet)
-                    </option>
-                    <option value="Ordinal (only numeric)">
-                      Ordinal (only numeric)
-                    </option>
-                    <option value="Date">Date</option>
-                    <option value="Time">Time</option>
-                    <option value="Free Text">Free Text</option>
-                    <option value="Amount">Amount</option>
-                    <option value="Percentage">Percentage</option>
-                  </select>
-
-                  <label>Input Text</label>
-                  <input
-                    type="text"
-                    placeholder="Enter input text..."
-                    value={selectedNode.data.inputText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, inputText: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>String Function</label>
-                  <select
-                    value={selectedNode.data.stringFunction || "None"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  stringFunction: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  >
-                    <option value="None">None</option>
-                    <option value="Substring">Substring</option>
-                  </select>
-                </>
-              )}
-
-              {selectedNode.type === "stt" && (
-                <>
-                  <label>Prompt Text:</label>
-                  <textarea
-                    rows="3"
-                    value={selectedNode.data.promptText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, promptText: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Prompt Text:</label>
-                  <textarea
-                    rows="3"
-                    value={selectedNode.data.promptText2 || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  promptText2: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
-                    Flow Decision Based On
-                  </h4>
-
-                  <label>
+                    <label>Default Flow:</label>
                     <input
-                      type="checkbox"
-                      checked={selectedNode.data.aiPromptEnabled || false}
+                      type="text"
+                      value={selectedNode.data.defaultFlow || ""}
                       onChange={(e) =>
                         setNodes((nds) =>
                           nds.map((n) =>
@@ -1799,7 +2111,7 @@ function FlowEditorContent({
                                   ...n,
                                   data: {
                                     ...n.data,
-                                    aiPromptEnabled: e.target.checked,
+                                    defaultFlow: e.target.value,
                                   },
                                 }
                               : n
@@ -1807,329 +2119,14 @@ function FlowEditorContent({
                         )
                       }
                     />
-                    AI Prompt
-                  </label>
 
-                  <h4 style={{ marginTop: "15px", marginBottom: "10px" }}>
-                    AI Prompt
-                  </h4>
-
-                  <label>Add Default Flow Field Text:</label>
-                  <textarea
-                    rows="3"
-                    value={selectedNode.data.addDefaultFlowField || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  addDefaultFlowField: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Add Alternative Flow Field Text:</label>
-                  <textarea
-                    rows="3"
-                    value={selectedNode.data.addAlternativeFlowField || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  addAlternativeFlowField: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={selectedNode.data.defaultFlowDynamic || false}
-                      onChange={(e) =>
-                        setNodes((nds) =>
-                          nds.map((n) =>
-                            n.id === selectedNode.id
-                              ? {
-                                  ...n,
-                                  data: {
-                                    ...n.data,
-                                    defaultFlowDynamic: e.target.checked,
-                                  },
-                                }
-                              : n
-                          )
-                        )
-                      }
-                    />
-                    Dynamic
-                  </label>
-
-                  <label>Default Flow:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.defaultFlow || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  defaultFlow: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedNode.data.alternativeFlowDynamic || false
-                      }
-                      onChange={(e) =>
-                        setNodes((nds) =>
-                          nds.map((n) =>
-                            n.id === selectedNode.id
-                              ? {
-                                  ...n,
-                                  data: {
-                                    ...n.data,
-                                    alternativeFlowDynamic: e.target.checked,
-                                  },
-                                }
-                              : n
-                          )
-                        )
-                      }
-                    />
-                    Dynamic
-                  </label>
-
-                  <label>Alternative Flow:</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.alternativeFlow || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  alternativeFlow: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Max Length (seconds):</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    value={selectedNode.data.maxLength || "10"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, maxLength: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-                </>
-              )}
-
-              {selectedNode.type === "istt" && (
-                <>
-                  <label>Prompt Text:</label>
-                  <textarea
-                    rows="3"
-                    value={selectedNode.data.promptText || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, promptText: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Prompt Text:</label>
-                  <textarea
-                    rows="3"
-                    value={selectedNode.data.promptText2 || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  promptText2: e.target.value,
-                                },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>AI Prompt:</label>
-                  <textarea
-                    rows="8"
-                    value={selectedNode.data.aiPrompt || ""}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, aiPrompt: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Max Length (seconds):</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    value={selectedNode.data.maxLength || "10"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, maxLength: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <label>Max Silence (seconds):</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={selectedNode.data.maxSilence || "3"}
-                    onChange={(e) =>
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: { ...n.data, maxSilence: e.target.value },
-                              }
-                            : n
-                        )
-                      )
-                    }
-                  />
-
-                  <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
-                    Function Routing
-                  </h4>
-
-                  {(selectedNode.data.functions || []).map((func, index) => (
-                    <div
-                      key={func.id}
-                      style={{
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "8px",
-                        padding: "12px",
-                        marginBottom: "10px",
-                        background: "#f8fafc",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        <strong>{func.name}</strong>
-                        {selectedNode.data.functions.length > 1 && (
-                          <button
-                            onClick={() => {
-                              const newFunctions =
-                                selectedNode.data.functions.filter(
-                                  (f) => f.id !== func.id
-                                );
-                              setNodes((nds) =>
-                                nds.map((n) =>
-                                  n.id === selectedNode.id
-                                    ? {
-                                        ...n,
-                                        data: {
-                                          ...n.data,
-                                          functions: newFunctions,
-                                        },
-                                      }
-                                    : n
-                                )
-                              );
-                            }}
-                            style={{
-                              padding: "4px 8px",
-                              background: "#fee",
-                              border: "1px solid #fcc",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                            }}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                      <label>Target Node:</label>
-                      <select
-                        value={func.targetNodeId || ""}
-                        onChange={(e) => {
-                          const newFunctions = [...selectedNode.data.functions];
-                          newFunctions[index].targetNodeId = e.target.value;
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedNode.data.alternativeFlowDynamic || false
+                        }
+                        onChange={(e) =>
                           setNodes((nds) =>
                             nds.map((n) =>
                               n.id === selectedNode.id
@@ -2137,75 +2134,320 @@ function FlowEditorContent({
                                     ...n,
                                     data: {
                                       ...n.data,
-                                      functions: newFunctions,
+                                      alternativeFlowDynamic: e.target.checked,
                                     },
                                   }
                                 : n
                             )
-                          );
+                          )
+                        }
+                      />
+                      Dynamic
+                    </label>
+
+                    <label>Alternative Flow:</label>
+                    <input
+                      type="text"
+                      value={selectedNode.data.alternativeFlow || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    alternativeFlow: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Max Length (seconds):</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={selectedNode.data.maxLength || "10"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    maxLength: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+                  </>
+                )}
+
+                {selectedNode.type === "istt" && (
+                  <>
+                    <label>Prompt Text:</label>
+                    <textarea
+                      rows="3"
+                      value={selectedNode.data.promptText || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    promptText: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Prompt Text:</label>
+                    <textarea
+                      rows="3"
+                      value={selectedNode.data.promptText2 || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    promptText2: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>AI Prompt:</label>
+                    <textarea
+                      rows="8"
+                      value={selectedNode.data.aiPrompt || ""}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: { ...n.data, aiPrompt: e.target.value },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Max Length (seconds):</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={selectedNode.data.maxLength || "10"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    maxLength: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <label>Max Silence (seconds):</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={selectedNode.data.maxSilence || "3"}
+                      onChange={(e) =>
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    maxSilence: e.target.value,
+                                  },
+                                }
+                              : n
+                          )
+                        )
+                      }
+                    />
+
+                    <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+                      Function Routing
+                    </h4>
+
+                    {(selectedNode.data.functions || []).map((func, index) => (
+                      <div
+                        key={func.id}
+                        style={{
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "8px",
+                          padding: "12px",
+                          marginBottom: "10px",
+                          background: "#f8fafc",
                         }}
                       >
-                        <option value="">Select target node...</option>
-                        {nodes
-                          .filter((n) => n.id !== selectedNode.id)
-                          .map((n, idx) => (
-                            <option key={n.id} value={n.id}>
-                              {idx + 1}. {n.type.toUpperCase()} -{" "}
-                              {n.data.text ||
-                                n.data.promptText ||
-                                n.data.variable ||
-                                n.data.label ||
-                                "Node"}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  ))}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          <strong>{func.name}</strong>
+                          {selectedNode.data.functions.length > 1 && (
+                            <button
+                              onClick={() => {
+                                const newFunctions =
+                                  selectedNode.data.functions.filter(
+                                    (f) => f.id !== func.id
+                                  );
+                                setNodes((nds) =>
+                                  nds.map((n) =>
+                                    n.id === selectedNode.id
+                                      ? {
+                                          ...n,
+                                          data: {
+                                            ...n.data,
+                                            functions: newFunctions,
+                                          },
+                                        }
+                                      : n
+                                  )
+                                );
+                              }}
+                              style={{
+                                padding: "4px 8px",
+                                background: "#fee",
+                                border: "1px solid #fcc",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                              }}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        <label>Target Node:</label>
+                        <select
+                          value={func.targetNodeId || ""}
+                          onChange={(e) => {
+                            const newFunctions = [
+                              ...selectedNode.data.functions,
+                            ];
+                            newFunctions[index].targetNodeId = e.target.value;
+                            setNodes((nds) =>
+                              nds.map((n) =>
+                                n.id === selectedNode.id
+                                  ? {
+                                      ...n,
+                                      data: {
+                                        ...n.data,
+                                        functions: newFunctions,
+                                      },
+                                    }
+                                  : n
+                              )
+                            );
+                          }}
+                        >
+                          <option value="">Select target node...</option>
+                          {nodes
+                            .filter((n) => n.id !== selectedNode.id)
+                            .map((n, idx) => (
+                              <option key={n.id} value={n.id}>
+                                {idx + 1}. {n.type.toUpperCase()} -{" "}
+                                {n.data.text ||
+                                  n.data.promptText ||
+                                  n.data.variable ||
+                                  n.data.label ||
+                                  "Node"}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    ))}
 
-                  <button
-                    onClick={() => {
-                      const functions = selectedNode.data.functions || [];
-                      const newId =
-                        functions.length > 0
-                          ? Math.max(...functions.map((f) => f.id)) + 1
-                          : 1;
-                      const newFunction = {
-                        id: newId,
-                        name: `Function ${newId}`,
-                        targetNodeId: "",
-                      };
-                      setNodes((nds) =>
-                        nds.map((n) =>
-                          n.id === selectedNode.id
-                            ? {
-                                ...n,
-                                data: {
-                                  ...n.data,
-                                  functions: [...functions, newFunction],
-                                },
-                              }
-                            : n
-                        )
-                      );
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      background: "#06b6d4",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: "500",
-                      marginTop: "10px",
-                    }}
-                  >
-                    + Add Function
-                  </button>
-                </>
-              )}
-            </div>{" "}
-            {/* config-body */}
+                    <button
+                      onClick={() => {
+                        const functions = selectedNode.data.functions || [];
+                        const newId =
+                          functions.length > 0
+                            ? Math.max(...functions.map((f) => f.id)) + 1
+                            : 1;
+                        const newFunction = {
+                          id: newId,
+                          name: `Function ${newId}`,
+                          targetNodeId: "",
+                        };
+                        setNodes((nds) =>
+                          nds.map((n) =>
+                            n.id === selectedNode.id
+                              ? {
+                                  ...n,
+                                  data: {
+                                    ...n.data,
+                                    functions: [...functions, newFunction],
+                                  },
+                                }
+                              : n
+                          )
+                        );
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        background: "#06b6d4",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                        marginTop: "10px",
+                      }}
+                    >
+                      + Add Function
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {configTab === "comments" && (
+              <CommentsPanel
+                flowId={currentFlowId}
+                nodeId={selectedNode.id}
+                nodeName={selectedNode.type}
+              />
+            )}
           </div>
         )}
       </div>
@@ -2219,6 +2461,7 @@ export default function FlowEditor({
   setFlowAction,
   currentFlowId,
   fieldsMappingList,
+  initialSelectedNodeId,
 }) {
   return (
     <ReactFlowProvider>
@@ -2227,6 +2470,7 @@ export default function FlowEditor({
         setFlowAction={setFlowAction}
         currentFlowId={currentFlowId}
         fieldsMappingList={fieldsMappingList}
+        initialSelectedNodeId={initialSelectedNodeId}
       />
     </ReactFlowProvider>
   );

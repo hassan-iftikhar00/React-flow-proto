@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Login from "./components/Login";
 import Navbar from "./components/Navbar";
 import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
@@ -6,8 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
 import IVRConfig from "./pages/IVRConfig";
 import FieldsMapping from "./pages/FieldsMapping";
-import DNISConfig from "./pages/DNISConfig"; // ⭐ NEW IMPORT
-import { ArrowLeft } from "lucide-react";
+import DNISConfig from "./pages/DNISConfig";
 
 import {
   Dialog,
@@ -19,47 +29,78 @@ import {
 import { WarningAmber } from "@mui/icons-material";
 import "./styles.css";
 
-export default function App() {
-  const [active, setActive] = useState("dashboard");
-  const [theme, setTheme] = useState("light");
+// Flow Editor Page Component
+function FlowEditorPage() {
+  const { flowId } = useParams();
+  const location = useLocation();
   const [flowAction, setFlowAction] = useState(null);
-  const [isFlowsSidebarOpen, setIsFlowsSidebarOpen] = useState(false);
+
+  // Extract nodeId from URL query parameter
+  const searchParams = new URLSearchParams(location.search);
+  const nodeIdFromUrl = searchParams.get("nodeId");
+
+  const handleAddNode = (type) => {
+    setFlowAction({ type, action: "add" });
+  };
+
+  return (
+    <div className="flow-page">
+      <NodeSidebar onAddNode={handleAddNode} />
+      <FlowEditor
+        flowAction={flowAction}
+        setFlowAction={setFlowAction}
+        currentFlowId={flowId}
+        initialSelectedNodeId={nodeIdFromUrl}
+      />
+    </div>
+  );
+}
+
+function AppContent() {
+  const { isAuthenticated, loading } = useAuth();
+  const [theme, setTheme] = useState("light");
+  const location = useLocation();
 
   const [openConfig, setOpenConfig] = useState(false);
   const [openMapping, setOpenMapping] = useState(false);
-  const [openDNIS, setOpenDNIS] = useState(false); // ⭐ NEW STATE
+  const [openDNIS, setOpenDNIS] = useState(false);
   const [fieldsMappingList, setFieldsMappingList] = useState([]);
 
   // Popup
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
-  const [currentFlowId, setCurrentFlowId] = useState(null); // Track current flow being edited
+  // Apply theme to <html> tag and load from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
 
-  // Apply theme to <html> tag
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
   }, [theme]);
-
-  const handleAddNode = (type) => {
-    setFlowAction({ type, action: "add" });
-  };
-
-  const handleLoadFlow = (flow) => {
-    console.log("Loading flow in editor:", flow);
-    setCurrentFlowId(flow.id); // Set the current flow ID
-    setActive("flows");
-  };
-
-  const handleBackToDashboard = () => {
-    setActive("dashboard");
-    setCurrentFlowId(null);
-  };
 
   const showPopup = (message) => {
     setPopupMessage(message);
     setPopupOpen(true);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <Login />;
+  }
 
   return (
     <div className="app-container">
@@ -69,58 +110,21 @@ export default function App() {
           <Navbar
             theme={theme}
             setTheme={setTheme}
-            setActive={setActive}
-            currentPage={active}
+            currentPage={location.pathname}
             onOpenConfig={() => setOpenConfig(true)}
             onOpenDNIS={() => setOpenDNIS(true)}
             onOpenMapping={() => setOpenMapping(true)}
           />
-
-          {/* Back button in header when in canvas mode */}
-          {active === "flows" && (
-            <button
-              className="header-back-btn"
-              onClick={handleBackToDashboard}
-              title="Back to Dashboard"
-            >
-              <ArrowLeft size={20} />
-            </button>
-          )}
         </div>
-        {/* Floating Hamburger */}
 
-        {/* Show floating hamburger only when in flows mode */}
-        {/* Hamburger removed from canvas page as requested */}
-        {/* {active === "flows" && (
-          <FloatingHamburger
-            onNavigate={setActive}
-            currentPage={active}
-            onOpenFlowsSidebar={() => setIsFlowsSidebarOpen(true)}
-            isFlowsSidebarOpen={isFlowsSidebarOpen}
-          />
-//         )} */}
-        {/* Switch pages */}
-        {active === "dashboard" && <Dashboard onLoadFlow={handleLoadFlow} />}
-        {/* Flow Editor */}
-        {active === "flows" && (
-          <div className="flow-page">
-            <NodeSidebar onAddNode={handleAddNode} />
-            <FlowEditor
-              flowAction={flowAction}
-              setFlowAction={setFlowAction}
-              currentFlowId={currentFlowId}
-              fieldsMappingList={fieldsMappingList}
-            />
-          </div>
-        )}
-        {active === "flowbuilder" && (
-          <FlowBuilder currentFlowId={currentFlowId} />
-        )}
-        {active === "ivrconfig" && (
-          <div className="ivrconfig-page">
-            <IVRConfig />
-          </div>
-        )}
+        {/* Routes */}
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/flows/:flowId" element={<FlowEditorPage />} />
+          <Route path="/builder" element={<FlowBuilder />} />
+          <Route path="/config" element={<IVRConfig />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
 
       {/* IVR Config Modal */}
@@ -150,7 +154,7 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
-      {/* ⭐ DNIS Configuration Modal */}
+      {/* DNIS Configuration Modal */}
       <Dialog
         open={openDNIS}
         onClose={() => setOpenDNIS(false)}
@@ -170,5 +174,15 @@ export default function App() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

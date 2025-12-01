@@ -38,6 +38,9 @@ import {
   Spline,
   ChevronRight,
   History,
+  BarChart3,
+  Clock,
+  Search,
 } from "lucide-react";
 
 export default function Toolbar({
@@ -59,16 +62,28 @@ export default function Toolbar({
   onAddLabel,
   onAddArrow,
   onShowVersionHistory,
+  onShowAnalytics,
+  onShowActivityLog,
+  onShowSearch,
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [activeColorPicker, setActiveColorPicker] = useState(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [scrollIndicatorStyle, setScrollIndicatorStyle] = useState({});
   const toolbarRef = useRef(null);
+  const shapesButtonRef = useRef(null);
+  const edgeStyleButtonRef = useRef(null);
 
   const isNodeSelected = selectedElement && selectedElement.type !== "edge";
   const isEdgeSelected = selectedElement && selectedElement.type === "edge";
   const isLabelSelected =
     selectedElement && selectedElement.elementType === "label";
+
+  // Close all dialogs when activeDropdown or activeColorPicker changes
+  const closeAllDialogs = useCallback(() => {
+    setActiveDropdown(null);
+    setActiveColorPicker(null);
+  }, []);
 
   // Check for overflow and update scroll indicator
   const checkOverflow = useCallback(() => {
@@ -340,9 +355,12 @@ export default function Toolbar({
     );
   };
 
-  const ColorPicker = ({ value, onChange, title }) => {
-    const [showPalette, setShowPalette] = useState(false);
+  const ColorPicker = ({ value, onChange, title, id }) => {
+    const [palettePosition, setPalettePosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef(null);
     const paletteRef = useRef(null);
+
+    const isOpen = activeColorPicker === id;
 
     // Pretty flowchart colors
     const colorPalette = [
@@ -399,66 +417,100 @@ export default function Toolbar({
     // Handle click outside to close palette
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (paletteRef.current && !paletteRef.current.contains(event.target)) {
-          setShowPalette(false);
+        if (
+          paletteRef.current &&
+          !paletteRef.current.contains(event.target) &&
+          buttonRef.current &&
+          !buttonRef.current.contains(event.target)
+        ) {
+          setActiveColorPicker(null);
         }
       };
 
-      if (showPalette) {
+      if (isOpen) {
         document.addEventListener("mousedown", handleClickOutside);
         return () =>
           document.removeEventListener("mousedown", handleClickOutside);
       }
-    }, [showPalette]);
+    }, [isOpen]);
+
+    // Update position when opening
+    useEffect(() => {
+      if (isOpen && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPalettePosition({
+          top: rect.bottom + 8,
+          left: rect.left,
+        });
+      }
+    }, [isOpen]);
+
+    const handleToggle = (e) => {
+      e.preventDefault();
+      if (!isOpen) {
+        setActiveDropdown(null); // Close any open dropdowns
+        setActiveColorPicker(id);
+      } else {
+        setActiveColorPicker(null);
+      }
+    };
 
     return (
-      <div className="color-picker-container" ref={paletteRef}>
-        <div
-          className="color-picker-wrapper"
-          onClick={(e) => {
-            e.preventDefault();
-            setShowPalette(!showPalette);
-          }}
-        >
-          <div
-            className="color-picker-preview"
-            style={{ backgroundColor: value || "#000000" }}
-            title={title}
-          />
-        </div>
-        {showPalette && (
-          <div className="color-palette">
-            <div className="color-palette-grid">
-              {colorPalette.map((color, index) => (
-                <div
-                  key={index}
-                  className={`color-swatch ${value === color ? "active" : ""}`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => {
-                    onChange(color);
-                    setShowPalette(false);
-                  }}
-                  title={color}
-                />
-              ))}
-            </div>
-            <div className="color-palette-custom">
-              <label className="custom-color-label">
-                Custom:
-                <input
-                  type="color"
-                  value={value || "#000000"}
-                  onChange={(e) => {
-                    onChange(e.target.value);
-                    setShowPalette(false);
-                  }}
-                  className="custom-color-picker"
-                />
-              </label>
-            </div>
+      <>
+        <div className="color-picker-container" ref={buttonRef}>
+          <div className="color-picker-wrapper" onClick={handleToggle}>
+            <div
+              className="color-picker-preview"
+              style={{ backgroundColor: value || "#000000" }}
+              title={title}
+            />
           </div>
-        )}
-      </div>
+        </div>
+        {isOpen &&
+          createPortal(
+            <div
+              ref={paletteRef}
+              className="color-palette"
+              style={{
+                position: "fixed",
+                top: `${palettePosition.top}px`,
+                left: `${palettePosition.left}px`,
+              }}
+            >
+              <div className="color-palette-grid">
+                {colorPalette.map((color, index) => (
+                  <div
+                    key={index}
+                    className={`color-swatch ${
+                      value === color ? "active" : ""
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      onChange(color);
+                      setActiveColorPicker(null);
+                    }}
+                    title={color}
+                  />
+                ))}
+              </div>
+              <div className="color-palette-custom">
+                <label className="custom-color-label">
+                  Custom:
+                  <input
+                    type="color"
+                    value={value || "#000000"}
+                    onChange={(e) => {
+                      onChange(e.target.value);
+                      setActiveColorPicker(null);
+                    }}
+                    className="custom-color-picker"
+                  />
+                </label>
+              </div>
+            </div>,
+            document.body
+          )}
+      </>
     );
   };
 
@@ -477,6 +529,38 @@ export default function Toolbar({
       <span className="slider-value">{value || min}</span>
     </div>
   );
+
+  const DropdownMenu = ({ isOpen, buttonRef, children }) => {
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+      if (isOpen && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPosition({
+          top: rect.bottom + 8,
+          left: rect.left,
+        });
+      }
+    }, [isOpen, buttonRef]);
+
+    if (!isOpen) return null;
+
+    return createPortal(
+      <div
+        ref={menuRef}
+        className="dropdown-menu"
+        style={{
+          position: "fixed",
+          top: `${position.top}px`,
+          left: `${position.left}px`,
+        }}
+      >
+        {children}
+      </div>,
+      document.body
+    );
+  };
 
   return (
     <div
@@ -550,6 +634,40 @@ export default function Toolbar({
             category="Edit"
             priority="critical"
           />
+          <TooltipButton
+            icon={BarChart3}
+            title="Analytics"
+            description="View flow performance metrics and insights"
+            onClick={onShowAnalytics}
+            shortcut="Ctrl I"
+            category="Analytics"
+            priority="critical"
+          />
+          <TooltipButton
+            icon={Clock}
+            title="Activity Log"
+            description="View user activity and modification history"
+            onClick={() => {
+              console.log("Activity Log clicked in Toolbar");
+              if (onShowActivityLog) {
+                onShowActivityLog();
+              } else {
+                console.error("onShowActivityLog is not defined!");
+              }
+            }}
+            shortcut="Ctrl L"
+            category="Analytics"
+            priority="high"
+          />
+          <TooltipButton
+            icon={Search}
+            title="Search & Navigate"
+            description="Search flows, nodes, and DNIS • Jump to specific nodes"
+            onClick={onShowSearch}
+            shortcut="Ctrl F"
+            category="Navigation"
+            priority="critical"
+          />
         </div>
       </div>
 
@@ -585,32 +703,56 @@ export default function Toolbar({
       {/* Add Section */}
       <div className="toolbar-section">
         <div className="toolbar-group">
-          <div className="dropdown-wrapper">
+          <div className="dropdown-wrapper" ref={shapesButtonRef}>
             <TooltipButton
               icon={Box}
               title="Add Shape"
               description="Add geometric shapes as containers"
-              onClick={() =>
-                setActiveDropdown(activeDropdown === "shapes" ? null : "shapes")
-              }
+              onClick={() => {
+                setActiveColorPicker(null);
+                setActiveDropdown(
+                  activeDropdown === "shapes" ? null : "shapes"
+                );
+              }}
               active={activeDropdown === "shapes"}
             />
-            {activeDropdown === "shapes" && (
-              <div className="dropdown-menu">
-                <button onClick={() => onAddShape("rectangle")}>
-                  <Square size={14} /> Rectangle
-                </button>
-                <button onClick={() => onAddShape("circle")}>
-                  <Circle size={14} /> Circle
-                </button>
-                <button onClick={() => onAddShape("triangle")}>
-                  <Triangle size={14} /> Triangle
-                </button>
-                <button onClick={() => onAddShape("hexagon")}>
-                  <Hexagon size={14} /> Hexagon
-                </button>
-              </div>
-            )}
+            <DropdownMenu
+              isOpen={activeDropdown === "shapes"}
+              buttonRef={shapesButtonRef}
+            >
+              <button
+                onClick={() => {
+                  onAddShape("rectangle");
+                  setActiveDropdown(null);
+                }}
+              >
+                <Square size={14} /> Rectangle
+              </button>
+              <button
+                onClick={() => {
+                  onAddShape("circle");
+                  setActiveDropdown(null);
+                }}
+              >
+                <Circle size={14} /> Circle
+              </button>
+              <button
+                onClick={() => {
+                  onAddShape("triangle");
+                  setActiveDropdown(null);
+                }}
+              >
+                <Triangle size={14} /> Triangle
+              </button>
+              <button
+                onClick={() => {
+                  onAddShape("hexagon");
+                  setActiveDropdown(null);
+                }}
+              >
+                <Hexagon size={14} /> Hexagon
+              </button>
+            </DropdownMenu>
           </div>
 
           <TooltipButton
@@ -731,6 +873,7 @@ export default function Toolbar({
             </div>
 
             <ColorPicker
+              id="text-color"
               value={
                 selectedElement?.style?.color ||
                 selectedElement?.data?.style?.color
@@ -790,6 +933,7 @@ export default function Toolbar({
               category="Styling"
             />
             <ColorPicker
+              id="bg-color"
               value={
                 selectedElement?.style?.backgroundColor ||
                 selectedElement?.data?.style?.backgroundColor
@@ -807,6 +951,7 @@ export default function Toolbar({
               category="Styling"
             />
             <ColorPicker
+              id="border-color"
               value={
                 selectedElement?.style?.borderColor ||
                 selectedElement?.data?.style?.borderColor
@@ -894,63 +1039,70 @@ export default function Toolbar({
       {isEdgeSelected && (
         <div className="toolbar-section">
           <div className="toolbar-group">
-            <div className="dropdown-wrapper">
+            <div className="dropdown-wrapper" ref={edgeStyleButtonRef}>
               <TooltipButton
                 icon={Spline}
                 title="Edge Style"
                 description="Change edge line style"
-                onClick={() =>
+                onClick={() => {
+                  setActiveColorPicker(null);
                   setActiveDropdown(
                     activeDropdown === "edgeStyle" ? null : "edgeStyle"
-                  )
-                }
+                  );
+                }}
                 active={activeDropdown === "edgeStyle"}
               />
-              {activeDropdown === "edgeStyle" && (
-                <div className="dropdown-menu">
-                  <button
-                    onClick={() =>
-                      onUpdateElement({ strokeDasharray: "", animated: false })
-                    }
-                  >
-                    <Minus size={14} /> Solid
-                  </button>
-                  <button
-                    onClick={() =>
-                      onUpdateElement({
-                        strokeDasharray: "5,5",
-                        animated: false,
-                      })
-                    }
-                  >
-                    <MoreHorizontal size={14} /> Dashed
-                  </button>
-                  <button
-                    onClick={() =>
-                      onUpdateElement({
-                        strokeDasharray: "2,2",
-                        animated: false,
-                      })
-                    }
-                  >
-                    <Scan size={14} /> Dotted
-                  </button>
-                  <button
-                    onClick={() =>
-                      onUpdateElement({
-                        animated: !selectedElement?.animated,
-                        strokeDasharray: "",
-                      })
-                    }
-                    className={selectedElement?.animated ? "active" : ""}
-                  >
-                    <Zap size={14} /> Animated
-                  </button>
-                </div>
-              )}
+              <DropdownMenu
+                isOpen={activeDropdown === "edgeStyle"}
+                buttonRef={edgeStyleButtonRef}
+              >
+                <button
+                  onClick={() => {
+                    onUpdateElement({ strokeDasharray: "", animated: false });
+                    setActiveDropdown(null);
+                  }}
+                >
+                  <Minus size={14} /> Solid
+                </button>
+                <button
+                  onClick={() => {
+                    onUpdateElement({
+                      strokeDasharray: "5,5",
+                      animated: false,
+                    });
+                    setActiveDropdown(null);
+                  }}
+                >
+                  <MoreHorizontal size={14} /> Dashed
+                </button>
+                <button
+                  onClick={() => {
+                    onUpdateElement({
+                      strokeDasharray: "2,2",
+                      animated: false,
+                    });
+                    setActiveDropdown(null);
+                  }}
+                >
+                  <Scan size={14} /> Dotted
+                </button>
+                <button
+                  onClick={() => {
+                    onUpdateElement({
+                      animated: !selectedElement?.animated,
+                      strokeDasharray: "",
+                    });
+                    setActiveDropdown(null);
+                  }}
+                  className={selectedElement?.animated ? "active" : ""}
+                >
+                  <Zap size={14} /> Animated
+                </button>
+              </DropdownMenu>
             </div>
 
             <ColorPicker
+              id="edge-color"
               value={selectedElement?.style?.stroke}
               onChange={(stroke) => onUpdateElement({ stroke })}
               title="Edge Color"

@@ -157,7 +157,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--close-btn-bg);
+  background: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -166,7 +166,6 @@
 }
 
 .close-btn:hover {
-  background: var(--close-btn-hover);
   color: var(--text-color);
 }
 
@@ -431,6 +430,9 @@
 
 .flow-meta {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .meta-item {
@@ -439,6 +441,15 @@
   gap: 6px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.meta-item.user-info {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.meta-item.user-info svg {
+  color: var(--primary);
 }
 
 .flow-actions {
