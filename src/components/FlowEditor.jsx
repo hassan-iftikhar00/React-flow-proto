@@ -165,16 +165,21 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
         }
       };
 
-      const newNode = {
-        id: getId(),
-        type: flowAction.type,
-        position: { x: 250, y: 100 },
-        data: getDefaultData(flowAction.type),
-      };
-
       setNodes((nds) => {
-        // Connect to Decision node for the first added node
+        // Calculate vertical offset to avoid overlap
+        const baseX = 250;
+        const baseY = 100;
+        const nodeSpacing = 120;
+        const offsetY = baseY + nds.length * nodeSpacing;
+        const newNode = {
+          id: getId(),
+          type: flowAction.type,
+          position: { x: baseX, y: offsetY },
+          data: getDefaultData(flowAction.type),
+        };
+
         let updatedNodes = nds.concat(newNode);
+        // Only connect to previous node
         if (lastNodeIdRef.current) {
           setEdges((eds) =>
             eds.concat({
@@ -216,13 +221,14 @@ function FlowEditorContent({ flowAction, setFlowAction }) {
     }
   }, [setNodes, setEdges, selectedNode]);
 
-  // Update nodes to include delete handler
-  const nodesWithDeleteHandler = nodes.map((node) => ({
+  // Update nodes to include delete handler and sequence number
+  const nodesWithDeleteHandler = nodes.map((node, idx) => ({
     ...node,
     data: {
       ...node.data,
       id: node.id,
       onDelete: handleDeleteNode,
+      sequence: idx + 1,
     },
   }));
 

@@ -53,6 +53,7 @@ export function PlayNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong style={textStyle}>▶ Play Prompt</strong>
       <div style={textStyle}>{data.text || "No prompt set"}</div>
 
@@ -120,6 +121,7 @@ export function MenuNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong style={textStyle}>📋 Menu</strong>
       <ul>
         {(data.options || []).map((o, i) => (
@@ -192,6 +194,7 @@ export function CollectNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong style={textStyle}>⌨ Collect Input</strong>
       <div style={textStyle}>Variable: {data.variable || "var1"}</div>
 
@@ -258,6 +261,7 @@ export function DecisionNode({ data, style }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong style={textStyle}>⚖ Decision</strong>
       <div style={textStyle}>{data.condition || "No condition set"}</div>
 
@@ -290,6 +294,7 @@ export function TransferNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong>📞 Transfer Call</strong>
       <div>{data.number || "No DNIS"}</div>
 
@@ -322,6 +327,7 @@ export function TTSNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong>🗣️ Text-to-Speech</strong>
       <div>{data.text || "Enter text to speak"}</div>
 
@@ -354,6 +360,7 @@ export function STTNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong>🎙️ Speech-to-Text</strong>
       <div>Variable: {data.variable || "speechText"}</div>
 
@@ -386,6 +393,7 @@ export function SetVariableNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong>⚙️ Set Variable</strong>
       <div>
         {data.variable || "variable"} = {data.value || "value"}
@@ -420,6 +428,7 @@ export function EndNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong>⏹ End</strong>
 
       <Handle
@@ -446,6 +455,7 @@ export function TerminatorNode({ data }) {
       >
         <Trash2 size={16} />
       </button>
+      <div className="node-seq-num">{data.sequence}</div>
       <strong>🚦 Terminator</strong>
       <Handle
         type="target"
