@@ -40,8 +40,13 @@ export default function VersionHistory({ currentFlowId, onRestore, onClose }) {
         ).toLocaleString()}?`
       )
     ) {
+      console.log("VersionHistory: Calling onRestore with version:", version);
       onRestore(version);
-      onClose();
+      // Close after a small delay to ensure restore completes
+      setTimeout(() => {
+        console.log("VersionHistory: Closing panel");
+        onClose();
+      }, 150);
     }
   };
 

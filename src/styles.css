@@ -2411,6 +2411,13 @@ body,
   z-index: 1001 !important;
 }
 
+/* Position minimap on the left to avoid NodeSidebar on the right */
+.flow-editor-wrapper .react-flow__minimap {
+  left: 16px !important;
+  right: auto !important;
+  bottom: 16px !important;
+}
+
 /* Welcome Page Styles */
 .welcome-page {
   flex: 1;
@@ -4174,6 +4181,7 @@ body,
 /* User Profile Component */
 .user-profile-container {
   position: relative;
+  z-index: 10001;
 }
 
 .user-profile-trigger {
@@ -4223,7 +4231,7 @@ body,
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   width: 320px;
-  z-index: 10001;
+  z-index: 99999999999999 !important;
   animation: dropdownFadeIn 0.2s ease-out;
 }
 

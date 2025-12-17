@@ -52,7 +52,7 @@ export default function Navbar({
       {/* Right side */}
       <div className="navbar-right">
         {/* Search */}
-
+    
         <button
           className="theme-toggle-btn-nav"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}

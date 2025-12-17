@@ -466,22 +466,54 @@ function FlowEditorContent({
   // Handle restore version
   const handleRestoreVersion = useCallback(
     (version) => {
-      setNodes(version.nodes);
-      setEdges(version.edges);
+      console.log("Restoring version:", version);
+      console.log("Current nodes before restore:", nodes.length);
+      console.log("Current edges before restore:", edges.length);
+
+      // Deep clone the version data to ensure React detects the change
+      const restoredNodes = JSON.parse(JSON.stringify(version.nodes));
+      const restoredEdges = JSON.parse(JSON.stringify(version.edges));
+
+      // Ensure edge IDs are unique
+      const uniqueEdges = restoredEdges.map((edge, index) => {
+        if (!edge.id || edge.id === "undefined") {
+          return { ...edge, id: `edge-${edge.source}-${edge.target}-${index}` };
+        }
+        return edge;
+      });
+
+      console.log("Restored nodes:", restoredNodes.length);
+      console.log("Restored edges:", uniqueEdges.length);
+
+      setNodes(restoredNodes);
+      setEdges(uniqueEdges);
       setSelectedNode(null);
       setSelectedEdge(null);
+
+      // Immediately save to localStorage
+      setLocalStorageItem(getStorageKey("nodes"), restoredNodes);
+      setLocalStorageItem(getStorageKey("edges"), uniqueEdges);
+
+      console.log("Version restored and saved to localStorage");
+
       // Save a new snapshot marking the restoration
-      setTimeout(
-        () =>
-          saveVersionSnapshot(
-            `Restored version from ${new Date(
-              version.timestamp
-            ).toLocaleString()}`
-          ),
-        100
-      );
+      setTimeout(() => {
+        saveVersionSnapshot(
+          `Restored version from ${new Date(
+            version.timestamp
+          ).toLocaleString()}`
+        );
+        console.log("Restoration snapshot saved");
+      }, 100);
     },
-    [setNodes, setEdges, saveVersionSnapshot]
+    [
+      setNodes,
+      setEdges,
+      saveVersionSnapshot,
+      currentFlowId,
+      nodes.length,
+      edges.length,
+    ]
   );
 
   // Update nodes to include delete handler
