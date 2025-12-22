@@ -31,19 +31,13 @@ export default function Login() {
 
   return (
     <div className="login-container">
-      <div className="login-background">
-        <div className="login-gradient-orb orb-1"></div>
-        <div className="login-gradient-orb orb-2"></div>
-        <div className="login-gradient-orb orb-3"></div>
-      </div>
-
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <LogIn size={40} />
+            <LogIn size={20} />
           </div>
-          <h1>Genesys Flow Builder</h1>
-          <p>Sign in to your account</p>
+          <h1>Flow Builder</h1>
+          <p>Sign in to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
