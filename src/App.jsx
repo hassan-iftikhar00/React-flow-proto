@@ -119,7 +119,10 @@ function AppContent() {
 
         {/* Routes */}
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route
+            path="/"
+            element={<Dashboard onOpenConfig={() => setOpenConfig(true)} />}
+          />
           <Route path="/flows/:flowId" element={<FlowEditorPage />} />
           <Route path="/builder" element={<FlowBuilder />} />
           <Route path="/config" element={<IVRConfig />} />

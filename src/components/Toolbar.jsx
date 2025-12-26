@@ -41,6 +41,7 @@ import {
   BarChart3,
   Clock,
   Search,
+  ArrowLeft,
 } from "lucide-react";
 
 export default function Toolbar({
@@ -63,6 +64,7 @@ export default function Toolbar({
   onShowAnalytics,
   onShowActivityLog,
   onShowSearch,
+  onBackToDashboard,
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [activeColorPicker, setActiveColorPicker] = useState(null);
@@ -213,7 +215,8 @@ export default function Toolbar({
         >
           <Icon size={16} />
         </button>
-        {isHovered && !hideTooltip &&
+        {isHovered &&
+          !hideTooltip &&
           createPortal(
             <div
               className="enhanced-tooltip-portal"
@@ -586,6 +589,21 @@ export default function Toolbar({
       className={`flow-toolbar ${hasOverflow ? "scrollable" : ""}`}
       ref={toolbarRef}
     >
+      {/* Back Button Section */}
+      <div className="toolbar-section toolbar-back-section">
+        <button
+          className="toolbar-back-btn"
+          onClick={onBackToDashboard}
+          title="Back to Dashboard"
+        >
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </button>
+      </div>
+
+      {/* Vertical Separator */}
+      <div className="toolbar-separator"></div>
+
       {/* Navigation Section */}
       <div className="toolbar-section critical">
         <div className="toolbar-group critical">
@@ -618,6 +636,9 @@ export default function Toolbar({
           />
         </div>
       </div>
+
+      {/* Vertical Separator */}
+      <div className="toolbar-separator"></div>
 
       {/* Edit Section */}
       <div className="toolbar-section critical">
@@ -690,6 +711,9 @@ export default function Toolbar({
         </div>
       </div>
 
+      {/* Vertical Separator */}
+      <div className="toolbar-separator"></div>
+
       {/* View Section */}
       <div className="toolbar-section">
         <div className="toolbar-group">
@@ -712,6 +736,9 @@ export default function Toolbar({
         </div>
       </div>
 
+      {/* Vertical Separator */}
+      <div className="toolbar-separator"></div>
+
       {/* Add Section */}
       <div className="toolbar-section">
         <div className="toolbar-group">
@@ -732,351 +759,323 @@ export default function Toolbar({
 
       {/* Typography Section - Show only when node/label is selected */}
       {(isNodeSelected || isLabelSelected) && (
-        <div className="toolbar-section">
-          <div className="toolbar-group">
-            <div className="toolbar-text-controls">
-              <TooltipButton
-                icon={Bold}
-                title="Bold"
-                description="Apply bold font weight to selected node text"
-                shortcut="Ctrl B"
-                category="Typography"
-                onClick={() =>
-                  onUpdateElement({
-                    fontWeight:
-                      selectedElement?.style?.fontWeight === "bold"
-                        ? "normal"
-                        : "bold",
-                  })
+        <>
+          {/* Vertical Separator */}
+          <div className="toolbar-separator"></div>
+
+          <div className="toolbar-section">
+            <div className="toolbar-group">
+              <div className="toolbar-text-controls">
+                <TooltipButton
+                  icon={Bold}
+                  title="Bold"
+                  description="Apply bold font weight to selected node text"
+                  shortcut="Ctrl B"
+                  category="Typography"
+                  onClick={() =>
+                    onUpdateElement({
+                      fontWeight:
+                        selectedElement?.style?.fontWeight === "bold"
+                          ? "normal"
+                          : "bold",
+                    })
+                  }
+                  active={
+                    selectedElement?.style?.fontWeight === "bold" ||
+                    selectedElement?.data?.style?.fontWeight === "bold"
+                  }
+                />
+                <TooltipButton
+                  icon={Italic}
+                  title="Italic"
+                  description="Apply italic font style to selected node text"
+                  shortcut="Ctrl I"
+                  category="Typography"
+                  onClick={() =>
+                    onUpdateElement({
+                      fontStyle:
+                        selectedElement?.style?.fontStyle === "italic"
+                          ? "normal"
+                          : "italic",
+                    })
+                  }
+                  active={
+                    selectedElement?.style?.fontStyle === "italic" ||
+                    selectedElement?.data?.style?.fontStyle === "italic"
+                  }
+                />
+                <TooltipButton
+                  icon={Underline}
+                  title="Underline"
+                  description="Apply underline decoration to selected node text"
+                  category="Typography"
+                  onClick={() =>
+                    onUpdateElement({
+                      textDecoration:
+                        selectedElement?.style?.textDecoration === "underline"
+                          ? "none"
+                          : "underline",
+                    })
+                  }
+                  active={
+                    selectedElement?.style?.textDecoration === "underline" ||
+                    selectedElement?.data?.style?.textDecoration === "underline"
+                  }
+                />
+              </div>
+
+              <div className="font-controls">
+                <select
+                  value={
+                    selectedElement?.style?.fontFamily ||
+                    selectedElement?.data?.style?.fontFamily ||
+                    "Inter"
+                  }
+                  onChange={(e) =>
+                    onUpdateElement({ fontFamily: e.target.value })
+                  }
+                  className="font-family-select"
+                  title="Font Family"
+                >
+                  <option value="Inter">Inter</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Times New Roman">Times</option>
+                  <option value="Courier New">Courier</option>
+                  <option value="Georgia">Georgia</option>
+                </select>
+
+                <input
+                  type="number"
+                  min="8"
+                  max="72"
+                  value={
+                    selectedElement?.style?.fontSize ||
+                    selectedElement?.data?.style?.fontSize ||
+                    14
+                  }
+                  onChange={(e) =>
+                    onUpdateElement({ fontSize: parseInt(e.target.value) })
+                  }
+                  className="font-size-input"
+                  title="Font Size"
+                />
+              </div>
+
+              <ColorPicker
+                id="text-color"
+                value={
+                  selectedElement?.style?.color ||
+                  selectedElement?.data?.style?.color
                 }
-                active={
-                  selectedElement?.style?.fontWeight === "bold" ||
-                  selectedElement?.data?.style?.fontWeight === "bold"
-                }
-              />
-              <TooltipButton
-                icon={Italic}
-                title="Italic"
-                description="Apply italic font style to selected node text"
-                shortcut="Ctrl I"
-                category="Typography"
-                onClick={() =>
-                  onUpdateElement({
-                    fontStyle:
-                      selectedElement?.style?.fontStyle === "italic"
-                        ? "normal"
-                        : "italic",
-                  })
-                }
-                active={
-                  selectedElement?.style?.fontStyle === "italic" ||
-                  selectedElement?.data?.style?.fontStyle === "italic"
-                }
-              />
-              <TooltipButton
-                icon={Underline}
-                title="Underline"
-                description="Apply underline decoration to selected node text"
-                category="Typography"
-                onClick={() =>
-                  onUpdateElement({
-                    textDecoration:
-                      selectedElement?.style?.textDecoration === "underline"
-                        ? "none"
-                        : "underline",
-                  })
-                }
-                active={
-                  selectedElement?.style?.textDecoration === "underline" ||
-                  selectedElement?.data?.style?.textDecoration === "underline"
-                }
+                onChange={(color) => onUpdateElement({ color })}
+                title="Text Color"
               />
             </div>
 
-            <div className="font-controls">
-              <select
-                value={
-                  selectedElement?.style?.fontFamily ||
-                  selectedElement?.data?.style?.fontFamily ||
-                  "Inter"
+            <div className="toolbar-alignment-group">
+              <TooltipButton
+                icon={AlignLeft}
+                title="Align Left"
+                description="Align text to the left"
+                category="Typography"
+                onClick={() => onUpdateElement({ textAlign: "left" })}
+                active={
+                  selectedElement?.style?.textAlign === "left" ||
+                  (!selectedElement?.style?.textAlign &&
+                    !selectedElement?.data?.style?.textAlign)
                 }
-                onChange={(e) =>
-                  onUpdateElement({ fontFamily: e.target.value })
+              />
+              <TooltipButton
+                icon={AlignCenter}
+                title="Align Center"
+                description="Center align text"
+                category="Typography"
+                onClick={() => onUpdateElement({ textAlign: "center" })}
+                active={
+                  selectedElement?.style?.textAlign === "center" ||
+                  selectedElement?.data?.style?.textAlign === "center"
                 }
-                className="font-family-select"
-                title="Font Family"
-              >
-                <option value="Inter">Inter</option>
-                <option value="Arial">Arial</option>
-                <option value="Helvetica">Helvetica</option>
-                <option value="Times New Roman">Times</option>
-                <option value="Courier New">Courier</option>
-                <option value="Georgia">Georgia</option>
-              </select>
-
-              <input
-                type="number"
-                min="8"
-                max="72"
-                value={
-                  selectedElement?.style?.fontSize ||
-                  selectedElement?.data?.style?.fontSize ||
-                  14
+              />
+              <TooltipButton
+                icon={AlignRight}
+                title="Align Right"
+                description="Align text to the right"
+                category="Typography"
+                onClick={() => onUpdateElement({ textAlign: "right" })}
+                active={
+                  selectedElement?.style?.textAlign === "right" ||
+                  selectedElement?.data?.style?.textAlign === "right"
                 }
-                onChange={(e) =>
-                  onUpdateElement({ fontSize: parseInt(e.target.value) })
-                }
-                className="font-size-input"
-                title="Font Size"
               />
             </div>
-
-            <ColorPicker
-              id="text-color"
-              value={
-                selectedElement?.style?.color ||
-                selectedElement?.data?.style?.color
-              }
-              onChange={(color) => onUpdateElement({ color })}
-              title="Text Color"
-            />
           </div>
-
-          <div className="toolbar-alignment-group">
-            <TooltipButton
-              icon={AlignLeft}
-              title="Align Left"
-              description="Align text to the left"
-              category="Typography"
-              onClick={() => onUpdateElement({ textAlign: "left" })}
-              active={
-                selectedElement?.style?.textAlign === "left" ||
-                (!selectedElement?.style?.textAlign &&
-                  !selectedElement?.data?.style?.textAlign)
-              }
-            />
-            <TooltipButton
-              icon={AlignCenter}
-              title="Align Center"
-              description="Center align text"
-              category="Typography"
-              onClick={() => onUpdateElement({ textAlign: "center" })}
-              active={
-                selectedElement?.style?.textAlign === "center" ||
-                selectedElement?.data?.style?.textAlign === "center"
-              }
-            />
-            <TooltipButton
-              icon={AlignRight}
-              title="Align Right"
-              description="Align text to the right"
-              category="Typography"
-              onClick={() => onUpdateElement({ textAlign: "right" })}
-              active={
-                selectedElement?.style?.textAlign === "right" ||
-                selectedElement?.data?.style?.textAlign === "right"
-              }
-            />
-          </div>
-        </div>
+        </>
       )}
 
       {/* Node Styling Section - Show only when node is selected */}
       {isNodeSelected && (
-        <div className="toolbar-section">
-          <div className="toolbar-group">
-            <TooltipButton
-              icon={Paintbrush}
-              title="Background"
-              description="Change node background color"
-              category="Styling"
-            />
-            <ColorPicker
-              id="bg-color"
-              value={
-                selectedElement?.style?.backgroundColor ||
-                selectedElement?.data?.style?.backgroundColor
-              }
-              onChange={(backgroundColor) =>
-                onUpdateElement({ backgroundColor })
-              }
-              title="Background Color"
-            />
+        <>
+          {/* Vertical Separator */}
+          <div className="toolbar-separator"></div>
 
-            <TooltipButton
-              icon={RectangleHorizontal}
-              title="Border"
-              description="Change border color and width"
-              category="Styling"
-            />
-            <ColorPicker
-              id="border-color"
-              value={
-                selectedElement?.style?.borderColor ||
-                selectedElement?.data?.style?.borderColor
-              }
-              onChange={(borderColor) => onUpdateElement({ borderColor })}
-              title="Border Color"
-            />
-
-            <Slider
-              value={
-                selectedElement?.style?.borderWidth ||
-                selectedElement?.data?.style?.borderWidth ||
-                1
-              }
-              onChange={(borderWidth) => onUpdateElement({ borderWidth })}
-              min={0}
-              max={10}
-              title="Border Width"
-            />
-
-            <TooltipButton
-              icon={Circle}
-              title="Border Radius"
-              description="Change corner roundness"
-            />
-            <Slider
-              value={
-                selectedElement?.style?.borderRadius ||
-                selectedElement?.data?.style?.borderRadius ||
-                8
-              }
-              onChange={(borderRadius) => onUpdateElement({ borderRadius })}
-              min={0}
-              max={50}
-              title="Border Radius"
-            />
-          </div>
-
-          <div className="toolbar-divider"></div>
-          <div className="toolbar-group">
-            <TooltipButton
-              icon={Move}
-              title="Dimensions"
-              description="Adjust node width and height"
-            />
-            <div className="dimension-controls">
-              <input
-                type="number"
-                min="50"
-                max="500"
-                value={
-                  selectedElement?.style?.width ||
-                  selectedElement?.data?.style?.width ||
-                  150
-                }
-                onChange={(e) =>
-                  onUpdateElement({ width: parseInt(e.target.value) })
-                }
-                className="dimension-input"
-                title="Width"
-                placeholder="W"
+          <div className="toolbar-section">
+            <div className="toolbar-group">
+              <TooltipButton
+                icon={Paintbrush}
+                title="Background"
+                description="Change node background color"
+                category="Styling"
               />
-              <input
-                type="number"
-                min="30"
-                max="300"
+              <ColorPicker
+                id="bg-color"
                 value={
-                  selectedElement?.style?.height ||
-                  selectedElement?.data?.style?.height ||
-                  60
+                  selectedElement?.style?.backgroundColor ||
+                  selectedElement?.data?.style?.backgroundColor
                 }
-                onChange={(e) =>
-                  onUpdateElement({ height: parseInt(e.target.value) })
+                onChange={(backgroundColor) =>
+                  onUpdateElement({ backgroundColor })
                 }
-                className="dimension-input"
-                title="Height"
-                placeholder="H"
+                title="Background Color"
+              />
+
+              <TooltipButton
+                icon={RectangleHorizontal}
+                title="Border"
+                description="Change border color and width"
+                category="Styling"
+              />
+              <ColorPicker
+                id="border-color"
+                value={
+                  selectedElement?.style?.borderColor ||
+                  selectedElement?.data?.style?.borderColor
+                }
+                onChange={(borderColor) => onUpdateElement({ borderColor })}
+                title="Border Color"
+              />
+
+              <Slider
+                value={
+                  selectedElement?.style?.borderWidth ||
+                  selectedElement?.data?.style?.borderWidth ||
+                  1
+                }
+                onChange={(borderWidth) => onUpdateElement({ borderWidth })}
+                min={0}
+                max={10}
+                title="Border Width"
+              />
+
+              <TooltipButton
+                icon={Circle}
+                title="Border Radius"
+                description="Change corner roundness"
+              />
+              <Slider
+                value={
+                  selectedElement?.style?.borderRadius ||
+                  selectedElement?.data?.style?.borderRadius ||
+                  8
+                }
+                onChange={(borderRadius) => onUpdateElement({ borderRadius })}
+                min={0}
+                max={50}
+                title="Border Radius"
               />
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Edge Styling Section - Show only when edge is selected */}
       {isEdgeSelected && (
-        <div className="toolbar-section">
-          <div className="toolbar-group">
-            <div className="dropdown-wrapper" ref={edgeStyleButtonRef}>
-              <TooltipButton
-                icon={Spline}
-                title="Edge Style"
-                description="Change edge line style"
-                onClick={() => {
-                  setActiveColorPicker(null);
-                  setActiveDropdown(
-                    activeDropdown === "edgeStyle" ? null : "edgeStyle"
-                  );
-                }}
-                active={activeDropdown === "edgeStyle"}
+        <>
+          {/* Vertical Separator */}
+          <div className="toolbar-separator"></div>
+
+          <div className="toolbar-section">
+            <div className="toolbar-group">
+              <div className="dropdown-wrapper" ref={edgeStyleButtonRef}>
+                <TooltipButton
+                  icon={Spline}
+                  title="Edge Style"
+                  description="Change edge line style"
+                  onClick={() => {
+                    setActiveColorPicker(null);
+                    setActiveDropdown(
+                      activeDropdown === "edgeStyle" ? null : "edgeStyle"
+                    );
+                  }}
+                  active={activeDropdown === "edgeStyle"}
+                />
+                <DropdownMenu
+                  isOpen={activeDropdown === "edgeStyle"}
+                  buttonRef={edgeStyleButtonRef}
+                >
+                  <button
+                    onClick={() => {
+                      onUpdateElement({ strokeDasharray: "", animated: false });
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <Minus size={14} /> Solid
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdateElement({
+                        strokeDasharray: "5,5",
+                        animated: false,
+                      });
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <MoreHorizontal size={14} /> Dashed
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdateElement({
+                        strokeDasharray: "2,2",
+                        animated: false,
+                      });
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <Scan size={14} /> Dotted
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdateElement({
+                        animated: !selectedElement?.animated,
+                        strokeDasharray: "",
+                      });
+                      setActiveDropdown(null);
+                    }}
+                    className={selectedElement?.animated ? "active" : ""}
+                  >
+                    <Zap size={14} /> Animated
+                  </button>
+                </DropdownMenu>
+              </div>
+
+              <ColorPicker
+                id="edge-color"
+                value={selectedElement?.style?.stroke}
+                onChange={(stroke) => onUpdateElement({ stroke })}
+                title="Edge Color"
               />
-              <DropdownMenu
-                isOpen={activeDropdown === "edgeStyle"}
-                buttonRef={edgeStyleButtonRef}
-              >
-                <button
-                  onClick={() => {
-                    onUpdateElement({ strokeDasharray: "", animated: false });
-                    setActiveDropdown(null);
-                  }}
-                >
-                  <Minus size={14} /> Solid
-                </button>
-                <button
-                  onClick={() => {
-                    onUpdateElement({
-                      strokeDasharray: "5,5",
-                      animated: false,
-                    });
-                    setActiveDropdown(null);
-                  }}
-                >
-                  <MoreHorizontal size={14} /> Dashed
-                </button>
-                <button
-                  onClick={() => {
-                    onUpdateElement({
-                      strokeDasharray: "2,2",
-                      animated: false,
-                    });
-                    setActiveDropdown(null);
-                  }}
-                >
-                  <Scan size={14} /> Dotted
-                </button>
-                <button
-                  onClick={() => {
-                    onUpdateElement({
-                      animated: !selectedElement?.animated,
-                      strokeDasharray: "",
-                    });
-                    setActiveDropdown(null);
-                  }}
-                  className={selectedElement?.animated ? "active" : ""}
-                >
-                  <Zap size={14} /> Animated
-                </button>
-              </DropdownMenu>
+
+              <Slider
+                value={selectedElement?.style?.strokeWidth || 2}
+                onChange={(strokeWidth) => onUpdateElement({ strokeWidth })}
+                min={1}
+                max={10}
+                title="Edge Width"
+                SliderColor="red"
+              />
             </div>
-
-            <ColorPicker
-              id="edge-color"
-              value={selectedElement?.style?.stroke}
-              onChange={(stroke) => onUpdateElement({ stroke })}
-              title="Edge Color"
-            />
-
-            <Slider
-              value={selectedElement?.style?.strokeWidth || 2}
-              onChange={(strokeWidth) => onUpdateElement({ strokeWidth })}
-              min={1}
-              max={10}
-              title="Edge Width"
-              SliderColor="red"
-            />
           </div>
-        </div>
+        </>
       )}
 
       {/* Scroll Indicator */}

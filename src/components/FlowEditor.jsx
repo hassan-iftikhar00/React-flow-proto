@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -31,7 +32,7 @@ import {
   getLocalStorageItem,
   setLocalStorageItem,
 } from "../hooks/useLocalStorage";
-import { Settings, X } from "lucide-react";
+import { Settings, X, ArrowLeft } from "lucide-react";
 import { GearIcon, XCircleIcon } from "@phosphor-icons/react";
 import IVRInputConfig from "./IVRInputConfig";
 import VersionHistory from "./VersionHistory";
@@ -89,8 +90,9 @@ function FlowEditorContent({
   initialSelectedNodeId = null,
 }) {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const reactFlowWrapper = useRef(null);
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, project, getViewport } = useReactFlow();
 
   // Load nodes and edges from localStorage based on current flow ID
   const getStorageKey = (suffix) =>
@@ -104,13 +106,17 @@ function FlowEditorContent({
             n.type !== "shape" &&
             !(
               n.data &&
-              ["rectangle", "circle", "triangle", "hexagon"].includes(n.data.shape)
+              ["rectangle", "circle", "triangle", "hexagon"].includes(
+                n.data.shape
+              )
             )
         )
       : nodes;
 
   const [nodes, setNodes, onNodesChange] = useNodesState(
-    filterShapes(getLocalStorageItem(getStorageKey("nodes"), defaultInitialNodes))
+    filterShapes(
+      getLocalStorageItem(getStorageKey("nodes"), defaultInitialNodes)
+    )
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
     getLocalStorageItem(getStorageKey("edges"), defaultInitialEdges)
@@ -181,56 +187,46 @@ function FlowEditorContent({
   // Toolbar state
   const [showGrid, setShowGrid] = useState(true);
   const [showMiniMap, setShowMiniMap] = useState(true);
-  // Unlimited undo/redo history for nodes/edges
-  const [history, setHistory] = useState([{ nodes: defaultInitialNodes, edges: defaultInitialEdges }]);
+
+  // Undo/redo history - simple implementation
+  const [history, setHistory] = useState([
+    { nodes: defaultInitialNodes, edges: defaultInitialEdges },
+  ]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const isRestoringRef = useRef(false);
 
-  // Helper to update nodes/edges and push to history
-  const updateFlow = useCallback((newNodes, newEdges) => {
-    setHistory((prev) => {
-      // Use latest index for redo truncation
-      const upto = prev.slice(0, historyIndex + 1);
-      return [...upto, { nodes: newNodes, edges: newEdges }];
-    });
-    setHistoryIndex(idx => idx + 1);
-    setNodes(newNodes);
-    setEdges(newEdges);
-  }, [historyIndex]);
+  // Save to history when nodes or edges change (but not during undo/redo)
+  useEffect(() => {
+    if (isRestoringRef.current) {
+      return; // Don't save to history during undo/redo
+    }
 
-  // Wrap setNodes/setEdges to always update history
-  const wrappedSetNodes = useCallback((updater) => {
-    setNodes((prevNodes) => {
-      const newNodes = typeof updater === 'function' ? updater(prevNodes) : updater;
-      setEdges((prevEdges) => {
-        // Use functional update for historyIndex
-        setHistoryIndex(idx => {
-          setHistory(prev => {
-            const upto = prev.slice(0, idx + 1);
-            return [...upto, { nodes: newNodes, edges: prevEdges }];
-          });
-          return idx + 1;
-        });
-        return prevEdges;
+    const currentState = { nodes, edges };
+    const lastState = history[historyIndex];
+
+    // Check if state actually changed
+    const hasChanged =
+      JSON.stringify(lastState?.nodes) !== JSON.stringify(nodes) ||
+      JSON.stringify(lastState?.edges) !== JSON.stringify(edges);
+
+    if (hasChanged) {
+      setHistory((prev) => {
+        // Remove any "future" states if we're not at the end
+        const newHistory = prev.slice(0, historyIndex + 1);
+        // Add new state
+        return [...newHistory, currentState].slice(-50); // Keep last 50 states
       });
-      return newNodes;
-    });
+      setHistoryIndex((idx) => Math.min(idx + 1, 49));
+    }
+  }, [nodes, edges]);
+
+  // Simple wrappers - no complex logic, just direct state updates
+  const wrappedSetNodes = useCallback((updater) => {
+    setNodes(updater);
   }, []);
 
   const wrappedSetEdges = useCallback((updater) => {
-    setEdges((prevEdges) => {
-      const newEdges = typeof updater === 'function' ? updater(prevEdges) : updater;
-      setNodes((prevNodes) => {
-        setHistoryIndex(idx => {
-          setHistory(prev => {
-            const upto = prev.slice(0, idx + 1);
-            return [...upto, { nodes: prevNodes, edges: newEdges }];
-          });
-          return idx + 1;
-        });
-        return prevNodes;
-      });
-      return newEdges;
-    });
+    setEdges(updater);
   }, []);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -497,7 +493,9 @@ function FlowEditorContent({
         // Find all incoming and outgoing edges for the node to be deleted
         const incoming = eds.filter((edge) => edge.target === nodeId);
         const outgoing = eds.filter((edge) => edge.source === nodeId);
-        const otherEdges = eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+        const otherEdges = eds.filter(
+          (edge) => edge.source !== nodeId && edge.target !== nodeId
+        );
 
         // Create new edges from each incoming source to each outgoing target (if not already present)
         const newEdges = [];
@@ -530,6 +528,22 @@ function FlowEditorContent({
       }
     },
     [setNodes, setEdges, selectedNode, saveVersionSnapshot]
+  );
+
+  // Handle label text change
+  const handleLabelChange = useCallback(
+    (nodeId, newLabel) => {
+      wrappedSetNodes((nds) =>
+        nds.map((node) =>
+          node.id === nodeId
+            ? { ...node, data: { ...node.data, label: newLabel } }
+            : node
+        )
+      );
+      // Save snapshot when label is changed
+      setTimeout(() => saveVersionSnapshot(`Updated label text`), 100);
+    },
+    [saveVersionSnapshot]
   );
 
   // Handle node selection from search
@@ -608,8 +622,8 @@ function FlowEditorContent({
   // Update nodes to include delete handler (for all nodes and labels)
   const nodesWithDeleteHandler = nodes.map((node) => {
     // For label nodes, ensure type is 'label' for custom renderer
-    if (node.data?.isLabel && node.type !== 'label') {
-      node = { ...node, type: 'label' };
+    if (node.data?.isLabel && node.type !== "label") {
+      node = { ...node, type: "label" };
     }
     return {
       ...node,
@@ -618,7 +632,11 @@ function FlowEditorContent({
         id: node.id,
         onDelete: handleDeleteNode,
         onLabelChange: (id, newLabel) => {
-          setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, label: newLabel } } : n));
+          setNodes((nds) =>
+            nds.map((n) =>
+              n.id === id ? { ...n, data: { ...n.data, label: newLabel } } : n
+            )
+          );
         },
         commentCount: currentFlowId
           ? getNodeCommentCount(currentFlowId, node.id)
@@ -692,23 +710,31 @@ function FlowEditorContent({
 
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
+      isRestoringRef.current = true;
       const newIdx = historyIndex - 1;
       const state = history[newIdx];
       setHistoryIndex(newIdx);
-      // Batch update for instant UI
       setNodes(state.nodes);
       setEdges(state.edges);
+      // Reset flag after state updates complete
+      setTimeout(() => {
+        isRestoringRef.current = false;
+      }, 0);
     }
   }, [history, historyIndex]);
 
   const handleRedo = useCallback(() => {
     if (historyIndex < history.length - 1) {
+      isRestoringRef.current = true;
       const newIdx = historyIndex + 1;
       const state = history[newIdx];
       setHistoryIndex(newIdx);
-      // Batch update for instant UI
       setNodes(state.nodes);
       setEdges(state.edges);
+      // Reset flag after state updates complete
+      setTimeout(() => {
+        isRestoringRef.current = false;
+      }, 0);
     }
   }, [history, historyIndex]);
 
@@ -722,7 +748,6 @@ function FlowEditorContent({
       setEdges([]);
     }
   };
-
 
   const handleToggleGrid = () => {
     setShowGrid(!showGrid);
@@ -833,33 +858,67 @@ function FlowEditorContent({
         label: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
         shape: shapeType,
       },
-      style: shapeType === "rectangle" ? { width: 120, height: 60, borderRadius: 6 }
-        : shapeType === "circle" ? { width: 80, height: 80, borderRadius: 40 }
-        : shapeType === "triangle" ? { width: 100, height: 90, clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }
-        : shapeType === "hexagon" ? { width: 100, height: 80, clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" }
-        : {},
+      style:
+        shapeType === "rectangle"
+          ? { width: 120, height: 60, borderRadius: 6 }
+          : shapeType === "circle"
+          ? { width: 80, height: 80, borderRadius: 40 }
+          : shapeType === "triangle"
+          ? {
+              width: 100,
+              height: 90,
+              clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+            }
+          : shapeType === "hexagon"
+          ? {
+              width: 100,
+              height: 80,
+              clipPath:
+                "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+            }
+          : {},
     };
     wrappedSetNodes((nds) => [...nds, shapeNode]);
   };
 
   const handleAddLabel = () => {
+    // Get current viewport to add label in visible area
+    const viewport = getViewport();
+    const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+    const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+
+    // Add some randomness but keep it near center
+    const randomOffsetX = (Math.random() - 0.5) * 100;
+    const randomOffsetY = (Math.random() - 0.5) * 100;
+
     // Add a text label node using the custom LabelNode type
     const labelNode = {
       id: getId(),
       type: "label",
-      position: { x: 250 + Math.random() * 200, y: 250 + Math.random() * 200 },
+      position: {
+        x: centerX + randomOffsetX,
+        y: centerY + randomOffsetY,
+      },
       data: {
         label: "New Label",
         isLabel: true,
+        onDelete: handleDeleteNode,
+        onLabelChange: handleLabelChange,
       },
-      style: { fontSize: 18, background: "#fffbe6", border: "1px dashed #facc15", padding: 6 },
+      style: {
+        fontSize: 14,
+        backgroundColor: "#fef3c7",
+        borderColor: "#f59e0b",
+        color: "#92400e",
+      },
     };
     wrappedSetNodes((nds) => [...nds, labelNode]);
   };
 
   const handleAddArrow = () => {
     // Add an edge between two selected nodes, or the last two nodes if none selected
-    let source = null, target = null;
+    let source = null,
+      target = null;
     if (selectedNode) {
       // If a node is selected, connect it to the previous node if possible
       const idx = nodes.findIndex((n) => n.id === selectedNode.id);
@@ -922,6 +981,7 @@ function FlowEditorContent({
           console.log("showActivityLog state:", showActivityLog);
         }}
         onShowSearch={() => setShowSearch(true)}
+        onBackToDashboard={() => navigate("/dashboard")}
       />
       <div className="flow-container" ref={reactFlowWrapper}>
         <ReactFlow

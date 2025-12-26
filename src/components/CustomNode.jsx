@@ -1055,24 +1055,25 @@ export function ShapeNode({ data, style }) {
     minHeight: 40,
     background: "#f3f4f6",
     border: "1px solid #d1d5db",
-    ...(
-      data.shape === "circle"
-        ? { borderRadius: "50%" }
-        : data.shape === "rectangle"
-        ? { borderRadius: 6 }
-        : data.shape === "triangle"
-        ? { clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }
-        : data.shape === "hexagon"
-        ? { clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" }
-        : {}
-    ),
+    ...(data.shape === "circle"
+      ? { borderRadius: "50%" }
+      : data.shape === "rectangle"
+      ? { borderRadius: 6 }
+      : data.shape === "triangle"
+      ? { clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }
+      : data.shape === "hexagon"
+      ? {
+          clipPath:
+            "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+        }
+      : {}),
   };
   return (
     <div className="node shape-node" style={nodeStyle}>
       <button
         className="delete-node-btn"
         style={{ position: "absolute", top: 2, right: 2, zIndex: 2 }}
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation();
           if (data.onDelete) data.onDelete(data.id);
         }}
@@ -1088,67 +1089,123 @@ export function ShapeNode({ data, style }) {
 // LabelNode: For label nodes with delete bin
 export function LabelNode({ data, style }) {
   const [editing, setEditing] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
   const textareaRef = React.useRef(null);
+
+  // Auto-resize textarea
+  React.useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [editing]);
 
   // Save label text to node data
   const save = () => {
     setEditing(false);
     // Only update if changed
-    if (data.onLabelChange && textareaRef.current && textareaRef.current.value !== data.label) {
+    if (
+      data.onLabelChange &&
+      textareaRef.current &&
+      textareaRef.current.value !== data.label
+    ) {
       data.onLabelChange(data.id, textareaRef.current.value);
     }
   };
 
-  // Prevent double deletion
-  const handleDelete = React.useCallback((e) => {
-    e.stopPropagation();
-    if (data.onDelete) {
-      data.onDelete(data.id);
-    }
-  }, [data]);
+  // Prevent double deletion and event propagation
+  const handleDelete = React.useCallback(
+    (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      // Use a small delay to ensure React Flow doesn't capture the click
+      setTimeout(() => {
+        if (data.onDelete) {
+          data.onDelete(data.id);
+        }
+      }, 0);
+    },
+    [data]
+  );
+
+  // Prevent node selection when clicking the label container
+  const handleContainerClick = React.useCallback(
+    (e) => {
+      // Only stop propagation if not clicking the edit area
+      if (!editing && e.target.classList.contains("label-node")) {
+        e.stopPropagation();
+      }
+    },
+    [editing]
+  );
+
+  // Get custom colors or use defaults
+  const backgroundColor = data.style?.backgroundColor || "#fef3c7";
+  const borderColor = data.style?.borderColor || "#f59e0b";
+  const textColor = data.style?.color || "#92400e";
 
   const labelBoxStyle = {
-    fontFamily: 'inherit',
-    fontWeight: 500,
-    fontSize: 22,
-    background: '#fffbe6',
-    border: '2px dashed #facc15',
-    borderRadius: 12,
-    padding: '8px 24px',
-    display: 'inline-block',
-    boxShadow: 'none',
-    cursor: editing ? 'text' : 'pointer',
-    maxWidth: 220,
-    minWidth: 60,
-    wordBreak: 'break-word',
-    whiteSpace: 'pre-wrap',
-    textAlign: 'center',
-    overflowWrap: 'break-word',
-    transition: 'none',
+    fontFamily: "inherit",
+    fontWeight: 600,
+    fontSize: data.style?.fontSize || 14,
+    background: backgroundColor,
+    border: `2px solid ${borderColor}`,
+    borderRadius: "4px 12px 12px 4px",
+    padding: "10px 16px 10px 20px",
+    display: "inline-block",
+    boxShadow:
+      isHovered && !editing
+        ? "0 4px 12px rgba(245, 158, 11, 0.25)"
+        : "0 2px 4px rgba(0, 0, 0, 0.08)",
+    cursor: editing ? "text" : "pointer",
+    maxWidth: 280,
+    minWidth: 80,
+    wordBreak: "break-word",
+    whiteSpace: "pre-wrap",
+    textAlign: "center",
+    overflowWrap: "break-word",
+    transition: "all 0.2s ease",
+    color: textColor,
+    transform: isHovered && !editing ? "translateY(-1px)" : "translateY(0)",
+    position: "relative",
+  };
+
+  // Label tag notch style
+  const notchStyle = {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: 0,
+    height: 0,
+    borderTop: "16px solid transparent",
+    borderBottom: "16px solid transparent",
+    borderLeft: `10px solid ${borderColor}`,
   };
 
   return (
     <div
       className="node label-node"
       style={{
-        ...style,
-        ...data.style,
-        minWidth: 60,
-        minHeight: 30,
-        background: 'none',
-        border: 'none',
-        boxShadow: 'none',
-        padding: data.style?.padding || 6,
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'inherit',
+        minWidth: 80,
+        minHeight: 36,
+        background: "transparent",
+        border: "none",
+        boxShadow: "none",
+        padding: 0,
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={handleContainerClick}
     >
       <button
         className="delete-node-btn"
-        style={{ position: 'absolute', top: 2, right: 2, zIndex: 2 }}
         onClick={handleDelete}
         title="Delete label"
       >
@@ -1161,34 +1218,41 @@ export function LabelNode({ data, style }) {
           autoFocus
           style={{
             ...labelBoxStyle,
-            resize: 'none',
-            outline: 'none',
-            height: 'auto',
-            minHeight: 40,
-            maxWidth: 220,
-            overflow: 'hidden',
-            fontFamily: 'inherit',
+            resize: "none",
+            outline: "none",
+            height: "auto",
+            minHeight: 36,
+            maxWidth: 280,
+            overflow: "hidden",
+            fontFamily: "inherit",
+            boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.2)",
           }}
-          rows={1}
+          onInput={(e) => {
+            e.target.style.height = "auto";
+            e.target.style.height = e.target.scrollHeight + "px";
+          }}
           onBlur={save}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               save();
             }
-            if (e.key === 'Escape') setEditing(false);
+            if (e.key === "Escape") {
+              setEditing(false);
+            }
           }}
         />
       ) : (
         <span
           style={labelBoxStyle}
-          onClick={e => {
+          onClick={(e) => {
             e.stopPropagation();
             setEditing(true);
           }}
           title="Click to edit label"
         >
-          {data.label}
+          <span style={notchStyle}></span>
+          {data.label || "Label"}
         </span>
       )}
     </div>

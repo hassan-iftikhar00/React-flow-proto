@@ -780,6 +780,7 @@ body,
   opacity: 0;
   transition: opacity 0.2s, transform 0.2s;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  cursor: pointer;
 }
 
 .node:hover .delete-node-btn {
@@ -868,6 +869,26 @@ body,
 .end-node {
   border-color: #6b7280;
   background: var(--end-node-bg);
+}
+
+/* Label node styling */
+.label-node {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.label-node .delete-node-btn {
+  top: -10px !important;
+  right: -10px !important;
+  z-index: 9999 !important;
+  opacity: 1;
+}
+
+.label-node:hover .delete-node-btn {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 /* ---------------------------
@@ -1156,6 +1177,52 @@ body,
     transparent
   );
   margin: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Back Button in Toolbar */
+.toolbar-back-section {
+  padding: 4px 8px;
+  margin-right: 8px;
+}
+
+.toolbar-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+}
+
+.toolbar-back-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.35);
+}
+
+.toolbar-back-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.25);
+}
+
+.toolbar-separator {
+  width: 2px;
+  height: 36px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(148, 163, 184, 0.4),
+    transparent
+  );
+  margin: 0 8px;
   flex-shrink: 0;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -9,95 +9,125 @@ import {
   Plus,
   Search,
   Filter,
-  MoreVertical,
   Circle,
   CheckCircle2,
   Clock,
   Calendar,
-  Menu,
-  X,
   User,
 } from "lucide-react";
+import {
+  PhoneIncoming,
+  PhoneOutgoing,
+  ChatCircleDots,
+  Gear,
+  Code,
+  Hospital,
+  CalendarBlank,
+  FlowArrow,
+} from "@phosphor-icons/react";
 import "./Dashboard.css";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useLocalStorage, getLocalStorageItem } from "../hooks/useLocalStorage";
 
-export default function Dashboard() {
+export default function Dashboard({ onOpenConfig }) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFlow, setSelectedFlow] = useState(null);
 
-  // Sample flows data - now stored in localStorage with user tracking
-  const defaultFlows = [
-    {
-      id: 1,
-      name: "Customer Support IVR",
-      description: "Main support flow with routing & menu options",
-      status: "active",
-      lastModified: new Date().toISOString(),
-      created: "Sep 15, 2025",
-      createdAt: new Date(Date.now() - 7776000000).toISOString(), // 90 days ago
-      nodes: 12,
-      connections: 8,
-      tags: ["Support", "IVR", "Production"],
-      createdBy: {
-        id: "john.doe",
-        name: "John Doe",
-        email: "john.doe@company.com",
-      },
-      lastModifiedBy: {
-        id: "sarah.smith",
-        name: "Sarah Smith",
-        email: "sarah.smith@company.com",
-      },
-    },
-    {
-      id: 2,
-      name: "Appointment Booking",
-      description: "Automated scheduling with calendar integration",
-      status: "draft",
-      lastModified: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      created: "Sep 20, 2025",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      nodes: 8,
-      connections: 6,
-      tags: ["Booking", "Calendar", "Draft"],
-      createdBy: {
-        id: "sarah.smith",
-        name: "Sarah Smith",
-        email: "sarah.smith@company.com",
-      },
-      lastModifiedBy: {
-        id: "sarah.smith",
-        name: "Sarah Smith",
-        email: "sarah.smith@company.com",
-      },
-    },
-    {
-      id: 3,
-      name: "Payment Processing Flow",
-      description: "Secure payment processing with validations",
-      status: "active",
-      lastModified: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-      created: "Sep 10, 2025",
-      createdAt: new Date(Date.now() - 259200000).toISOString(),
-      nodes: 15,
-      connections: 12,
-      tags: ["Payment", "Security", "Production"],
-      createdBy: {
-        id: "john.doe",
-        name: "John Doe",
-        email: "john.doe@company.com",
-      },
-      lastModifiedBy: {
-        id: "john.doe",
-        name: "John Doe",
-        email: "john.doe@company.com",
-      },
-    },
-  ];
+  // Get flows from IVR Config instead of hardcoded data
+  const [flows, setFlows] = useState([]);
 
-  const [flows, setFlows] = useLocalStorage("dashboard_flows", defaultFlows);
+  // Load flows from IVR Config logs
+  useEffect(() => {
+    const ivrLogs = getLocalStorageItem("ivrConfig_logs", []);
+    const mappedFlows = ivrLogs.map((log) => {
+      // Get actual node count from localStorage
+      const flowNodes = getLocalStorageItem(`flow_${log.appId}_nodes`, []);
+      const nodeCount = flowNodes.length;
+
+      return {
+        id: log.appId,
+        name: log.appName,
+        description: `${log.appType} - ${log.purpose}`,
+        status: log.status === "Enabled" ? "active" : "draft",
+        lastModified: new Date().toISOString(),
+        created: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        createdAt: new Date().toISOString(),
+        nodes: nodeCount,
+        tags: [log.environment],
+        createdBy: {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+        },
+        lastModifiedBy: {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+        },
+        appCode: log.appCode,
+        practiceCode: log.practiceCode,
+        environment: log.environment,
+      };
+    });
+    setFlows(mappedFlows);
+  }, [currentUser]);
+
+  // Refresh flows when returning to dashboard
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const ivrLogs = getLocalStorageItem("ivrConfig_logs", []);
+      const mappedFlows = ivrLogs.map((log) => {
+        // Get actual node count from localStorage
+        const flowNodes = getLocalStorageItem(`flow_${log.appId}_nodes`, []);
+        const nodeCount = flowNodes.length;
+
+        return {
+          id: log.appId,
+          name: log.appName,
+          description: `${log.appType} - ${log.purpose}`,
+          status: log.status === "Enabled" ? "active" : "draft",
+          lastModified: new Date().toISOString(),
+          created: new Date().toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          createdAt: new Date().toISOString(),
+          nodes: nodeCount,
+          tags: [log.environment],
+          createdBy: {
+            id: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+          },
+          lastModifiedBy: {
+            id: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+          },
+          appCode: log.appCode,
+          practiceCode: log.practiceCode,
+          environment: log.environment,
+        };
+      });
+      setFlows(mappedFlows);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also refresh when component becomes visible
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [currentUser]);
 
   // Filtered search
   const filteredFlows = flows.filter(
@@ -121,35 +151,10 @@ export default function Dashboard() {
   };
 
   const handleCreateNewFlow = () => {
-    const now = new Date().toISOString();
-    const newFlow = {
-      id: Date.now(),
-      name: `New Flow ${flows.length + 1}`,
-      description: "A new IVR flow",
-      status: "draft",
-      lastModified: now,
-      created: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      createdAt: now,
-      nodes: 0,
-      connections: 0,
-      tags: ["Draft"],
-      createdBy: {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-      },
-      lastModifiedBy: {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-      },
-    };
-    setFlows([...flows, newFlow]);
-    handleLoadFlow(newFlow);
+    // Open IVR Config modal to create a new flow
+    if (onOpenConfig) {
+      onOpenConfig();
+    }
   };
 
   const handleDuplicateFlow = (flow) => {
@@ -182,27 +187,17 @@ export default function Dashboard() {
 
   const handleDeleteFlow = (flowId) => {
     if (window.confirm("Are you sure you want to delete this flow?")) {
+      // Remove from IVR Config logs
+      const ivrLogs = getLocalStorageItem("ivrConfig_logs", []);
+      const updatedLogs = ivrLogs.filter((log) => log.appId !== flowId);
+      localStorage.setItem("ivrConfig_logs", JSON.stringify(updatedLogs));
+
+      // Update local state
       setFlows(flows.filter((f) => f.id !== flowId));
     }
   };
 
   const handleLoadFlow = (flow) => {
-    // Update the flow's last modified time and modifier
-    const updatedFlows = flows.map((f) =>
-      f.id === flow.id
-        ? {
-            ...f,
-            lastModified: new Date().toISOString(),
-            lastModifiedBy: {
-              id: currentUser.id,
-              name: currentUser.name,
-              email: currentUser.email,
-            },
-          }
-        : f
-    );
-    setFlows(updatedFlows);
-
     setSelectedFlow(flow);
     navigate(`/flows/${flow.id}`);
     console.log("Loading flow:", flow.name);
@@ -219,6 +214,28 @@ export default function Dashboard() {
       default:
         return <Circle className="status-icon" size={16} />;
     }
+  };
+
+  const getFlowTypeIcon = (description) => {
+    const desc = description.toLowerCase();
+    if (desc.includes("inbound")) {
+      return { icon: PhoneIncoming, color: "#4ECDC4" };
+    } else if (desc.includes("outbound")) {
+      return { icon: PhoneOutgoing, color: "#FF6B6B" };
+    } else if (desc.includes("chat")) {
+      return { icon: ChatCircleDots, color: "#FFE66D" };
+    } else {
+      return { icon: FlowArrow, color: "#95E1D3" };
+    }
+  };
+
+  const getPurposeColor = (description) => {
+    const desc = description.toLowerCase();
+    if (desc.includes("claim")) return "#FF6B9D";
+    if (desc.includes("appointment")) return "#AA96DA";
+    if (desc.includes("billing")) return "#F38181";
+    if (desc.includes("support")) return "#A8D8EA";
+    return "#6BCF7F";
   };
 
   return (
@@ -262,99 +279,127 @@ export default function Dashboard() {
 
         {/* Flows Grid */}
         <div className="flows-grid">
-          {filteredFlows.map((flow) => (
-            <div key={flow.id} className="flow-card">
-              <div className="flow-card-header">
-                <div className="flow-status">
-                  {getStatusIcon(flow.status)}
-                  <span className={`status-text ${flow.status}`}>
-                    {flow.status.charAt(0).toUpperCase() + flow.status.slice(1)}
-                  </span>
-                </div>
-                <button className="flow-menu-btn">
-                  <MoreVertical size={16} />
-                </button>
-              </div>
+          {filteredFlows.map((flow) => {
+            const flowTypeInfo = getFlowTypeIcon(flow.description);
+            const FlowIcon = flowTypeInfo.icon;
+            const purposeColor = getPurposeColor(flow.description);
 
-              <div className="flow-card-content">
-                <h3 className="flow-name">{flow.name}</h3>
-                <p className="flow-description">{flow.description}</p>
-
-                <div className="flow-stats">
-                  <div className="stat">
-                    <span className="stat-value">{flow.nodes}</span>
-                    <span className="stat-label">Nodes</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-value">{flow.connections}</span>
-                    <span className="stat-label">Connections</span>
-                  </div>
-                </div>
-
-                <div className="flow-tags">
-                  {flow.tags.map((tag, index) => (
-                    <span key={index} className="flow-tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flow-card-footer">
-                <div className="flow-meta">
-                  <div className="meta-item">
-                    <Calendar size={14} />
-                    <span>Modified {getRelativeTime(flow.lastModified)}</span>
-                  </div>
-                  {flow.createdBy && (
-                    <div className="meta-item user-info">
-                      <User size={14} />
-                      <span title={`Created by ${flow.createdBy.name}`}>
-                        {flow.createdBy.name}
-                      </span>
+            return (
+              <div
+                key={flow.id}
+                className="flow-card"
+                onClick={() => handleLoadFlow(flow)}
+              >
+                <div className="flow-card-header">
+                  <div className="flow-icon-container">
+                    <div
+                      className="flow-main-icon"
+                      style={{
+                        background: `linear-gradient(135deg, ${flowTypeInfo.color}20, ${flowTypeInfo.color}10)`,
+                      }}
+                    >
+                      <FlowIcon
+                        size={32}
+                        color={flowTypeInfo.color}
+                        weight="duotone"
+                      />
                     </div>
-                  )}
-                  {flow.lastModifiedBy &&
-                    flow.lastModifiedBy.id !== flow.createdBy?.id && (
-                      <div className="meta-item user-info">
-                        <User size={14} />
-                        <span
-                          title={`Last modified by ${flow.lastModifiedBy.name}`}
-                        >
-                          Edited by {flow.lastModifiedBy.name.split(" ")[0]}
+                  </div>
+                  <div className="flow-status-badge">
+                    {getStatusIcon(flow.status)}
+                  </div>
+                </div>
+
+                <div className="flow-card-content">
+                  <h3 className="flow-name">{flow.name}</h3>
+                  <p className="flow-description">{flow.description}</p>
+
+                  <div className="flow-info-grid">
+                    <div className="info-item">
+                      <Code size={16} color="#6366F1" weight="duotone" />
+                      <div className="info-content">
+                        <span className="info-label">App Code</span>
+                        <span className="info-value">
+                          {flow.appCode || "N/A"}
                         </span>
                       </div>
-                    )}
+                    </div>
+                    <div className="info-item">
+                      <Hospital size={16} color="#EC4899" weight="duotone" />
+                      <div className="info-content">
+                        <span className="info-label">Practice</span>
+                        <span className="info-value">
+                          {flow.practiceCode || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="info-item">
+                      <FlowArrow size={16} color="#10B981" weight="duotone" />
+                      <div className="info-content">
+                        <span className="info-label">Nodes</span>
+                        <span className="info-value">{flow.nodes}</span>
+                      </div>
+                    </div>
+                    <div className="info-item">
+                      <Gear size={16} color="#F59E0B" weight="duotone" />
+                      <div className="info-content">
+                        <span className="info-label">Environment</span>
+                        <span className="info-value">
+                          {flow.environment || "Dev"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flow-actions">
-                  <button
-                    className="btn-action"
-                    onClick={() => handleLoadFlow(flow)}
-                    title="Edit Flow"
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                  <button className="btn-action" title="Run Flow">
-                    <Play size={16} />
-                  </button>
-                  <button
-                    className="btn-action"
-                    title="Duplicate"
-                    onClick={() => handleDuplicateFlow(flow)}
-                  >
-                    <Copy size={16} />
-                  </button>
-                  <button
-                    className="btn-action"
-                    title="Delete"
-                    onClick={() => handleDeleteFlow(flow.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+
+                <div className="flow-card-footer">
+                  <div className="flow-meta">
+                    <Calendar size={14} color="#94A3B8" weight="duotone" />
+                    <span>{getRelativeTime(flow.lastModified)}</span>
+                  </div>
+                  <div className="flow-actions">
+                    <button
+                      className="btn-action edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLoadFlow(flow);
+                      }}
+                      title="Edit Flow"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      className="btn-action play"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Run Flow"
+                    >
+                      <Play size={16} />
+                    </button>
+                    <button
+                      className="btn-action copy"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicateFlow(flow);
+                      }}
+                      title="Duplicate"
+                    >
+                      <Copy size={16} />
+                    </button>
+                    <button
+                      className="btn-action delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFlow(flow.id);
+                      }}
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empty State */}
