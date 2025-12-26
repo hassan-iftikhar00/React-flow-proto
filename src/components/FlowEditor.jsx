@@ -64,6 +64,7 @@ const defaultInitialNodes = [
 
 const defaultInitialEdges = [];
 
+import { ShapeNode, LabelNode } from "./CustomNode";
 const nodeTypes = {
   play: PlayNode,
   menu: MenuNode,
@@ -76,6 +77,8 @@ const nodeTypes = {
   stt: STTNode,
   istt: ISSTNode,
   terminator: TerminatorNode,
+  label: LabelNode,
+  shape: ShapeNode,
 };
 
 function FlowEditorContent({
@@ -93,8 +96,21 @@ function FlowEditorContent({
   const getStorageKey = (suffix) =>
     currentFlowId ? `flow_${currentFlowId}_${suffix}` : `flowEditor_${suffix}`;
 
+  // Remove all shape nodes (rectangle, circle, triangle, hexagon) on load
+  const filterShapes = (nodes) =>
+    Array.isArray(nodes)
+      ? nodes.filter(
+          (n) =>
+            n.type !== "shape" &&
+            !(
+              n.data &&
+              ["rectangle", "circle", "triangle", "hexagon"].includes(n.data.shape)
+            )
+        )
+      : nodes;
+
   const [nodes, setNodes, onNodesChange] = useNodesState(
-    getLocalStorageItem(getStorageKey("nodes"), defaultInitialNodes)
+    filterShapes(getLocalStorageItem(getStorageKey("nodes"), defaultInitialNodes))
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
     getLocalStorageItem(getStorageKey("edges"), defaultInitialEdges)
@@ -165,8 +181,57 @@ function FlowEditorContent({
   // Toolbar state
   const [showGrid, setShowGrid] = useState(true);
   const [showMiniMap, setShowMiniMap] = useState(true);
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // Unlimited undo/redo history for nodes/edges
+  const [history, setHistory] = useState([{ nodes: defaultInitialNodes, edges: defaultInitialEdges }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Helper to update nodes/edges and push to history
+  const updateFlow = useCallback((newNodes, newEdges) => {
+    setHistory((prev) => {
+      // Use latest index for redo truncation
+      const upto = prev.slice(0, historyIndex + 1);
+      return [...upto, { nodes: newNodes, edges: newEdges }];
+    });
+    setHistoryIndex(idx => idx + 1);
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [historyIndex]);
+
+  // Wrap setNodes/setEdges to always update history
+  const wrappedSetNodes = useCallback((updater) => {
+    setNodes((prevNodes) => {
+      const newNodes = typeof updater === 'function' ? updater(prevNodes) : updater;
+      setEdges((prevEdges) => {
+        // Use functional update for historyIndex
+        setHistoryIndex(idx => {
+          setHistory(prev => {
+            const upto = prev.slice(0, idx + 1);
+            return [...upto, { nodes: newNodes, edges: prevEdges }];
+          });
+          return idx + 1;
+        });
+        return prevEdges;
+      });
+      return newNodes;
+    });
+  }, []);
+
+  const wrappedSetEdges = useCallback((updater) => {
+    setEdges((prevEdges) => {
+      const newEdges = typeof updater === 'function' ? updater(prevEdges) : updater;
+      setNodes((prevNodes) => {
+        setHistoryIndex(idx => {
+          setHistory(prev => {
+            const upto = prev.slice(0, idx + 1);
+            return [...upto, { nodes: prevNodes, edges: newEdges }];
+          });
+          return idx + 1;
+        });
+        return prevNodes;
+      });
+      return newEdges;
+    });
+  }, []);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
@@ -200,28 +265,25 @@ function FlowEditorContent({
   );
 
   // Auto-save nodes and edges to localStorage whenever they change
+  // Track changes for undo/redo (nodes/edges)
   useEffect(() => {
-    setLocalStorageItem(getStorageKey("nodes"), nodes);
-
+    // Filter out shape nodes before saving
+    const filteredNodes = filterShapes(nodes);
+    setLocalStorageItem(getStorageKey("nodes"), filteredNodes);
+    setLocalStorageItem(getStorageKey("edges"), edges);
     // Auto-save version snapshot every 2 minutes or on significant changes
     const now = Date.now();
-    if (now - lastSaveRef.current > 120000 && nodes.length > 0) {
-      // 2 minutes
+    if (now - lastSaveRef.current > 120000 && filteredNodes.length > 0) {
       saveVersionSnapshot();
       lastSaveRef.current = now;
     }
-  }, [nodes, currentFlowId, saveVersionSnapshot]);
-
-  useEffect(() => {
-    setLocalStorageItem(getStorageKey("edges"), edges);
-  }, [edges, currentFlowId]);
+  }, [nodes, edges, currentFlowId, saveVersionSnapshot]);
 
   // Load flow data when currentFlowId changes
   useEffect(() => {
     if (currentFlowId) {
-      const savedNodes = getLocalStorageItem(
-        getStorageKey("nodes"),
-        defaultInitialNodes
+      const savedNodes = filterShapes(
+        getLocalStorageItem(getStorageKey("nodes"), defaultInitialNodes)
       );
       const savedEdges = getLocalStorageItem(
         getStorageKey("edges"),
@@ -257,7 +319,7 @@ function FlowEditorContent({
   // add edge
   const onConnect = useCallback(
     (params) =>
-      setEdges((eds) =>
+      wrappedSetEdges((eds) =>
         addEdge(
           {
             ...params,
@@ -267,7 +329,7 @@ function FlowEditorContent({
           eds
         )
       ),
-    [setEdges]
+    [wrappedSetEdges]
   );
 
   // 🆕 sidebar click -> add node
@@ -373,11 +435,11 @@ function FlowEditorContent({
         },
       };
 
-      setNodes((nds) => {
+      wrappedSetNodes((nds) => {
         // Connect to last added node
         let updatedNodes = nds.concat(newNode);
         if (lastNodeIdRef.current) {
-          setEdges((eds) =>
+          wrappedSetEdges((eds) =>
             eds.concat({
               id: `edge-${lastNodeIdRef.current}-${newNode.id}`,
               source: lastNodeIdRef.current,
@@ -415,7 +477,7 @@ function FlowEditorContent({
   // Handle node deletion
   const handleDeleteNode = useCallback(
     (nodeId) => {
-      setNodes((nds) => {
+      wrappedSetNodes((nds) => {
         const filteredNodes = nds.filter((node) => node.id !== nodeId);
         // Update lastNodeIdRef to the most recently added node
         if (filteredNodes.length > 1) {
@@ -430,9 +492,36 @@ function FlowEditorContent({
         }
         return filteredNodes;
       });
-      setEdges((eds) =>
-        eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
-      );
+
+      wrappedSetEdges((eds) => {
+        // Find all incoming and outgoing edges for the node to be deleted
+        const incoming = eds.filter((edge) => edge.target === nodeId);
+        const outgoing = eds.filter((edge) => edge.source === nodeId);
+        const otherEdges = eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+
+        // Create new edges from each incoming source to each outgoing target (if not already present)
+        const newEdges = [];
+        incoming.forEach((inEdge) => {
+          outgoing.forEach((outEdge) => {
+            // Prevent self-loop and duplicate
+            const exists = eds.some(
+              (e) => e.source === inEdge.source && e.target === outEdge.target
+            );
+            if (inEdge.source !== outEdge.target && !exists) {
+              newEdges.push({
+                id: `edge-${inEdge.source}-${outEdge.target}-${Date.now()}`,
+                source: inEdge.source,
+                target: outEdge.target,
+                animated: true,
+                markerEnd: { type: MarkerType.Arrow },
+                style: { stroke: "#06b6d4", strokeWidth: 2 },
+              });
+            }
+          });
+        });
+        return [...otherEdges, ...newEdges];
+      });
+
       // Save snapshot when deleting node
       setTimeout(() => saveVersionSnapshot(`Deleted node`), 100);
       // Clear selection if the deleted node was selected
@@ -516,23 +605,32 @@ function FlowEditorContent({
     ]
   );
 
-  // Update nodes to include delete handler
-  const nodesWithDeleteHandler = nodes.map((node) => ({
-    ...node,
-    data: {
-      ...node.data,
-      id: node.id,
-      onDelete: handleDeleteNode,
-      commentCount: currentFlowId
-        ? getNodeCommentCount(currentFlowId, node.id)
-        : 0,
-      onCommentClick: () => {
-        setSelectedNode(node);
-        setSelectedEdge(null);
-        setConfigTab("comments");
+  // Update nodes to include delete handler (for all nodes and labels)
+  const nodesWithDeleteHandler = nodes.map((node) => {
+    // For label nodes, ensure type is 'label' for custom renderer
+    if (node.data?.isLabel && node.type !== 'label') {
+      node = { ...node, type: 'label' };
+    }
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        id: node.id,
+        onDelete: handleDeleteNode,
+        onLabelChange: (id, newLabel) => {
+          setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, label: newLabel } } : n));
+        },
+        commentCount: currentFlowId
+          ? getNodeCommentCount(currentFlowId, node.id)
+          : 0,
+        onCommentClick: () => {
+          setSelectedNode(node);
+          setSelectedEdge(null);
+          setConfigTab("comments");
+        },
       },
-    },
-  }));
+    };
+  });
 
   // Toolbar functions
   const handleSave = () => {
@@ -592,13 +690,27 @@ function FlowEditorContent({
     fitView();
   };
 
-  const handleUndo = () => {
-    console.log("Undo");
-  };
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIdx = historyIndex - 1;
+      const state = history[newIdx];
+      setHistoryIndex(newIdx);
+      // Batch update for instant UI
+      setNodes(state.nodes);
+      setEdges(state.edges);
+    }
+  }, [history, historyIndex]);
 
-  const handleRedo = () => {
-    console.log("Redo");
-  };
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIdx = historyIndex + 1;
+      const state = history[newIdx];
+      setHistoryIndex(newIdx);
+      // Batch update for instant UI
+      setNodes(state.nodes);
+      setEdges(state.edges);
+    }
+  }, [history, historyIndex]);
 
   const handleClearAll = () => {
     if (
@@ -611,9 +723,6 @@ function FlowEditorContent({
     }
   };
 
-  const handleAutoLayout = () => {
-    console.log("Auto layout - to be implemented");
-  };
 
   const handleToggleGrid = () => {
     setShowGrid(!showGrid);
@@ -715,18 +824,69 @@ function FlowEditorContent({
   };
 
   const handleAddShape = (shapeType) => {
-    console.log("Add shape:", shapeType);
-    // Implementation for adding shapes
+    // Add a new node with the given shape type
+    const shapeNode = {
+      id: getId(),
+      type: "shape", // Use custom ShapeNode type
+      position: { x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 },
+      data: {
+        label: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
+        shape: shapeType,
+      },
+      style: shapeType === "rectangle" ? { width: 120, height: 60, borderRadius: 6 }
+        : shapeType === "circle" ? { width: 80, height: 80, borderRadius: 40 }
+        : shapeType === "triangle" ? { width: 100, height: 90, clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }
+        : shapeType === "hexagon" ? { width: 100, height: 80, clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" }
+        : {},
+    };
+    wrappedSetNodes((nds) => [...nds, shapeNode]);
   };
 
   const handleAddLabel = () => {
-    console.log("Add label");
-    // Implementation for adding labels
+    // Add a text label node using the custom LabelNode type
+    const labelNode = {
+      id: getId(),
+      type: "label",
+      position: { x: 250 + Math.random() * 200, y: 250 + Math.random() * 200 },
+      data: {
+        label: "New Label",
+        isLabel: true,
+      },
+      style: { fontSize: 18, background: "#fffbe6", border: "1px dashed #facc15", padding: 6 },
+    };
+    wrappedSetNodes((nds) => [...nds, labelNode]);
   };
 
   const handleAddArrow = () => {
-    console.log("Add arrow");
-    // Implementation for adding arrows
+    // Add an edge between two selected nodes, or the last two nodes if none selected
+    let source = null, target = null;
+    if (selectedNode) {
+      // If a node is selected, connect it to the previous node if possible
+      const idx = nodes.findIndex((n) => n.id === selectedNode.id);
+      if (idx > 0) {
+        source = nodes[idx - 1].id;
+        target = selectedNode.id;
+      }
+    } else if (nodes.length >= 2) {
+      // Otherwise, connect the last two nodes
+      source = nodes[nodes.length - 2].id;
+      target = nodes[nodes.length - 1].id;
+    }
+    if (source && target) {
+      wrappedSetEdges((eds) => [
+        ...eds,
+        {
+          id: `edge-${source}-${target}-${Date.now()}`,
+          source,
+          target,
+          animated: true,
+          markerEnd: { type: MarkerType.Arrow },
+          style: { stroke: "#6366f1", strokeWidth: 2 },
+        },
+      ]);
+    } else {
+      alert("Select a node or add at least two nodes to add an arrow.");
+    }
   };
 
   return (
@@ -740,11 +900,10 @@ function FlowEditorContent({
         onRedo={handleRedo}
         onToggleGrid={handleToggleGrid}
         onToggleMiniMap={handleToggleMiniMap}
-        onAutoLayout={handleAutoLayout}
         showGrid={showGrid}
         showMiniMap={showMiniMap}
-        canUndo={false}
-        canRedo={false}
+        canUndo={historyIndex > 0}
+        canRedo={historyIndex < history.length - 1}
         onUpdateElement={handleUpdateElement}
         onAddShape={handleAddShape}
         onAddLabel={handleAddLabel}
