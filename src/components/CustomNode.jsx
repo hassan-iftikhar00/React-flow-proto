@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Handle, Position } from "reactflow";
 import { Trash2, MessageCircle } from "lucide-react";
 import {
@@ -1038,6 +1038,159 @@ export function TerminatorNode({ data }) {
         position={Position.Bottom}
         style={{ background: "#555" }}
       />
+    </div>
+  );
+}
+
+export function ShapeNode({ data, style }) {
+  // Use shape type for custom style
+  const nodeStyle = {
+    ...style,
+    ...data.style,
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 60,
+    minHeight: 40,
+    background: "#f3f4f6",
+    border: "1px solid #d1d5db",
+    ...(
+      data.shape === "circle"
+        ? { borderRadius: "50%" }
+        : data.shape === "rectangle"
+        ? { borderRadius: 6 }
+        : data.shape === "triangle"
+        ? { clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }
+        : data.shape === "hexagon"
+        ? { clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)" }
+        : {}
+    ),
+  };
+  return (
+    <div className="node shape-node" style={nodeStyle}>
+      <button
+        className="delete-node-btn"
+        style={{ position: "absolute", top: 2, right: 2, zIndex: 2 }}
+        onClick={e => {
+          e.stopPropagation();
+          if (data.onDelete) data.onDelete(data.id);
+        }}
+        title="Delete shape"
+      >
+        <Trash2 size={16} />
+      </button>
+      <span style={{ fontWeight: 600, fontSize: 15 }}>{data.label}</span>
+    </div>
+  );
+}
+
+// LabelNode: For label nodes with delete bin
+export function LabelNode({ data, style }) {
+  const [editing, setEditing] = React.useState(false);
+  const textareaRef = React.useRef(null);
+
+  // Save label text to node data
+  const save = () => {
+    setEditing(false);
+    // Only update if changed
+    if (data.onLabelChange && textareaRef.current && textareaRef.current.value !== data.label) {
+      data.onLabelChange(data.id, textareaRef.current.value);
+    }
+  };
+
+  // Prevent double deletion
+  const handleDelete = React.useCallback((e) => {
+    e.stopPropagation();
+    if (data.onDelete) {
+      data.onDelete(data.id);
+    }
+  }, [data]);
+
+  const labelBoxStyle = {
+    fontFamily: 'inherit',
+    fontWeight: 500,
+    fontSize: 22,
+    background: '#fffbe6',
+    border: '2px dashed #facc15',
+    borderRadius: 12,
+    padding: '8px 24px',
+    display: 'inline-block',
+    boxShadow: 'none',
+    cursor: editing ? 'text' : 'pointer',
+    maxWidth: 220,
+    minWidth: 60,
+    wordBreak: 'break-word',
+    whiteSpace: 'pre-wrap',
+    textAlign: 'center',
+    overflowWrap: 'break-word',
+    transition: 'none',
+  };
+
+  return (
+    <div
+      className="node label-node"
+      style={{
+        ...style,
+        ...data.style,
+        minWidth: 60,
+        minHeight: 30,
+        background: 'none',
+        border: 'none',
+        boxShadow: 'none',
+        padding: data.style?.padding || 6,
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'inherit',
+      }}
+    >
+      <button
+        className="delete-node-btn"
+        style={{ position: 'absolute', top: 2, right: 2, zIndex: 2 }}
+        onClick={handleDelete}
+        title="Delete label"
+      >
+        <Trash2 size={16} />
+      </button>
+      {editing ? (
+        <textarea
+          ref={textareaRef}
+          defaultValue={data.label}
+          autoFocus
+          style={{
+            ...labelBoxStyle,
+            resize: 'none',
+            outline: 'none',
+            height: 'auto',
+            minHeight: 40,
+            maxWidth: 220,
+            overflow: 'hidden',
+            fontFamily: 'inherit',
+          }}
+          rows={1}
+          onBlur={save}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              save();
+            }
+            if (e.key === 'Escape') setEditing(false);
+          }}
+        />
+      ) : (
+        <span
+          style={labelBoxStyle}
+          onClick={e => {
+            e.stopPropagation();
+            setEditing(true);
+          }}
+          title="Click to edit label"
+        >
+          {data.label}
+        </span>
+      )}
     </div>
   );
 }

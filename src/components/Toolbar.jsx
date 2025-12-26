@@ -52,13 +52,11 @@ export default function Toolbar({
   onRedo,
   onToggleGrid,
   onToggleMiniMap,
-  onAutoLayout,
   showGrid = true,
   showMiniMap = true,
   canUndo = false,
   canRedo = false,
   onUpdateElement,
-  onAddShape,
   onAddLabel,
   onAddArrow,
   onShowVersionHistory,
@@ -71,7 +69,7 @@ export default function Toolbar({
   const [hasOverflow, setHasOverflow] = useState(false);
   const [scrollIndicatorStyle, setScrollIndicatorStyle] = useState({});
   const toolbarRef = useRef(null);
-  const shapesButtonRef = useRef(null);
+  // const shapesButtonRef = useRef(null);
   const edgeStyleButtonRef = useRef(null);
 
   const isNodeSelected = selectedElement && selectedElement.type !== "edge";
@@ -158,6 +156,7 @@ export default function Toolbar({
     shortcut,
     category,
     priority = "normal", // Add priority prop: "critical", "essential", "normal"
+    hideTooltip = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -214,7 +213,7 @@ export default function Toolbar({
         >
           <Icon size={16} />
         </button>
-        {isHovered &&
+        {isHovered && !hideTooltip &&
           createPortal(
             <div
               className="enhanced-tooltip-portal"
@@ -530,7 +529,7 @@ export default function Toolbar({
     </div>
   );
 
-  const DropdownMenu = ({ isOpen, buttonRef, children }) => {
+  const DropdownMenu = ({ isOpen, buttonRef, children, onClose }) => {
     const [position, setPosition] = useState({ top: 0, left: 0 });
     const menuRef = useRef(null);
 
@@ -544,6 +543,24 @@ export default function Toolbar({
       }
     }, [isOpen, buttonRef]);
 
+    useEffect(() => {
+      if (!isOpen) return;
+      function handleClickOutside(event) {
+        if (
+          menuRef.current &&
+          !menuRef.current.contains(event.target) &&
+          buttonRef.current &&
+          !buttonRef.current.contains(event.target)
+        ) {
+          if (onClose) onClose();
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [isOpen, onClose, buttonRef]);
+
     if (!isOpen) return null;
 
     return createPortal(
@@ -554,6 +571,8 @@ export default function Toolbar({
           position: "fixed",
           top: `${position.top}px`,
           left: `${position.left}px`,
+          minWidth: 160, // Prevents flinching
+          zIndex: 10001, // Above tooltips
         }}
       >
         {children}
@@ -675,13 +694,6 @@ export default function Toolbar({
       <div className="toolbar-section">
         <div className="toolbar-group">
           <TooltipButton
-            icon={Layers}
-            title="Auto Layout"
-            description="Automatically arrange nodes in optimal layout"
-            onClick={onAutoLayout}
-            category="Layout"
-          />
-          <TooltipButton
             icon={Grid3X3}
             title="Toggle Grid"
             description="Show/hide background grid for alignment"
@@ -703,65 +715,12 @@ export default function Toolbar({
       {/* Add Section */}
       <div className="toolbar-section">
         <div className="toolbar-group">
-          <div className="dropdown-wrapper" ref={shapesButtonRef}>
-            <TooltipButton
-              icon={Box}
-              title="Add Shape"
-              description="Add geometric shapes as containers"
-              onClick={() => {
-                setActiveColorPicker(null);
-                setActiveDropdown(
-                  activeDropdown === "shapes" ? null : "shapes"
-                );
-              }}
-              active={activeDropdown === "shapes"}
-            />
-            <DropdownMenu
-              isOpen={activeDropdown === "shapes"}
-              buttonRef={shapesButtonRef}
-            >
-              <button
-                onClick={() => {
-                  onAddShape("rectangle");
-                  setActiveDropdown(null);
-                }}
-              >
-                <Square size={14} /> Rectangle
-              </button>
-              <button
-                onClick={() => {
-                  onAddShape("circle");
-                  setActiveDropdown(null);
-                }}
-              >
-                <Circle size={14} /> Circle
-              </button>
-              <button
-                onClick={() => {
-                  onAddShape("triangle");
-                  setActiveDropdown(null);
-                }}
-              >
-                <Triangle size={14} /> Triangle
-              </button>
-              <button
-                onClick={() => {
-                  onAddShape("hexagon");
-                  setActiveDropdown(null);
-                }}
-              >
-                <Hexagon size={14} /> Hexagon
-              </button>
-            </DropdownMenu>
-          </div>
-
           <TooltipButton
             icon={Tag}
             title="Add Label"
             description="Add text labels and annotations"
             onClick={onAddLabel}
           />
-
           <TooltipButton
             icon={CornerUpRight}
             title="Add Arrow"
