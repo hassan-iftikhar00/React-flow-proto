@@ -11,6 +11,7 @@ import {
   MenuItem,
   Button,
   Checkbox,
+  Switch, 
   FormControlLabel,
   Stepper,
   Step,
@@ -63,7 +64,11 @@ export default function IVRConfig() {
   });
   const [editingLogIndex, setEditingLogIndex] = useState(null);
   const [ivrLogs, setIvrLogs] = useLocalStorage("ivrConfig_logs", []);
-  const [toast, setToast] = useState({ open: false, type: "success", message: "" });
+  const [toast, setToast] = useState({
+    open: false,
+    type: "success",
+    message: "",
+  });
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
     appType: [],
@@ -86,7 +91,9 @@ export default function IVRConfig() {
   const validateStep = (step) => {
     switch (step) {
       case 0:
-        return form.ivrName && form.appType && form.practiceCode && form.appCode;
+        return (
+          form.ivrName && form.appType && form.practiceCode && form.appCode
+        );
       case 1:
         return (
           form.environment &&
@@ -109,7 +116,10 @@ export default function IVRConfig() {
   const handleNext = () =>
     validateStep(activeStep)
       ? setActiveStep((prev) => prev + 1)
-      : showToast("warning", "Please fill all required fields before continuing.");
+      : showToast(
+          "warning",
+          "Please fill all required fields before continuing."
+        );
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
@@ -206,7 +216,8 @@ export default function IVRConfig() {
 
   const requestSort = (key) => {
     let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "asc")
+      direction = "desc";
     setSortConfig({ key, direction });
   };
 
@@ -261,14 +272,25 @@ export default function IVRConfig() {
   return (
     <Box className="ivr-container">
       {/* Toast Alerts */}
-      <div className="toast-container">
-        {toast.open && <div className={`toast toast-${toast.type}`}>{toast.message}</div>}
-      </div>
+{toast.open && (
+  <div className="stepper-alert-wrapper">
+    <div className={`alert alert-${toast.type}`}>
+      <span className="alert-icon">✖</span>
+      <span className="alert-text">{toast.message}</span>
+    </div>
+  </div>
+)}
+
+
 
       <Typography variant="h5" gutterBottom>
         IVR Configuration Wizard
       </Typography>
-      <Typography variant="body2" color="text.secondary" className="ivr-subtitle">
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        className="ivr-subtitle"
+      >
         Configure DNIS, Database, API, and Advanced settings step by step.
       </Typography>
 
@@ -287,28 +309,65 @@ export default function IVRConfig() {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <FormControlLabel
-                  control={<Checkbox checked={form.enable} onChange={handleChange} name="enable" />}
+                  control={
+                    <Switch
+                      checked={form.enable}
+                      onChange={handleChange}
+                      name="enable"
+                      color="primary"
+                    />
+                  }
                   label="Enable IVR"
                 />
               </Grid>
               <Grid item xs={6}>
-                <TextField label="IVR Name" name="ivrName" value={form.ivrName} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="IVR Name"
+                  name="ivrName"
+                  value={form.ivrName}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
               <Grid item xs={6}>
                 <FormControl fullWidth variant="filled" required>
                   <InputLabel>Application Type</InputLabel>
-                  <Select name="appType" value={form.appType} onChange={handleChange}>
+                  <Select
+                    name="appType"
+                    value={form.appType}
+                    onChange={handleChange}
+                  >
                     {appTypes.map((type) => (
-                      <MenuItem key={type} value={type}>{type}</MenuItem>
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <TextField label="Practice Code" name="practiceCode" value={form.practiceCode} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Practice Code"
+                  name="practiceCode"
+                  value={form.practiceCode}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField label="Application Code" name="appCode" value={form.appCode} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Application Code"
+                  name="appCode"
+                  value={form.appCode}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
             </Grid>
           )}
@@ -319,9 +378,15 @@ export default function IVRConfig() {
               <Grid item xs={6}>
                 <FormControl fullWidth variant="filled" required>
                   <InputLabel>Environment</InputLabel>
-                  <Select name="environment" value={form.environment} onChange={handleChange}>
+                  <Select
+                    name="environment"
+                    value={form.environment}
+                    onChange={handleChange}
+                  >
                     {environments.map((env) => (
-                      <MenuItem key={env} value={env}>{env}</MenuItem>
+                      <MenuItem key={env} value={env}>
+                        {env}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -329,7 +394,11 @@ export default function IVRConfig() {
               <Grid item xs={6}>
                 <FormControl fullWidth variant="filled" required>
                   <InputLabel>Record CNA</InputLabel>
-                  <Select name="recordCNA" value={form.recordCNA} onChange={handleChange}>
+                  <Select
+                    name="recordCNA"
+                    value={form.recordCNA}
+                    onChange={handleChange}
+                  >
                     <MenuItem value="Yes">Yes</MenuItem>
                     <MenuItem value="No">No</MenuItem>
                   </Select>
@@ -338,18 +407,42 @@ export default function IVRConfig() {
               <Grid item xs={6}>
                 <FormControl fullWidth variant="filled" required>
                   <InputLabel>Purpose</InputLabel>
-                  <Select name="purpose" value={form.purpose} onChange={handleChange}>
+                  <Select
+                    name="purpose"
+                    value={form.purpose}
+                    onChange={handleChange}
+                  >
                     {purposes.map((p) => (
-                      <MenuItem key={p} value={p}>{p}</MenuItem>
+                      <MenuItem key={p} value={p}>
+                        {p}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={3}>
-                <TextField type="time" label="Business Hours From" name="businessHoursFrom" value={form.businessHoursFrom} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  type="time"
+                  label="Business Hours From"
+                  name="businessHoursFrom"
+                  value={form.businessHoursFrom}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
               <Grid item xs={3}>
-                <TextField type="time" label="Business Hours To" name="businessHoursTo" value={form.businessHoursTo} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  type="time"
+                  label="Business Hours To"
+                  name="businessHoursTo"
+                  value={form.businessHoursTo}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
             </Grid>
           )}
@@ -358,7 +451,15 @@ export default function IVRConfig() {
           {activeStep === 2 && (
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <TextField label="Database Connection" name="dbConnection" value={form.dbConnection} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Database Connection"
+                  name="dbConnection"
+                  value={form.dbConnection}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
             </Grid>
           )}
@@ -367,13 +468,37 @@ export default function IVRConfig() {
           {activeStep === 3 && (
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <TextField label="API Key" name="apiKey" value={form.apiKey} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="API Key"
+                  name="apiKey"
+                  value={form.apiKey}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField label="Insurance" name="insurance" value={form.insurance} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Insurance"
+                  name="insurance"
+                  value={form.insurance}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
               <Grid item xs={12}>
-                <TextField label="Insurance Contact" name="insuranceContact" value={form.insuranceContact} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Insurance Contact"
+                  name="insuranceContact"
+                  value={form.insuranceContact}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
             </Grid>
           )}
@@ -382,28 +507,67 @@ export default function IVRConfig() {
           {activeStep === 4 && (
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <TextField label="Timeout (sec)" name="timeout" value={form.timeout} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Timeout (sec)"
+                  name="timeout"
+                  value={form.timeout}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField label="Retries" name="retries" value={form.retries} onChange={handleChange} fullWidth required variant="filled" />
+                <TextField
+                  label="Retries"
+                  name="retries"
+                  value={form.retries}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="filled"
+                />
               </Grid>
             </Grid>
           )}
 
           {/* Buttons */}
           <Box className="ivr-buttons">
-            <Button variant="outlined" startIcon={<ArrowBack />} disabled={activeStep === 0} onClick={handleBack}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              disabled={activeStep === 0}
+              onClick={handleBack}
+            >
               Back
             </Button>
             {activeStep === steps.length - 1 ? (
               <Box className="ivr-button-group">
-                <Button variant="outlined" color="error" startIcon={<Clear />} onClick={handleClear}>Clear</Button>
-                <Button type="submit" variant="contained" color="primary" startIcon={<Save />}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Clear />}
+                  onClick={handleClear}
+                >
+                  Clear
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Save />}
+                >
                   {editingLogIndex !== null ? "Update" : "Save"}
                 </Button>
               </Box>
             ) : (
-              <Button variant="contained" endIcon={<ArrowForward />} onClick={handleNext}>Next</Button>
+              <Button
+                variant="contained"
+                endIcon={<ArrowForward />}
+                onClick={handleNext}
+              >
+                Next
+              </Button>
             )}
           </Box>
         </Box>
@@ -411,16 +575,30 @@ export default function IVRConfig() {
 
       {/* Logs Table */}
       <Paper className="ivr-paper" sx={{ mt: 3, p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>IVR Logs</Typography>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          IVR Logs
+        </Typography>
 
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid item xs={4}>
-            <TextField placeholder="Search by App Name/Code/Type" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} />
+            <TextField
+              placeholder="Search by App Name/Code/Type"
+              fullWidth
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </Grid>
           <Grid item xs={2}>
             <FormControl fullWidth>
               <InputLabel>App Type</InputLabel>
-              <Select multiple name="appType" value={filters.appType} onChange={handleFilterChange} input={<OutlinedInput label="App Type" />} renderValue={(selected) => selected.join(", ")}>
+              <Select
+                multiple
+                name="appType"
+                value={filters.appType}
+                onChange={handleFilterChange}
+                input={<OutlinedInput label="App Type" />}
+                renderValue={(selected) => selected.join(", ")}
+              >
                 {appTypes.map((type) => (
                   <MenuItem key={type} value={type}>
                     <Checkbox checked={filters.appType.indexOf(type) > -1} />
@@ -433,7 +611,14 @@ export default function IVRConfig() {
           <Grid item xs={3}>
             <FormControl fullWidth>
               <InputLabel>Environment</InputLabel>
-              <Select multiple name="environment" value={filters.environment} onChange={handleFilterChange} input={<OutlinedInput label="Environment" />} renderValue={(selected) => selected.join(", ")}>
+              <Select
+                multiple
+                name="environment"
+                value={filters.environment}
+                onChange={handleFilterChange}
+                input={<OutlinedInput label="Environment" />}
+                renderValue={(selected) => selected.join(", ")}
+              >
                 {environments.map((env) => (
                   <MenuItem key={env} value={env}>
                     <Checkbox checked={filters.environment.indexOf(env) > -1} />
@@ -446,7 +631,14 @@ export default function IVRConfig() {
           <Grid item xs={3}>
             <FormControl fullWidth>
               <InputLabel>Purpose</InputLabel>
-              <Select multiple name="purpose" value={filters.purpose} onChange={handleFilterChange} input={<OutlinedInput label="Purpose" />} renderValue={(selected) => selected.join(", ")}>
+              <Select
+                multiple
+                name="purpose"
+                value={filters.purpose}
+                onChange={handleFilterChange}
+                input={<OutlinedInput label="Purpose" />}
+                renderValue={(selected) => selected.join(", ")}
+              >
                 {purposes.map((p) => (
                   <MenuItem key={p} value={p}>
                     <Checkbox checked={filters.purpose.indexOf(p) > -1} />
@@ -462,9 +654,34 @@ export default function IVRConfig() {
           <Table>
             <TableHead>
               <TableRow>
-                {["appId","appName","appCode","appType","purpose","insurance","status","timeZone","businessHoursFrom","businessHoursTo","businessTimeZone","environment","recordCNA","practiceCode"].map((col) => (
-                  <TableCell key={col} sx={{ backgroundColor: sortConfig.key === col ? "#f0f8ff" : "" }}>
-                    {renderSortLabel(col, col.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()))}
+                {[
+                  "appId",
+                  "appName",
+                  "appCode",
+                  "appType",
+                  "purpose",
+                  "insurance",
+                  "status",
+                  "timeZone",
+                  "businessHoursFrom",
+                  "businessHoursTo",
+                  "businessTimeZone",
+                  "environment",
+                  "recordCNA",
+                  "practiceCode",
+                ].map((col) => (
+                  <TableCell
+                    key={col}
+                    sx={{
+                      backgroundColor: sortConfig.key === col ? "#f0f8ff" : "",
+                    }}
+                  >
+                    {renderSortLabel(
+                      col,
+                      col
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase())
+                    )}
                   </TableCell>
                 ))}
                 <TableCell align="center">Action</TableCell>
@@ -473,12 +690,29 @@ export default function IVRConfig() {
             <TableBody>
               {sortedLogs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={15} align="center">No Records Found</TableCell>
+                  <TableCell colSpan={15} align="center">
+                    No Records Found
+                  </TableCell>
                 </TableRow>
               ) : (
                 sortedLogs.map((row, index) => (
                   <TableRow key={index}>
-                  {["appId","appName","appCode","appType","purpose","insurance","status","timeZone","businessHoursFrom","businessHoursTo","businessTimeZone","environment","recordCNA","practiceCode"].map((col) => (
+                    {[
+                      "appId",
+                      "appName",
+                      "appCode",
+                      "appType",
+                      "purpose",
+                      "insurance",
+                      "status",
+                      "timeZone",
+                      "businessHoursFrom",
+                      "businessHoursTo",
+                      "businessTimeZone",
+                      "environment",
+                      "recordCNA",
+                      "practiceCode",
+                    ].map((col) => (
                       <TableCell key={col}>{row[col]}</TableCell>
                     ))}
                     <TableCell align="center">
@@ -509,4 +743,3 @@ export default function IVRConfig() {
     </Box>
   );
 }
-

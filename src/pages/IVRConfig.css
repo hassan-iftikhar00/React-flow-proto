@@ -1,253 +1,224 @@
 /* -----------------------------------------------------
-   ROOT VARIABLES (EASY GLOBAL CUSTOMIZATION)
+   ROOT VARIABLES
 ------------------------------------------------------ */
 :root {
-  --aurora-1: #547cff;
-  --aurora-2: #8ba4ff;
-  --aurora-3: #d9e2ff;
-  --dark-text: #0f1320;
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.28);
+  --aurora-1: #3a5ae0;
+  --aurora-2: #4b70f5;
+  --aurora-3: #f9f9fb;
+  --dark-text: #1a2238;
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: #e2e2e2;
+  --text-muted: #555;
+  --border-light: #d3d3d3;
 }
 
 /* -----------------------------------------------------
-   CONTAINER – FLOATING AURORA GLASS
+   CONTAINER
 ------------------------------------------------------ */
 .ivr-container {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Roboto", sans-serif;
   padding: 36px;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--aurora-3), #ffffff);
-  position: relative;
+  background-color: var(--aurora-3);
+  position: relative; /* 🔴 important for toast */
   overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
 }
 
-/* Floating aurora lights */
+/* Glow */
 .ivr-container::before,
 .ivr-container::after {
   content: "";
   position: absolute;
-  width: 45%;
-  height: 45%;
-  background: radial-gradient(circle at center,
-    rgba(84, 124, 255, 0.45),
+  width: 35%;
+  height: 35%;
+  background: radial-gradient(
+    circle at center,
+    rgba(58, 90, 224, 0.08),
     transparent 70%
   );
   filter: blur(60px);
-  animation: floatAurora 10s ease-in-out infinite alternate;
+  animation: floatAurora 15s ease-in-out infinite alternate;
+  z-index: 0;
 }
 
 .ivr-container::before {
-  top: -5%;
-  left: -5%;
+  top: -10%;
+  left: -10%;
 }
 
 .ivr-container::after {
-  bottom: -5%;
-  right: -5%;
-  animation-delay: 1.5s;
+  bottom: -10%;
+  right: -10%;
+  animation-delay: 2s;
 }
 
 @keyframes floatAurora {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(30px, -20px) scale(1.14); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(20px, -15px) scale(1.05);
+  }
 }
 
 /* -----------------------------------------------------
-   TITLE TEXT – SIGNATURE GRADIENT
+   TITLE
 ------------------------------------------------------ */
 .ivr-container h5 {
   font-size: 30px;
   font-weight: 700;
-  letter-spacing: 0.3px;
-  background: linear-gradient(90deg, #3e4fff, #738aff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 5px;
+  color: var(--dark-text);
+  position: relative;
+  z-index: 1;
 }
 
 .ivr-subtitle {
   font-size: 15px;
-  color: #4c5060;
-  opacity: 0.85;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 /* -----------------------------------------------------
-   STEP-BY-STEP WIZARD – CYBER NEON ENERGY
+   STEPPER
 ------------------------------------------------------ */
-
-.ivr-stepper .MuiStepIcon-root {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #d3d2d2, #ffffff);
-  color: #4e66ff !important;
-  border: 2px solid rgba(78, 102, 255, 0.35);
-  box-shadow:
-    inset 0 0 12px rgba(78, 102, 255, 0.18),
-    0 4px 14px rgba(78, 102, 255, 0.25);
-  transition: 0.3s ease;
-}
-
-.ivr-stepper .MuiStepIcon-root.Mui-active {
-  background: linear-gradient(135deg, #4e66ff, #6b7dff) !important;
-  color: #5c96d8 !important;
-  box-shadow:
-    0 0 24px rgba(78, 102, 255, 0.65),
-    inset 0 0 16px rgba(255,255,255,0.2);
-  border-color: #4e66ff;
-  transform: scale(1.1);
-}
-
-.ivr-stepper .MuiStepIcon-root.Mui-completed {
-  background: #d6ddff !important;
-  color: #4e66ff !important;
-  box-shadow: inset 0 0 12px rgba(78, 102, 255, 0.15);
-}
-
-.ivr-stepper .MuiStepLabel-label {
-  color: #5c5f75 !important;
-  font-weight: 600;
+.ivr-stepper {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 /* -----------------------------------------------------
-   FORM CARD – LIQUID GLASS + DEPTH SHADOW
+   FORM CARD
 ------------------------------------------------------ */
 .ivr-paper {
   padding: 32px;
   margin-top: 28px;
-  border-radius: 24px;
+  border-radius: 18px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  box-shadow:
-    8px 8px 24px rgba(0,0,0,0.08),
-    -4px -4px 16px rgba(255,255,255,0.6);
-  backdrop-filter: blur(14px) saturate(160%);
-  transition: 0.3s ease;
-}
-
-.ivr-paper:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    12px 12px 28px rgba(0,0,0,0.1),
-    -6px -6px 20px rgba(255,255,255,0.75);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
 /* -----------------------------------------------------
-   LIQUID INPUT FIELDS (COMPLETELY UNIQUE)
+   BUTTONS
 ------------------------------------------------------ */
-.MuiFilledInput-root {
-  background: rgba(243, 246, 255, 0.82) !important;
-  border-radius: 16px !important;
-  border: 1px solid rgba(78, 102, 255, 0.22) !important;
-  padding-left: 14px !important;
-  backdrop-filter: blur(6px);
-  box-shadow:
-    inset 4px 4px 10px rgba(181, 191, 230, 0.4),
-    inset -3px -3px 12px rgba(255,255,255,0.7);
-  transition: 0.3s ease;
+.ivr-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
 }
 
-.MuiFilledInput-root:hover {
-  border-color: #4e66ff !important;
-  box-shadow:
-    inset 4px 4px 12px rgba(160,170,220,0.45),
-    inset -4px -4px 14px rgba(255,255,255,0.9);
+.ivr-button-group {
+  display: flex;
+  gap: 12px;
 }
 
-.MuiFilledInput-root.Mui-focused {
-  box-shadow:
-    0 0 18px rgba(78, 102, 255, 0.45),
-    inset 0 0 12px rgba(255,255,255,0.3);
-  border-color: #4e66ff !important;
-  background: rgba(231, 236, 255, 0.95) !important;
-}
-
-/* Label */
-.MuiInputLabel-root {
-  color: #68708a !important;
-  font-weight: 500;
-}
-
-.MuiInputLabel-root.Mui-focused {
-  color: #4e66ff !important;
-}
-
-/* -----------------------------------------------------
-   BUTTONS – SOFT GLOW GRADIENT
------------------------------------------------------- */
 .MuiButton-containedPrimary {
-  background: linear-gradient(135deg, #4b61ff, #738aff) !important;
-  border-radius: 16px !important;
-  padding: 10px 26px !important;
+  background-color: var(--aurora-1) !important;
+  color: #fff !important;
+  border-radius: 10px !important;
   font-weight: 600 !important;
-  box-shadow:
-    0 6px 18px rgba(78, 102, 255, 0.3),
-    inset 0 0 10px rgba(255,255,255,0.25);
-  transition: 0.25s;
-}
-
-.MuiButton-containedPrimary:hover {
-  background: linear-gradient(135deg, #3e53ef, #677bff) !important;
-  box-shadow:
-    0 10px 24px rgba(78, 102, 255, 0.45),
-    inset 0 0 16px rgba(255,255,255,0.3);
-  transform: translateY(-2px);
 }
 
 .MuiButton-outlined {
-  border-radius: 16px !important;
-  color: #4e66ff !important;
-  border-color: #4e66ff !important;
+  border-radius: 10px !important;
+  color: var(--aurora-1) !important;
+  border: 1px solid var(--aurora-1) !important;
 }
 
 /* -----------------------------------------------------
-   TABLE – CRYSTAL GLASS LOOK
+   INPUTS
+------------------------------------------------------ */
+.MuiFilledInput-root {
+  background: #fff !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.MuiInputLabel-filled {
+  font-weight: 500;
+}
+
+/* -----------------------------------------------------
+   TABLE
 ------------------------------------------------------ */
 .MuiTableContainer-root {
-  border-radius: 22px !important;
-  background: rgba(255,255,255,0.5);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.3);
-  box-shadow:
-    6px 6px 18px rgba(0,0,0,0.06),
-    -6px -6px 18px rgba(255,255,255,0.6);
+  border-radius: 12px !important;
+  border: 1px solid var(--glass-border);
 }
 
-.MuiTableRow-root:hover {
-  background: rgba(78, 102, 255, 0.06);
+.MuiTableCell-head {
+  background-color: #f0f2ff;
+  font-weight: 600;
 }
 
 /* -----------------------------------------------------
-   TOASTS – KEEP COLORS BUT GIVE PREMIUM LOOK
+   ✅ TOAST ALERT (STEPPER KE BILKUL UPAR)
 ------------------------------------------------------ */
+
 .toast-container {
-  position: fixed;
-  top: 25px;
-  right: 25px;
-  z-index: 99999;
+  position: absolute; /* 🔴 fixed hata diya */
+  top: 95px;          /* 🔴 heading + subtitle ke baad */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
 }
 
-.toast {
-  padding: 16px 26px;
-  border-radius: 30px;
-  font-weight: 600;
-  color: white;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.18);
-  transform: translateX(120%);
-  opacity: 0;
-  backdrop-filter: blur(8px) brightness(1.1);
-  animation: slideIn 0.45s forwards, fadeOut 0.5s 3s forwards;
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 420px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 500;
+  background: #fff;
+  animation: slideDown 0.3s ease, fadeOut 0.4s ease 2.5s forwards;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
 }
 
-.toast-success { background: rgba(76, 175, 80, 0.95); }
-.toast-error   { background: rgba(244, 67, 54, 0.95); }
-.toast-warning { background: rgba(255, 152, 0, 0.95); }
+/* Error / Warning */
+.alert-error,
+.alert-warning {
+  background: #fdeaea;
+  color: #d32f2f;
+  border-left: 6px solid #d32f2f;
+}
 
-@keyframes slideIn {
-  to { opacity: 1; transform: translateX(0); }
+/* Success */
+.alert-success {
+  background: #e9f7ef;
+  color: #1e7e34;
+  border-left: 6px solid #1e7e34;
+}
+
+.alert-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 @keyframes fadeOut {
-  to { opacity: 0; transform: translateX(120%); }
+  to {
+    opacity: 0;
+  }
 }
