@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
 
 /**
- * Custom hook to sync state with localStorage
- * @param {string} key - The localStorage key
- * @param {any} initialValue - The initial value if no stored value exists
- * @returns {[any, function]} - Returns [storedValue, setValue]
+ * Custom hook to sync state with localStorage (cross-component & cross-tab)
  */
 export function useLocalStorage(key, initialValue) {
-  // Get stored value or use initial value
   const [storedValue, setStoredValue] = useState(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -18,7 +14,7 @@ export function useLocalStorage(key, initialValue) {
     }
   });
 
-  // Update localStorage when state changes
+  // ✅ Save to localStorage when value changes
   useEffect(() => {
     try {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
@@ -27,15 +23,29 @@ export function useLocalStorage(key, initialValue) {
     }
   }, [key, storedValue]);
 
+  // ✅ LISTEN for external localStorage updates (IMPORTANT FIX)
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === key) {
+        try {
+          setStoredValue(
+            event.newValue ? JSON.parse(event.newValue) : initialValue
+          );
+        } catch (error) {
+          console.error(`Error syncing localStorage key "${key}":`, error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [key, initialValue]);
+
   return [storedValue, setStoredValue];
 }
 
-/**
- * Utility function to get item from localStorage
- * @param {string} key - The localStorage key
- * @param {any} defaultValue - Default value if key doesn't exist
- * @returns {any} - The parsed value or default
- */
+/* ----------------- Utilities (unchanged) ----------------- */
+
 export function getLocalStorageItem(key, defaultValue = null) {
   try {
     const item = window.localStorage.getItem(key);
@@ -46,12 +56,6 @@ export function getLocalStorageItem(key, defaultValue = null) {
   }
 }
 
-/**
- * Utility function to set item in localStorage
- * @param {string} key - The localStorage key
- * @param {any} value - The value to store
- * @returns {boolean} - Success status
- */
 export function setLocalStorageItem(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
@@ -62,11 +66,6 @@ export function setLocalStorageItem(key, value) {
   }
 }
 
-/**
- * Utility function to remove item from localStorage
- * @param {string} key - The localStorage key
- * @returns {boolean} - Success status
- */
 export function removeLocalStorageItem(key) {
   try {
     window.localStorage.removeItem(key);
@@ -77,10 +76,6 @@ export function removeLocalStorageItem(key) {
   }
 }
 
-/**
- * Utility function to clear all localStorage
- * @returns {boolean} - Success status
- */
 export function clearLocalStorage() {
   try {
     window.localStorage.clear();
