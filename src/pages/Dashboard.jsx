@@ -14,6 +14,7 @@ import {
   Clock,
   Calendar,
   User,
+  Settings,
 } from "lucide-react";
 import {
   PhoneIncoming,
@@ -250,6 +251,14 @@ export default function Dashboard({ onOpenConfig }) {
             </p>
           </div>
           <div className="header-actions">
+            <button
+              className="btn-secondary"
+              onClick={() => navigate("/configuration")}
+              style={{ marginRight: "12px" }}
+            >
+              <Settings size={20} />
+              Configuration
+            </button>
             <button className="btn-primary" onClick={handleCreateNewFlow}>
               <Plus size={20} />
               New Flow

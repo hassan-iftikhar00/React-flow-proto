@@ -13,6 +13,7 @@ import Login from "./components/Login";
 import Navbar from "./components/Navbar";
 import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
+import ConfigurationPage from "./pages/ConfigurationPage";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/FlowBuilder";
 import IVRConfig from "./pages/IVRConfig";
@@ -126,6 +127,7 @@ function AppContent() {
           <Route path="/flows/:flowId" element={<FlowEditorPage />} />
           <Route path="/builder" element={<FlowBuilder />} />
           <Route path="/config" element={<IVRConfig />} />
+          <Route path="/configuration" element={<ConfigurationPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
