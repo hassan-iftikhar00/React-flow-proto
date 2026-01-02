@@ -17,25 +17,42 @@ export default function FieldsMapping() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
+  const [errors, setErrors] = useState({});
 
   const showAlert = (type, message) => {
     setAlert({ show: true, type, message });
     setTimeout(() => setAlert({ show: false }), 2500);
   };
 
+  const validateForm = () => {
+    let newErrors = {};
+    if (!form.mappingName || form.mappingName.trim() === "") {
+      newErrors.mappingName = "Mapping Name is required!";
+    } else if (form.mappingName.length < 3) {
+      newErrors.mappingName = "Minimum 3 characters required!";
+    }
+    if (!form.sourceField) {
+      newErrors.sourceField = "Please select a source field!";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleAddNew = () => {
     setForm({ mappingName: "", sourceField: "", showInDesigner: false });
     setEditingIndex(list.length);
+    setErrors({});
   };
 
   const handleSave = () => {
-    if (!form.mappingName || !form.sourceField) {
-      showAlert("error", "Please fill all required fields!");
+    if (!validateForm()) {
+      showAlert("error", "Please fix the highlighted errors.");
       return;
     }
     const updatedList = [...list];
@@ -49,18 +66,24 @@ export default function FieldsMapping() {
     setList(updatedList);
     setEditingIndex(null);
     setForm({ mappingName: "", sourceField: "", showInDesigner: false });
+    setErrors({});
   };
 
+  // --- window.confirm removed ---
   const handleDelete = (index) => {
     const updatedList = list.filter((_, i) => i !== index);
     setList(updatedList);
-    if (editingIndex === index) setEditingIndex(null);
-    showAlert("success", "Entry Deleted!");
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setForm({ mappingName: "", sourceField: "", showInDesigner: false });
+    }
+    showAlert("success", "Entry Deleted Successfully!");
   };
 
   const onEdit = (index) => {
     setForm(list[index]);
     setEditingIndex(index);
+    setErrors({});
   };
 
   const toggleFilter = (value) => {
@@ -107,13 +130,11 @@ export default function FieldsMapping() {
     const items = Array.from(sortedList);
     const [reordered] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reordered);
-
     const updatedList = [...list];
-    items.forEach((item, idx) => {
+    items.forEach((item) => {
       const originalIndex = list.findIndex((l) => l.mappingName === item.mappingName);
       updatedList[originalIndex] = item;
     });
-
     setList(updatedList);
   };
 
@@ -122,9 +143,11 @@ export default function FieldsMapping() {
       <h2 className="title">Fields Mapping</h2>
 
       {alert.show && (
-        <div className={`alert ${alert.type}`}>
-          {alert.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
-          <span>{alert.message}</span>
+        <div className="alert-wrapper">
+          <div className={`alert ${alert.type}`}>
+            {alert.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+            <span>{alert.message}</span>
+          </div>
         </div>
       )}
 
@@ -138,7 +161,6 @@ export default function FieldsMapping() {
 
       {enable && (
         <div className="split-container">
-          {/* Left Panel */}
           <div className="left-panel">
             <button className="open-btn" onClick={handleAddNew}>Add New Mapping</button>
             <input
@@ -149,11 +171,11 @@ export default function FieldsMapping() {
               className="search-input"
             />
 
-            <div className="filter-section">
-              <span>Filter by Source Field:</span>
-              <div className="filter-options">
+            <div className="filter-section" style={{marginTop: '15px', fontSize: '13px'}}>
+              <span style={{fontWeight: '600', color: '#555'}}>Filter by Source:</span>
+              <div style={{display: 'flex', gap: '10px', marginTop: '5px'}}>
                 {sourceFields.map((f) => (
-                  <label key={f}>
+                  <label key={f} style={{display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer'}}>
                     <input type="checkbox" checked={sourceFilter.includes(f)} onChange={() => toggleFilter(f)} />
                     {f}
                   </label>
@@ -164,7 +186,7 @@ export default function FieldsMapping() {
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="fieldsList">
                 {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                  <div {...provided.droppableProps} ref={provided.innerRef} className="table-wrapper">
                     <table className="dnis-table">
                       <thead>
                         <tr>
@@ -174,42 +196,43 @@ export default function FieldsMapping() {
                           <th onClick={() => requestSort("sourceField")}>
                             Source Field {sortConfig.key === "sourceField" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
                           </th>
-                          <th onClick={() => requestSort("showInDesigner")}>
-                            Show in Designer {sortConfig.key === "showInDesigner" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-                          </th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {currentRecords.length === 0 && <tr><td colSpan={4}>No Records Found</td></tr>}
-                        {currentRecords.map((row, index) => (
-                          <Draggable
-                            key={row.mappingName + index}
-                            draggableId={row.mappingName + index}
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <tr
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className="fade-row"
-                                style={{
-                                  background: editingIndex === indexOfFirstRecord + index ? "#e4e8ff" : snapshot.isDragging ? "#d0e1ff" : "transparent",
-                                  ...provided.draggableProps.style
-                                }}
-                              >
-                                <td>{row.mappingName}</td>
-                                <td>{row.sourceField}</td>
-                                <td>{row.showInDesigner ? "Yes" : "No"}</td>
-                                <td className="actions">
-                                  <Pencil size={18} className="edit" onClick={() => onEdit(indexOfFirstRecord + index)} />
-                                  <Trash2 size={18} className="delete" onClick={() => handleDelete(indexOfFirstRecord + index)} />
-                                </td>
-                              </tr>
-                            )}
-                          </Draggable>
-                        ))}
+                        {currentRecords.length === 0 && <tr><td colSpan={3} className="no-data-td">No Records Found</td></tr>}
+                        {currentRecords.map((row, index) => {
+                          const actualIdx = list.indexOf(row);
+                          return (
+                            <Draggable key={row.mappingName + actualIdx} draggableId={row.mappingName + actualIdx} index={index}>
+                              {(provided) => (
+                                <tr
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={editingIndex === actualIdx ? "selected-row" : "fade-row"}
+                                  onClick={() => onEdit(actualIdx)}
+                                >
+                                  <td>{row.mappingName}</td>
+                                  <td>{row.sourceField}</td>
+                                  <td className="actions">
+                                    <div className="action-btns">
+                                      <Pencil size={18} className="edit-icon" />
+                                      <Trash2 
+                                        size={18} 
+                                        className="delete-icon" 
+                                        onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          handleDelete(actualIdx); 
+                                        }} 
+                                      />
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Draggable>
+                          );
+                        })}
                         {provided.placeholder}
                       </tbody>
                     </table>
@@ -229,38 +252,54 @@ export default function FieldsMapping() {
             )}
           </div>
 
-          {/* Right Panel */}
           <div className="right-panel">
             {editingIndex !== null ? (
-              <div className="form">
-                <h3>Mapping Details</h3>
-                <input
-                  name="mappingName"
-                  placeholder="Mapping Name *"
-                  value={form.mappingName}
-                  onChange={onChange}
-                />
-                <div className={`custom-dropdown ${sourceDropdown ? "show-options" : ""}`}>
-                  <div className="selected" onClick={() => setSourceDropdown(!sourceDropdown)}>
-                    <span>{form.sourceField || "Select Source Field *"}</span>
-                    <ChevronDown size={16} />
+              <div className="sticky-wrapper">
+                <div className="form">
+                  <h3>{editingIndex < list.length ? "Edit Mapping" : "New Mapping"}</h3>
+                  <div className="input-group">
+                    <label>Mapping Name *</label>
+                    <input
+                      name="mappingName"
+                      className={errors.mappingName ? "error-border" : ""}
+                      placeholder="Enter mapping name"
+                      value={form.mappingName}
+                      onChange={onChange}
+                    />
+                    {errors.mappingName && <span className="error-msg">{errors.mappingName}</span>}
                   </div>
-                  <div className="options">
-                    {sourceFields.map((f, i) => (
-                      <div key={i} className="option" onClick={() => { setForm({ ...form, sourceField: f }); setSourceDropdown(false); }}>{f}</div>
-                    ))}
+                  <div className="input-group">
+                    <label>Source Field *</label>
+                    <div className={`custom-dropdown ${sourceDropdown ? "show-options" : ""} ${errors.sourceField ? "error-border" : ""}`}>
+                      <div className="selected" onClick={() => setSourceDropdown(!sourceDropdown)}>
+                        <span>{form.sourceField || "Select Source..."}</span>
+                        <ChevronDown size={16} />
+                      </div>
+                      <div className="options">
+                        {sourceFields.map((f, i) => (
+                          <div key={i} className="option" onClick={() => { 
+                            setForm({ ...form, sourceField: f }); 
+                            setSourceDropdown(false); 
+                            setErrors(p => ({...p, sourceField: null}));
+                          }}>{f}</div>
+                        ))}
+                      </div>
+                    </div>
+                    {errors.sourceField && <span className="error-msg">{errors.sourceField}</span>}
                   </div>
+                  <div className="input-group checkbox-group" style={{flexDirection: 'row', alignItems: 'center', gap: '10px', marginTop: '10px'}}>
+                    <input type="checkbox" checked={form.showInDesigner} name="showInDesigner" id="designer" onChange={onChange} style={{width: '18px', height: '18px'}} />
+                    <label htmlFor="designer" style={{marginBottom: 0, cursor: 'pointer'}}>Show in Designer</label>
+                  </div>
+                  <button className="submit-btn" onClick={handleSave}>
+                    {editingIndex < list.length ? "Update Changes" : "Save Mapping"}
+                  </button>
                 </div>
-                <label>
-                  <input type="checkbox" checked={form.showInDesigner} name="showInDesigner" onChange={onChange} />
-                  Show in Designer
-                </label>
-                <button className="submit-btn" onClick={handleSave}>
-                  {editingIndex !== null && editingIndex < list.length ? "Update" : "Save"}
-                </button>
               </div>
             ) : (
-              <p>Select a mapping from the left panel to view details or edit.</p>
+              <div className="empty-state">
+                <p>Select a mapping to edit or click "Add New Mapping"</p>
+              </div>
             )}
           </div>
         </div>
