@@ -1,15 +1,15 @@
 import React from "react";
-import { Bell, Search, Sun, Moon, Settings, Map } from "lucide-react";
+import { Bell, Sun, Moon, Settings, Map } from "lucide-react";
 import UserProfile from "./UserProfile";
 import "./Navbar.css";
 
 export default function Navbar({
   theme,
   setTheme,
-  setActive,
-  onOpenConfig,
-  onOpenDNIS, // ✅ added
-  onOpenMapping,
+  activePanel,       // 'ivr', 'dnis', 'mapping', or null
+  onOpenConfig,      // toggle function
+  onOpenDNIS,        // toggle function
+  onOpenMapping,     // toggle function
 }) {
   return (
     <div className="navbar">
@@ -27,13 +27,19 @@ export default function Navbar({
         {/* Buttons Group */}
         <div className="navbar-buttons">
           {/* IVR Config */}
-          <button onClick={onOpenConfig} className="nav-action-btn ivr-btn">
+          <button
+            onClick={onOpenConfig}
+            className={`nav-action-btn ivr-btn ${activePanel === "ivr" ? "active" : ""}`}
+          >
             <Settings size={16} />
             IVR Config
           </button>
 
           {/* DNIS Config */}
-          <button onClick={onOpenDNIS} className="nav-action-btn mapping-btn">
+          <button
+            onClick={onOpenDNIS}
+            className={`nav-action-btn dnis-btn ${activePanel === "dnis" ? "active" : ""}`}
+          >
             <Map size={16} />
             DNIS Config
           </button>
@@ -41,7 +47,7 @@ export default function Navbar({
           {/* Fields Mapping */}
           <button
             onClick={onOpenMapping}
-            className="nav-action-btn mapping-btn"
+            className={`nav-action-btn mapping-btn ${activePanel === "mapping" ? "active" : ""}`}
           >
             <Map size={16} />
             Fields Mapping
@@ -51,8 +57,7 @@ export default function Navbar({
 
       {/* Right side */}
       <div className="navbar-right">
-        {/* Search */}
-    
+        {/* Theme toggle */}
         <button
           className="theme-toggle-btn-nav"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}

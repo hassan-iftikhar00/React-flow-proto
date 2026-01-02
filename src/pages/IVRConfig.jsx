@@ -11,7 +11,7 @@ import {
   MenuItem,
   Button,
   Checkbox,
-  Switch, 
+  Switch,
   FormControlLabel,
   Stepper,
   Step,
@@ -25,8 +25,15 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  FormHelperText,
 } from "@mui/material";
-import { Save, Clear, ArrowBack, ArrowForward } from "@mui/icons-material";
+import {
+  Save,
+  Clear,
+  ArrowBack,
+  ArrowForward,
+  ErrorOutline,
+} from "@mui/icons-material";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./IVRConfig.css";
 
@@ -39,17 +46,27 @@ const purposes = [
   "Balance Reminder",
   "Appointment Rescheduling",
 ];
-const regions = ["US-East", "US-West", "Europe"];
+
+const timeZones = [
+  "Eastern Time (US & Canada)",
+  "Central Time (US & Canada)",
+  "Mountain Time (US & Canada)",
+  "Pacific Time (US & Canada)",
+  "Greenwich Mean Time (UK)",
+  "Central European Time (Berlin, Paris, Rome)",
+];
 
 export default function IVRConfig() {
   const [activeStep, setActiveStep] = useState(0);
+
+  // State Initialization
   const [form, setForm] = useState({
     enable: false,
     ivrName: "",
     appType: "",
     practiceCode: "",
     appCode: "",
-    region: "US-East",
+    timeZone: "",
     environment: "",
     recordCNA: "",
     purpose: "",
@@ -62,8 +79,14 @@ export default function IVRConfig() {
     businessHoursFrom: "",
     businessHoursTo: "",
   });
+
+  const [errors, setErrors] = useState({});
   const [editingLogIndex, setEditingLogIndex] = useState(null);
+
+  // Wrapped in try-catch internally by custom hook, but handled here for logic
   const [ivrLogs, setIvrLogs] = useLocalStorage("ivrConfig_logs", []);
+
+  // UI State
   const [toast, setToast] = useState({
     open: false,
     type: "success",
@@ -77,49 +100,163 @@ export default function IVRConfig() {
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-  // Toast functions
+  // --- HELPER FUNCTIONS ---
+
   const showToast = (type, message) => {
     setToast({ open: true, type, message });
-    setTimeout(() => setToast({ open: false, type: "", message: "" }), 2500);
+    setTimeout(() => setToast({ open: false, type: "", message: "" }), 3000);
+  };
+
+  // --- VALIDATION LOGIC (UPDATED) ---
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    // Required check for non-boolean fields
+    if (
+      (value === "" || value === null || value === undefined) &&
+      name !== "enable"
+    ) {
+      return "This field is required";
+    }
+
+    switch (name) {
+      case "ivrName":
+        if (!/^[a-zA-Z0-9 ]+$/.test(value))
+          error = "Only letters and numbers allowed";
+        else if (value.length < 3) error = "Name must be at least 3 characters";
+        break;
+
+      case "practiceCode":
+        // Practice code validation
+        if (value.length < 3)
+          error = "Practice Code must be at least 3 characters";
+        break;
+
+      case "appCode":
+        if (value.length < 2) {
+          error = "Code must be at least 2 characters";
+        } else {
+          // --- UNIQUE VALIDATION CHECK ---
+          // Check if code exists in logs (excluding the one currently being edited)
+          const isDuplicate = ivrLogs.some(
+            (log, index) =>
+              log.appCode?.toLowerCase() === value.toLowerCase() &&
+              index !== editingLogIndex
+          );
+
+          if (isDuplicate) {
+            error = "Application Code must be unique (Already exists)";
+          }
+        }
+        break;
+
+      case "businessHoursTo":
+        if (form.businessHoursFrom && value <= form.businessHoursFrom) {
+          error = "End time must be after Start time";
+        }
+        break;
+
+      case "dbConnection":
+        if (value.length < 10) error = "Invalid connection string (too short)";
+        break;
+
+      case "apiKey":
+        // Robust API Key Validation
+        if (value.length < 2) error = "API Key must be at least 2 characters";
+        break;
+
+      case "insurance":
+        // --- UPDATED: Minimum 3 characters ---
+        if (value.length < 3) {
+          error = "Insurance ID must be at least 3 characters";
+        }
+        break;
+
+      case "insuranceContact":
+        // --- UPDATED: Email OR Min 11 Digit Phone ---
+        if (value.includes("@")) {
+          // Validate as Email
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            error = "Invalid email address format";
+          }
+        } else {
+          // Validate as Phone (Numeric & Min 11 digits)
+          // ^\d{11,}$ means start to end, digits only, 11 or more repetitions
+          if (!/^\d{11,}$/.test(value)) {
+            error = "Phone number must be at least 11 digits";
+          }
+        }
+        break;
+
+      case "timeout":
+        if (!/^\d+$/.test(value)) error = "Must be a number";
+        else if (parseInt(value) > 300) error = "Max timeout is 300s";
+        else if (parseInt(value) < 1) error = "Min timeout is 1s";
+        break;
+
+      case "retries":
+        if (!/^\d+$/.test(value)) error = "Must be a number";
+        else if (parseInt(value) > 10) error = "Max retries is 10";
+        break;
+
+      default:
+        break;
+    }
+    return error;
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
-  };
+    const newValue = type === "checkbox" || name === "enable" ? checked : value;
 
-  const validateStep = (step) => {
-    switch (step) {
-      case 0:
-        return (
-          form.ivrName && form.appType && form.practiceCode && form.appCode
-        );
-      case 1:
-        return (
-          form.environment &&
-          form.recordCNA &&
-          form.purpose &&
-          form.businessHoursFrom &&
-          form.businessHoursTo
-        );
-      case 2:
-        return form.dbConnection;
-      case 3:
-        return form.apiKey && form.insurance && form.insuranceContact;
-      case 4:
-        return form.timeout && form.retries;
-      default:
-        return true;
+    setForm((prev) => ({ ...prev, [name]: newValue }));
+
+    if (type !== "checkbox" && name !== "enable") {
+      const errorMsg = validateField(name, newValue);
+      setErrors((prev) => ({ ...prev, [name]: errorMsg }));
     }
   };
 
-  const handleNext = () =>
-    validateStep(activeStep)
-      ? setActiveStep((prev) => prev + 1)
-      : showToast(
-          "warning",
-          "Please fill all required fields before continuing."
-        );
+  const validateCurrentStep = () => {
+    const stepFields = {
+      0: ["ivrName", "appType", "practiceCode", "appCode"],
+      1: [
+        "environment",
+        "timeZone",
+        "recordCNA",
+        "purpose",
+        "businessHoursFrom",
+        "businessHoursTo",
+      ],
+      2: ["dbConnection"],
+      3: ["apiKey", "insurance", "insuranceContact"],
+      4: ["timeout", "retries"],
+    };
+
+    const currentFields = stepFields[activeStep];
+    let newErrors = { ...errors };
+    let isValid = true;
+
+    currentFields.forEach((field) => {
+      const err = validateField(field, form[field]);
+      if (err) {
+        newErrors[field] = err;
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleNext = () => {
+    if (validateCurrentStep()) {
+      setActiveStep((prev) => prev + 1);
+    } else {
+      showToast("error", "Please fix the errors before proceeding.");
+    }
+  };
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
@@ -130,7 +267,7 @@ export default function IVRConfig() {
       appType: "",
       practiceCode: "",
       appCode: "",
-      region: "US-East",
+      timeZone: "",
       environment: "",
       recordCNA: "",
       purpose: "",
@@ -143,75 +280,126 @@ export default function IVRConfig() {
       businessHoursFrom: "",
       businessHoursTo: "",
     });
+    setErrors({});
     setActiveStep(0);
     setEditingLogIndex(null);
   };
 
+  // --- SUBMIT WITH ROBUST ERROR HANDLING ---
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateStep(activeStep)) {
-      showToast("error", "Please complete all required fields before saving.");
+
+    // 1. Final Validation Check
+    if (!validateCurrentStep()) {
+      showToast("error", "Please complete all required fields correctly.");
       return;
     }
 
-    const logData = {
-      appId:
-        editingLogIndex !== null
-          ? ivrLogs[editingLogIndex].appId
-          : Math.floor(Math.random() * 10000),
-      appName: form.ivrName,
-      appCode: form.appCode,
-      appType: form.appType,
-      purpose: form.purpose,
-      insurance: form.insurance,
-      status: form.enable ? "Enabled" : "Disabled",
-      timeZone: form.region,
-      businessHoursFrom: form.businessHoursFrom,
-      businessHoursTo: form.businessHoursTo,
-      businessTimeZone: form.region,
-      environment: form.environment,
-      recordCNA: form.recordCNA,
-      practiceCode: form.practiceCode,
-    };
+    try {
+      // 2. Prepare Data
+      // Generating a unique numeric ID using timestamp to ensure uniqueness internally
+      const newAppId = Date.now();
 
-    if (editingLogIndex !== null) {
-      const copy = [...ivrLogs];
-      copy[editingLogIndex] = logData;
-      setIvrLogs(copy);
+      const logData = {
+        ...form,
+        appId:
+          editingLogIndex !== null ? ivrLogs[editingLogIndex].appId : newAppId,
+        appName: form.ivrName,
+        status: form.enable ? "Enabled" : "Disabled",
+        businessTimeZone: form.timeZone,
+      };
+
+      const updatedLogs = [...ivrLogs];
+
+      // 3. Update or Add
+      if (editingLogIndex !== null) {
+        updatedLogs[editingLogIndex] = logData;
+      } else {
+        updatedLogs.push(logData);
+      }
+
+      // 4. Save to Storage (This might throw QuotaExceededError)
+      setIvrLogs(updatedLogs);
+
+      // 5. Success UI
+      showToast(
+        "success",
+        editingLogIndex !== null
+          ? "IVR Log updated successfully!"
+          : "IVR Configuration saved successfully!"
+      );
       setEditingLogIndex(null);
-      showToast("success", "IVR Log updated successfully!");
-    } else {
-      setIvrLogs([...ivrLogs, logData]);
-      showToast("success", "IVR Configuration saved successfully!");
+      handleClear();
+    } catch (error) {
+      // 6. Error Handling
+      console.error("Critical Error during save:", error);
+
+      // Specific check for Storage Full
+      if (
+        error.name === "QuotaExceededError" ||
+        error.name === "NS_ERROR_DOM_QUOTA_REACHED"
+      ) {
+        showToast("error", "Storage Full! Please delete old logs.");
+      } else {
+        showToast("error", "An unexpected error occurred. Please try again.");
+      }
     }
-    handleClear();
   };
 
   const handleDeleteLog = (index) => {
-    const copy = [...ivrLogs];
-    copy.splice(index, 1);
-    setIvrLogs(copy);
-    showToast("success", "IVR log deleted successfully!");
+    try {
+      const copy = [...ivrLogs];
+      copy.splice(index, 1);
+      setIvrLogs(copy);
+      showToast("success", "Record deleted successfully.");
+
+      // If we were editing this specific log, clear the form
+      if (editingLogIndex === index) {
+        handleClear();
+      }
+    } catch (error) {
+      console.error("Delete Error:", error);
+      showToast("error", "Failed to delete record.");
+    }
   };
 
   const handleEditLog = (index) => {
-    const log = ivrLogs[index];
-    setForm({
-      enable: log.status === "Enabled",
-      ivrName: log.appName,
-      appCode: log.appCode,
-      appType: log.appType,
-      purpose: log.purpose,
-      insurance: log.insurance,
-      region: log.timeZone,
-      businessHoursFrom: log.businessHoursFrom,
-      businessHoursTo: log.businessHoursTo,
-      environment: log.environment,
-      recordCNA: log.recordCNA,
-      practiceCode: log.practiceCode,
-    });
-    setEditingLogIndex(index);
-    setActiveStep(0);
+    try {
+      const log = ivrLogs[index];
+      setForm({
+        enable: log.status === "Enabled",
+        ivrName: log.appName,
+        appCode: log.appCode,
+        appType: log.appType,
+        practiceCode: log.practiceCode || "",
+        purpose: log.purpose,
+        insurance: log.insurance,
+        insuranceContact: log.insuranceContact || "",
+        timeZone: log.timeZone || log.businessTimeZone || "",
+        environment: log.environment,
+        recordCNA: log.recordCNA,
+        dbConnection: log.dbConnection || "",
+        apiKey: log.apiKey || "",
+        timeout: log.timeout || "",
+        retries: log.retries || "",
+        businessHoursFrom: log.businessHoursFrom,
+        businessHoursTo: log.businessHoursTo,
+      });
+      setEditingLogIndex(index);
+      setActiveStep(0);
+      setErrors({});
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      console.error("Edit Load Error:", error);
+      showToast("error", "Failed to load record for editing.");
+    }
+  };
+
+  // --- SORTING & FILTERING ---
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters({ ...filters, [name]: value });
   };
 
   const requestSort = (key) => {
@@ -221,16 +409,11 @@ export default function IVRConfig() {
     setSortConfig({ key, direction });
   };
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
-  };
-
   const filteredLogs = ivrLogs.filter((log) => {
     const searchMatch =
-      log.appName.toLowerCase().includes(search.toLowerCase()) ||
-      log.appCode.toLowerCase().includes(search.toLowerCase()) ||
-      log.appType.toLowerCase().includes(search.toLowerCase());
+      (log.appName || "").toLowerCase().includes(search.toLowerCase()) ||
+      (log.appCode || "").toLowerCase().includes(search.toLowerCase()) ||
+      (log.appType || "").toLowerCase().includes(search.toLowerCase());
 
     const typeMatch = filters.appType.length
       ? filters.appType.includes(log.appType)
@@ -265,36 +448,38 @@ export default function IVRConfig() {
       direction={sortConfig.key === columnKey ? sortConfig.direction : "asc"}
       onClick={() => requestSort(columnKey)}
     >
-      {label}
+      <b>{label}</b>
     </TableSortLabel>
   );
 
   return (
     <Box className="ivr-container">
-      {/* Toast Alerts */}
-{toast.open && (
-  <div className="stepper-alert-wrapper">
-    <div className={`alert alert-${toast.type}`}>
-      <span className="alert-icon">✖</span>
-      <span className="alert-text">{toast.message}</span>
-    </div>
-  </div>
-)}
+      {/* Toast Notification */}
+      {toast.open && (
+        <Box
+          className="ivr-toast"
+          sx={{
+            borderLeft: `6px solid ${
+              toast.type === "error" ? "#d32f2f" : "#2e7d32"
+            }`,
+            color: toast.type === "error" ? "#d32f2f" : "#2e7d32",
+          }}
+        >
+          <ErrorOutline sx={{ mr: 1 }} />
+          <Typography variant="body2" fontWeight="bold">
+            {toast.message}
+          </Typography>
+        </Box>
+      )}
 
+      {/* Header */}
+      <Box className="ivr-header-sticky">
+        <Typography variant="h5" fontWeight="bold">
+          IVR Configuration Wizard
+        </Typography>
+      </Box>
 
-
-      <Typography variant="h5" gutterBottom>
-        IVR Configuration Wizard
-      </Typography>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        className="ivr-subtitle"
-      >
-        Configure DNIS, Database, API, and Advanced settings step by step.
-      </Typography>
-
-      <Stepper activeStep={activeStep} alternativeLabel className="ivr-stepper">
+      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4, mt: 2 }}>
         {steps.map((label) => (
           <Step key={label}>
             <StepLabel>{label}</StepLabel>
@@ -302,11 +487,11 @@ export default function IVRConfig() {
         ))}
       </Stepper>
 
-      <Paper elevation={6} className="ivr-paper">
-        <Box component="form" onSubmit={handleSubmit}>
+      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+        <Box component="form" noValidate>
           {/* Step 0 - General */}
           {activeStep === 0 && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
@@ -314,10 +499,9 @@ export default function IVRConfig() {
                       checked={form.enable}
                       onChange={handleChange}
                       name="enable"
-                      color="primary"
                     />
                   }
-                  label="Enable IVR"
+                  label="Enable IVR System"
                 />
               </Grid>
               <Grid item xs={6}>
@@ -328,11 +512,12 @@ export default function IVRConfig() {
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.ivrName}
+                  helperText={errors.ivrName}
                 />
               </Grid>
               <Grid item xs={6}>
-                <FormControl fullWidth variant="filled" required>
+                <FormControl fullWidth required error={!!errors.appType}>
                   <InputLabel>Application Type</InputLabel>
                   <Select
                     name="appType"
@@ -345,6 +530,9 @@ export default function IVRConfig() {
                       </MenuItem>
                     ))}
                   </Select>
+                  {errors.appType && (
+                    <FormHelperText>{errors.appType}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
@@ -355,7 +543,8 @@ export default function IVRConfig() {
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.practiceCode}
+                  helperText={errors.practiceCode}
                 />
               </Grid>
               <Grid item xs={6}>
@@ -366,7 +555,8 @@ export default function IVRConfig() {
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.appCode}
+                  helperText={errors.appCode}
                 />
               </Grid>
             </Grid>
@@ -374,9 +564,9 @@ export default function IVRConfig() {
 
           {/* Step 1 - Routing */}
           {activeStep === 1 && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid item xs={6}>
-                <FormControl fullWidth variant="filled" required>
+                <FormControl fullWidth required error={!!errors.environment}>
                   <InputLabel>Environment</InputLabel>
                   <Select
                     name="environment"
@@ -389,10 +579,32 @@ export default function IVRConfig() {
                       </MenuItem>
                     ))}
                   </Select>
+                  {errors.environment && (
+                    <FormHelperText>{errors.environment}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <FormControl fullWidth variant="filled" required>
+                <FormControl fullWidth required error={!!errors.timeZone}>
+                  <InputLabel>Time Zone</InputLabel>
+                  <Select
+                    name="timeZone"
+                    value={form.timeZone}
+                    onChange={handleChange}
+                  >
+                    {timeZones.map((tz) => (
+                      <MenuItem key={tz} value={tz}>
+                        {tz}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.timeZone && (
+                    <FormHelperText>{errors.timeZone}</FormHelperText>
+                  )}
+                </FormControl>
+              </Grid>
+              <Grid item xs={6}>
+                <FormControl fullWidth required error={!!errors.recordCNA}>
                   <InputLabel>Record CNA</InputLabel>
                   <Select
                     name="recordCNA"
@@ -402,10 +614,13 @@ export default function IVRConfig() {
                     <MenuItem value="Yes">Yes</MenuItem>
                     <MenuItem value="No">No</MenuItem>
                   </Select>
+                  {errors.recordCNA && (
+                    <FormHelperText>{errors.recordCNA}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <FormControl fullWidth variant="filled" required>
+                <FormControl fullWidth required error={!!errors.purpose}>
                   <InputLabel>Purpose</InputLabel>
                   <Select
                     name="purpose"
@@ -418,30 +633,37 @@ export default function IVRConfig() {
                       </MenuItem>
                     ))}
                   </Select>
+                  {errors.purpose && (
+                    <FormHelperText>{errors.purpose}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
-              <Grid item xs={3}>
+              <Grid item xs={6}>
                 <TextField
                   type="time"
                   label="Business Hours From"
                   name="businessHoursFrom"
+                  InputLabelProps={{ shrink: true }}
                   value={form.businessHoursFrom}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.businessHoursFrom}
+                  helperText={errors.businessHoursFrom}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid item xs={6}>
                 <TextField
                   type="time"
                   label="Business Hours To"
                   name="businessHoursTo"
+                  InputLabelProps={{ shrink: true }}
                   value={form.businessHoursTo}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.businessHoursTo}
+                  helperText={errors.businessHoursTo}
                 />
               </Grid>
             </Grid>
@@ -449,16 +671,17 @@ export default function IVRConfig() {
 
           {/* Step 2 - Database */}
           {activeStep === 2 && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
-                  label="Database Connection"
+                  label="Database Connection String"
                   name="dbConnection"
                   value={form.dbConnection}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.dbConnection}
+                  helperText={errors.dbConnection}
                 />
               </Grid>
             </Grid>
@@ -466,7 +689,7 @@ export default function IVRConfig() {
 
           {/* Step 3 - API */}
           {activeStep === 3 && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid item xs={6}>
                 <TextField
                   label="API Key"
@@ -475,29 +698,33 @@ export default function IVRConfig() {
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.apiKey}
+                  helperText={errors.apiKey}
                 />
               </Grid>
               <Grid item xs={6}>
                 <TextField
-                  label="Insurance"
+                  label="Insurance ID (Min 3 Chars)"
                   name="insurance"
                   value={form.insurance}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  // REMOVED: inputProps={{ maxLength: 11 }} to allow dynamic validation
+                  error={!!errors.insurance}
+                  helperText={errors.insurance}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label="Insurance Contact"
+                  label="Insurance Contact (Email OR 11+ Digit Phone)"
                   name="insuranceContact"
                   value={form.insuranceContact}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.insuranceContact}
+                  helperText={errors.insuranceContact}
                 />
               </Grid>
             </Grid>
@@ -505,34 +732,36 @@ export default function IVRConfig() {
 
           {/* Step 4 - Advanced */}
           {activeStep === 4 && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid item xs={6}>
                 <TextField
-                  label="Timeout (sec)"
+                  label="Timeout (seconds)"
                   name="timeout"
                   value={form.timeout}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.timeout}
+                  helperText={errors.timeout}
                 />
               </Grid>
               <Grid item xs={6}>
                 <TextField
-                  label="Retries"
+                  label="Max Retries"
                   name="retries"
                   value={form.retries}
                   onChange={handleChange}
                   fullWidth
                   required
-                  variant="filled"
+                  error={!!errors.retries}
+                  helperText={errors.retries}
                 />
               </Grid>
             </Grid>
           )}
 
           {/* Buttons */}
-          <Box className="ivr-buttons">
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
             <Button
               variant="outlined"
               startIcon={<ArrowBack />}
@@ -541,34 +770,36 @@ export default function IVRConfig() {
             >
               Back
             </Button>
-            {activeStep === steps.length - 1 ? (
-              <Box className="ivr-button-group">
+
+            <Box>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<Clear />}
+                onClick={handleClear}
+                sx={{ mr: 1 }}
+              >
+                Clear
+              </Button>
+              {activeStep === steps.length - 1 ? (
                 <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Clear />}
-                  onClick={handleClear}
-                >
-                  Clear
-                </Button>
-                <Button
-                  type="submit"
                   variant="contained"
-                  color="primary"
+                  color="success"
                   startIcon={<Save />}
+                  onClick={handleSubmit}
                 >
                   {editingLogIndex !== null ? "Update" : "Save"}
                 </Button>
-              </Box>
-            ) : (
-              <Button
-                variant="contained"
-                endIcon={<ArrowForward />}
-                onClick={handleNext}
-              >
-                Next
-              </Button>
-            )}
+              ) : (
+                <Button
+                  variant="contained"
+                  endIcon={<ArrowForward />}
+                  onClick={handleNext}
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
           </Box>
         </Box>
       </Paper>
@@ -579,17 +810,19 @@ export default function IVRConfig() {
           IVR Logs
         </Typography>
 
+        {/* Filters */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid item xs={4}>
             <TextField
               placeholder="Search by App Name/Code/Type"
               fullWidth
+              size="small"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </Grid>
           <Grid item xs={2}>
-            <FormControl fullWidth>
+            <FormControl fullWidth size="small">
               <InputLabel>App Type</InputLabel>
               <Select
                 multiple
@@ -609,7 +842,7 @@ export default function IVRConfig() {
             </FormControl>
           </Grid>
           <Grid item xs={3}>
-            <FormControl fullWidth>
+            <FormControl fullWidth size="small">
               <InputLabel>Environment</InputLabel>
               <Select
                 multiple
@@ -629,7 +862,7 @@ export default function IVRConfig() {
             </FormControl>
           </Grid>
           <Grid item xs={3}>
-            <FormControl fullWidth>
+            <FormControl fullWidth size="small">
               <InputLabel>Purpose</InputLabel>
               <Select
                 multiple
@@ -650,8 +883,9 @@ export default function IVRConfig() {
           </Grid>
         </Grid>
 
-        <TableContainer>
-          <Table>
+        {/* Table */}
+        <TableContainer sx={{ maxHeight: 600 }}>
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
                 {[
@@ -665,7 +899,6 @@ export default function IVRConfig() {
                   "timeZone",
                   "businessHoursFrom",
                   "businessHoursTo",
-                  "businessTimeZone",
                   "environment",
                   "recordCNA",
                   "practiceCode",
@@ -673,7 +906,10 @@ export default function IVRConfig() {
                   <TableCell
                     key={col}
                     sx={{
-                      backgroundColor: sortConfig.key === col ? "#f0f8ff" : "",
+                      backgroundColor:
+                        sortConfig.key === col ? "#f0f8ff" : "#f5f5f5",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {renderSortLabel(
@@ -684,19 +920,24 @@ export default function IVRConfig() {
                     )}
                   </TableCell>
                 ))}
-                <TableCell align="center">Action</TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ backgroundColor: "#f5f5f5", fontWeight: "bold" }}
+                >
+                  Action
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sortedLogs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={15} align="center">
+                  <TableCell colSpan={14} align="center">
                     No Records Found
                   </TableCell>
                 </TableRow>
               ) : (
                 sortedLogs.map((row, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} hover>
                     {[
                       "appId",
                       "appName",
@@ -708,19 +949,20 @@ export default function IVRConfig() {
                       "timeZone",
                       "businessHoursFrom",
                       "businessHoursTo",
-                      "businessTimeZone",
                       "environment",
                       "recordCNA",
                       "practiceCode",
                     ].map((col) => (
-                      <TableCell key={col}>{row[col]}</TableCell>
+                      <TableCell key={col} sx={{ whiteSpace: "nowrap" }}>
+                        {row[col] || "-"}
+                      </TableCell>
                     ))}
-                    <TableCell align="center">
+                    <TableCell align="center" sx={{ minWidth: 150 }}>
                       <Button
                         variant="outlined"
                         size="small"
                         sx={{ mr: 1 }}
-                        onClick={() => handleEditLog(index)}
+                        onClick={() => handleEditLog(ivrLogs.indexOf(row))}
                       >
                         Edit
                       </Button>
@@ -728,7 +970,7 @@ export default function IVRConfig() {
                         variant="outlined"
                         color="error"
                         size="small"
-                        onClick={() => handleDeleteLog(index)}
+                        onClick={() => handleDeleteLog(ivrLogs.indexOf(row))}
                       >
                         Delete
                       </Button>

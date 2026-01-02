@@ -10,215 +10,222 @@
   --glass-border: #e2e2e2;
   --text-muted: #555;
   --border-light: #d3d3d3;
+  --error-bg: #ffe9e9;
+  --error-text: #c62828;
+  --success-bg: #eafff2;
+  --success-text: #0c8c4a;
 }
 
 /* -----------------------------------------------------
-   CONTAINER
+   CONTAINER (FIX: Navbar Overlap Issue)
 ------------------------------------------------------ */
 .ivr-container {
-  font-family: "Roboto", sans-serif;
-  padding: 36px;
-  min-height: 100vh;
+  font-family: "Inter", "Roboto", sans-serif;
+  padding: 24px;
+  /* IMPORTANT: Agar apka Navbar Fixed hai (top pe chipka hua), 
+     to ye margin content ko neeche push karega taake wo chupe nahi.
+     Apne Navbar ki height ke hisab se '80px' ko adjust karein.
+  */
+  margin-top: 80px; 
+  min-height: calc(100vh - 80px);
   background-color: var(--aurora-3);
-  position: relative; /* 🔴 important for toast */
-  overflow: hidden;
-  border-radius: 18px;
-  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
+  position: relative;
 }
 
-/* Glow */
+/* Background Aurora Glow */
 .ivr-container::before,
 .ivr-container::after {
   content: "";
   position: absolute;
-  width: 35%;
-  height: 35%;
+  width: 40%;
+  height: 40%;
   background: radial-gradient(
     circle at center,
     rgba(58, 90, 224, 0.08),
     transparent 70%
   );
-  filter: blur(60px);
+  filter: blur(80px);
   animation: floatAurora 15s ease-in-out infinite alternate;
   z-index: 0;
+  pointer-events: none;
 }
 
 .ivr-container::before {
-  top: -10%;
+  top: -15%;
   left: -10%;
 }
 
 .ivr-container::after {
-  bottom: -10%;
+  bottom: -15%;
   right: -10%;
   animation-delay: 2s;
 }
 
 @keyframes floatAurora {
-  from {
-    transform: translate(0, 0) scale(1);
-  }
-  to {
-    transform: translate(20px, -15px) scale(1.05);
-  }
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(30px, -20px) scale(1.1); }
 }
 
 /* -----------------------------------------------------
-   TITLE
+   STICKY HEADER (Title Scroll pe chipka rahega)
 ------------------------------------------------------ */
-.ivr-container h5 {
-  font-size: 30px;
-  font-weight: 700;
-  color: var(--dark-text);
+.ivr-header-sticky {
+  position: sticky;
+  top: 0; /* Container ke top pe stick karega */
+  z-index: 50;
+  background-color: var(--aurora-3); /* Background zaruri hai taake content through na dikhe */
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  display: block;
+}
+
+/* -----------------------------------------------------
+   TOAST NOTIFICATION (FIX: Navbar ke upar dikhane ke liye)
+------------------------------------------------------ */
+.ivr-toast {
+  position: fixed;
+  /* Navbar (approx 60-80px) ke neeche dikhane ke liye */
+  top: 90px;       
+  right: 20px;
+  z-index: 99999;  /* Sabse upar (Navbar aur Modal ke upar) */
+  min-width: 320px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* -----------------------------------------------------
+   CARDS (Paper)
+------------------------------------------------------ */
+.ivr-paper, .MuiPaper-root {
+  border-radius: 18px !important;
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(12px);
   position: relative;
   z-index: 1;
 }
 
-.ivr-subtitle {
-  font-size: 15px;
+/* -----------------------------------------------------
+   MUI INPUT OVERRIDES
+------------------------------------------------------ */
+.MuiOutlinedInput-root {
+  border-radius: 10px !important;
+  background-color: #fff !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--aurora-2) !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--aurora-1) !important;
+  border-width: 2px !important;
+}
+
+.MuiInputLabel-root {
   color: var(--text-muted);
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
+  font-size: 14px;
 }
 
-/* -----------------------------------------------------
-   STEPPER
------------------------------------------------------- */
-.ivr-stepper {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  position: relative;
-  z-index: 1;
-}
-
-/* -----------------------------------------------------
-   FORM CARD
------------------------------------------------------- */
-.ivr-paper {
-  padding: 32px;
-  margin-top: 28px;
-  border-radius: 18px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(10px);
-  position: relative;
-  z-index: 1;
+.MuiInputLabel-root.Mui-focused {
+  color: var(--aurora-1) !important;
+  font-weight: 600;
 }
 
 /* -----------------------------------------------------
    BUTTONS
 ------------------------------------------------------ */
-.ivr-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
-}
-
-.ivr-button-group {
-  display: flex;
-  gap: 12px;
-}
-
-.MuiButton-containedPrimary {
-  background-color: var(--aurora-1) !important;
-  color: #fff !important;
+.MuiButton-contained {
+  background-color: var(--aurora-2) !important;
+  box-shadow: 0 4px 12px rgba(75, 112, 245, 0.3) !important;
   border-radius: 10px !important;
+  padding: 8px 22px !important;
   font-weight: 600 !important;
+  text-transform: none !important;
+  transition: transform 0.2s !important;
+}
+
+.MuiButton-contained:hover {
+  background-color: var(--aurora-1) !important;
+  transform: translateY(-2px);
 }
 
 .MuiButton-outlined {
   border-radius: 10px !important;
-  color: var(--aurora-1) !important;
-  border: 1px solid var(--aurora-1) !important;
+  border: 1.5px solid var(--aurora-2) !important;
+  color: var(--aurora-2) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+.MuiButton-outlined:hover {
+  background-color: #f0f2ff !important;
+}
+
+.MuiButton-outlinedColorError {
+  border-color: #ff4d4d !important;
+  color: #ff4d4d !important;
+}
+.MuiButton-outlinedColorError:hover {
+  background-color: #fff0f0 !important;
 }
 
 /* -----------------------------------------------------
-   INPUTS
+   STEPPER
 ------------------------------------------------------ */
-.MuiFilledInput-root {
-  background: #fff !important;
-  border-radius: 10px !important;
-  border: 1px solid var(--border-light) !important;
+.MuiStepIcon-root.Mui-active {
+  color: var(--aurora-1) !important;
 }
-
-.MuiInputLabel-filled {
-  font-weight: 500;
+.MuiStepIcon-root.Mui-completed {
+  color: var(--success-text) !important;
+}
+.MuiStepLabel-label {
+  font-weight: 500 !important;
 }
 
 /* -----------------------------------------------------
-   TABLE
+   TABLE STYLES
 ------------------------------------------------------ */
 .MuiTableContainer-root {
-  border-radius: 12px !important;
-  border: 1px solid var(--glass-border);
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.MuiTableHead-root {
+  background-color: #f0f2ff;
 }
 
 .MuiTableCell-head {
-  background-color: #f0f2ff;
-  font-weight: 600;
+  background-color: #f0f2ff !important;
+  color: var(--aurora-1) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e0e0e0 !important;
 }
 
-/* -----------------------------------------------------
-   ✅ TOAST ALERT (STEPPER KE BILKUL UPAR)
------------------------------------------------------- */
-
-.toast-container {
-  position: absolute; /* 🔴 fixed hata diya */
-  top: 95px;          /* 🔴 heading + subtitle ke baad */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
+.MuiTableCell-body {
+  font-size: 14px !important;
+  color: var(--dark-text);
+  border-bottom: 1px solid #f0f0f0 !important;
 }
 
-.alert {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 420px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font-weight: 500;
-  background: #fff;
-  animation: slideDown 0.3s ease, fadeOut 0.4s ease 2.5s forwards;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
-}
-
-/* Error / Warning */
-.alert-error,
-.alert-warning {
-  background: #fdeaea;
-  color: #d32f2f;
-  border-left: 6px solid #d32f2f;
-}
-
-/* Success */
-.alert-success {
-  background: #e9f7ef;
-  color: #1e7e34;
-  border-left: 6px solid #1e7e34;
-}
-
-.alert-icon {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-/* Animations */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -12px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-@keyframes fadeOut {
-  to {
-    opacity: 0;
-  }
+.MuiTableRow-root:hover {
+  background-color: #f8f9ff !important;
 }

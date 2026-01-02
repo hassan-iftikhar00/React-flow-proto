@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Pencil,
   Trash2,
@@ -6,7 +6,6 @@ import {
   CheckCircle,
   XCircle,
   ChevronUp,
-  ChevronDown as DownIcon,
 } from "lucide-react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./DNISConfig.css";
@@ -14,119 +13,126 @@ import "./DNISConfig.css";
 export default function DNISConfig() {
   const [enable, setEnable] = useState(false);
 
-  // DNIS data
-  const [data, setData] = useLocalStorage("dnisConfig_data", []);
+  // --- Data Fetching & State ---
+  const [storedData, setStoredData] = useLocalStorage("dnisConfig_data", []);
+  const [storedLogs] = useLocalStorage("ivrConfig_logs", []);
 
-  // IVR logs
-  const [ivrLogs] = useLocalStorage("ivrConfig_logs", []);
+  const [data, setData] = useState(Array.isArray(storedData) ? storedData : []);
+  const [ivrLogs] = useState(Array.isArray(storedLogs) ? storedLogs : []);
 
+  // UI & Error States
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
-  const [envDropdown, setEnvDropdown] = useState(false);
+  const [errors, setErrors] = useState({}); 
   const [selectedDNISIndex, setSelectedDNISIndex] = useState(null);
+  
+  // Dropdown States
+  const [envDropdown, setEnvDropdown] = useState(false);
   const [filterDropdown, setFilterDropdown] = useState(false);
-  const [filter, setFilter] = useState("All");
   const [appDropdown, setAppDropdown] = useState(false);
-
+  
+  const [filter, setFilter] = useState("All");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   const environments = ["Production", "Development"];
   const filters = ["All", ...environments];
 
-  const ivrAppNames = Array.from(new Set(ivrLogs.map((log) => log.appName)));
+  useEffect(() => {
+    setStoredData(data);
+  }, [data, setStoredData]);
+
+  const ivrAppNames = useMemo(() => {
+    return Array.from(new Set(ivrLogs.map((log) => log?.appName).filter(Boolean)));
+  }, [ivrLogs]);
 
   const showAlert = (type, message) => {
     setAlert({ show: true, type, message });
     setTimeout(() => setAlert({ show: false }), 2500);
   };
 
+  // --- Action Handlers ---
+
   const handleChange = (e) => {
-    if (selectedDNISIndex === null) return;
+    if (selectedDNISIndex === null || !data[selectedDNISIndex]) return;
+    const { name, value } = e.target;
+    
+    let finalValue = value;
+    if (name === "dnis") {
+      finalValue = value.replace(/[^0-9]/g, ""); // Sirf numbers allow karega
+    }
+
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+
     const updatedData = [...data];
-    updatedData[selectedDNISIndex][e.target.name] = e.target.value;
+    updatedData[selectedDNISIndex] = { ...updatedData[selectedDNISIndex], [name]: finalValue };
     setData(updatedData);
   };
 
   const handleSave = () => {
-    if (selectedDNISIndex === null) {
-      showAlert("error", "No DNIS selected!");
+    if (selectedDNISIndex === null) return;
+    
+    const current = data[selectedDNISIndex];
+    let newErrors = {};
+
+    if (!current?.dnis?.trim()) newErrors.dnis = "DNIS number is required!";
+    else if (current.dnis.length < 4 || current.dnis.length > 15) newErrors.dnis = "DNIS must be 4-15 digits!";
+    
+    if (!current?.appName) newErrors.appName = "Please select an application!";
+    if (!current?.environment) newErrors.environment = "Please select an environment!";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showAlert("error", "Please fix the highlighted errors.");
       return;
     }
 
-    const dnis = data[selectedDNISIndex];
-    if (!dnis.dnis || !dnis.appName || !dnis.environment) {
-      showAlert("error", "Please fill all required fields!");
+    const isDuplicate = data.some((item, idx) => 
+      item.dnis === current.dnis && item.environment === current.environment && idx !== selectedDNISIndex
+    );
+
+    if (isDuplicate) {
+      setErrors({ dnis: "DNIS already exists in this environment!" });
+      showAlert("error", "Duplicate Configuration!");
       return;
     }
 
-    showAlert("success", "DNIS Saved Successfully!");
+    setErrors({});
+    showAlert("success", "Configuration saved successfully!");
   };
 
   const handleAddNew = () => {
-    const newDNIS = { dnis: "", appName: "", environment: "", remarks: "" };
-    setData([...data, newDNIS]);
-    setSelectedDNISIndex(data.length);
+    const newEntry = { dnis: "", appName: "", environment: "", remarks: "" };
+    const updatedData = [...data, newEntry];
+    setData(updatedData);
+    setSelectedDNISIndex(updatedData.length - 1);
+    setErrors({});
   };
 
   const handleDelete = (index) => {
     const updatedData = data.filter((_, i) => i !== index);
     setData(updatedData);
     if (selectedDNISIndex === index) setSelectedDNISIndex(null);
-    showAlert("success", "Entry Deleted!");
+    else if (selectedDNISIndex > index) setSelectedDNISIndex(selectedDNISIndex - 1);
+    showAlert("success", "Entry removed!");
   };
 
-  const selectEnvironment = (env) => {
-    if (selectedDNISIndex === null) return;
-    const updatedData = [...data];
-    updatedData[selectedDNISIndex].environment = env;
-    setData(updatedData);
-    setEnvDropdown(false);
-  };
+  // --- Filter & Sort ---
+  const filteredData = useMemo(() => 
+    filter === "All" ? data : data.filter(d => d.environment === filter)
+  , [data, filter]);
 
-  const selectAppName = (app) => {
-    if (selectedDNISIndex === null) return;
-    const updatedData = [...data];
-    updatedData[selectedDNISIndex].appName = app;
-    setData(updatedData);
-    setAppDropdown(false);
-  };
-
-  const selectFilter = (f) => {
-    setFilter(f);
-    setFilterDropdown(false);
-  };
-
-  const filteredData =
-    filter === "All" ? data : data.filter((d) => d.environment === filter);
-
-  // Sorting
-  const sortedData = React.useMemo(() => {
-    let sortableItems = [...filteredData];
-    if (sortConfig.key !== null) {
-      sortableItems.sort((a, b) => {
-        const valA = a[sortConfig.key] || "";
-        const valB = b[sortConfig.key] || "";
-        if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+  const sortedData = useMemo(() => {
+    let items = [...filteredData];
+    if (sortConfig.key) {
+      items.sort((a, b) => {
+        const aVal = (a[sortConfig.key] || "").toString().toLowerCase();
+        const bVal = (b[sortConfig.key] || "").toString().toLowerCase();
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
         return 0;
       });
     }
-    return sortableItems;
+    return items;
   }, [filteredData, sortConfig]);
-
-  const requestSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortArrow = (key) => {
-    if (sortConfig.key === key) {
-      return sortConfig.direction === "asc" ? <ChevronUp size={12} /> : <DownIcon size={12} />;
-    }
-    return null;
-  };
 
   return (
     <div className="dnis-container">
@@ -149,131 +155,139 @@ export default function DNISConfig() {
 
       {enable && (
         <div className="split-container">
-          {/* LEFT PANEL */}
+          {/* LEFT PANEL: TABLE SECTION */}
           <div className="left-panel">
-            <button className="open-btn" onClick={handleAddNew}>
-              Add New DNIS
-            </button>
-
-            {data.length > 0 && (
-              <div className={`custom-dropdown ${filterDropdown ? "show-options" : ""}`} style={{ margin: "16px 0" }}>
+            <div className="panel-actions">
+              <button className="open-btn" onClick={handleAddNew}>+ Add New DNIS</button>
+              
+              <div className={`custom-dropdown filter-dropdown ${filterDropdown ? "show-options" : ""}`}>
                 <div className="selected" onClick={() => setFilterDropdown(!filterDropdown)}>
-                  <span>{filter}</span>
-                  <ChevronDown size={16} />
+                  <span>Filter: {filter}</span>
+                  <ChevronDown size={14} />
                 </div>
                 <div className="options">
                   {filters.map((f, i) => (
-                    <div key={i} className="option" onClick={() => selectFilter(f)}>
-                      {f}
-                    </div>
+                    <div key={i} className="option" onClick={() => { setFilter(f); setFilterDropdown(false); }}>{f}</div>
                   ))}
                 </div>
               </div>
-            )}
+            </div>
 
-            {filteredData.length > 0 && (
+            <div className="table-wrapper">
               <table className="dnis-table">
                 <thead>
                   <tr>
-                    <th onClick={() => requestSort("dnis")}>
-                      DNIS {getSortArrow("dnis")}
+                    <th onClick={() => setSortConfig({ key: "dnis", direction: sortConfig.direction === "asc" ? "desc" : "asc" })}>
+                      DNIS {sortConfig.key === "dnis" && (sortConfig.direction === "asc" ? "↑" : "↓")}
                     </th>
-                    <th onClick={() => requestSort("appName")}>
-                      App Name {getSortArrow("appName")}
-                    </th>
-                    <th onClick={() => requestSort("environment")}>
-                      Environment {getSortArrow("environment")}
-                    </th>
-                    <th onClick={() => requestSort("remarks")}>
-                      Remarks {getSortArrow("remarks")}
-                    </th>
-                    <th>Actions</th>
+                    <th>App Name</th>
+                    <th>Env</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedData.map((row, index) => (
-                    <tr
-                      key={index}
-                      style={{
-                        background: selectedDNISIndex === index ? "#e4e8ff" : "transparent",
-                      }}
-                    >
-                      <td>{row.dnis}</td>
-                      <td>{row.appName}</td>
-                      <td>{row.environment}</td>
-                      <td>{row.remarks}</td>
-                      <td className="actions">
-                        <Pencil size={18} onClick={() => setSelectedDNISIndex(index)} />
-                        <Trash2 size={18} onClick={() => handleDelete(index)} />
-                      </td>
-                    </tr>
-                  ))}
+                  {sortedData.length > 0 ? sortedData.map((row) => {
+                    const actualIdx = data.indexOf(row);
+                    return (
+                      <tr key={actualIdx} className={selectedDNISIndex === actualIdx ? "selected-row" : ""}>
+                        <td onClick={() => setSelectedDNISIndex(actualIdx)}>{row.dnis || "---"}</td>
+                        <td onClick={() => setSelectedDNISIndex(actualIdx)}>{row.appName || "---"}</td>
+                        <td onClick={() => setSelectedDNISIndex(actualIdx)}>{row.environment || "---"}</td>
+                        <td>
+                          <div className="action-btns">
+                            <Pencil size={18} className="edit-icon" onClick={() => setSelectedDNISIndex(actualIdx)} />
+                            <Trash2 size={18} className="delete-icon" onClick={() => handleDelete(actualIdx)} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr><td colSpan="4" className="no-data-td">No records found.</td></tr>
+                  )}
                 </tbody>
               </table>
-            )}
+            </div>
           </div>
 
-          {/* RIGHT PANEL */}
+          {/* RIGHT PANEL: STICKY FORM SECTION */}
           <div className="right-panel">
-            {selectedDNISIndex !== null ? (
-              <div className="form">
-                <h3>DNIS Details</h3>
-
-                <input
-                  name="dnis"
-                  placeholder="DNIS *"
-                  value={data[selectedDNISIndex].dnis}
-                  onChange={handleChange}
-                />
-
-                {/* APP NAME DROPDOWN */}
-                <div className={`custom-dropdown ${appDropdown ? "show-options" : ""}`}>
-                  <div className="selected" onClick={() => setAppDropdown(!appDropdown)}>
-                    <span>{data[selectedDNISIndex].appName || "Select App Name *"}</span>
-                    <ChevronDown size={16} />
+            <div className="sticky-wrapper">
+              {selectedDNISIndex !== null && data[selectedDNISIndex] ? (
+                <div className="form">
+                  <h3>{data[selectedDNISIndex].dnis ? "Edit Configuration" : "New Configuration"}</h3>
+                  
+                  <div className="input-group">
+                    <label>DNIS Number</label>
+                    <input 
+                      name="dnis" 
+                      type="text" 
+                      placeholder="e.g. 1800123456"
+                      className={errors.dnis ? "error-border" : ""}
+                      value={data[selectedDNISIndex].dnis || ""} 
+                      onChange={handleChange} 
+                    />
+                    {errors.dnis && <span className="error-msg">{errors.dnis}</span>}
                   </div>
-                  <div className="options">
-                    {ivrAppNames.length === 0 ? (
-                      <div className="option disabled">No IVR Apps Found</div>
-                    ) : (
-                      ivrAppNames.map((app, i) => (
-                        <div key={i} className="option" onClick={() => selectAppName(app)}>
-                          {app}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
 
-                {/* ENV DROPDOWN */}
-                <div className={`custom-dropdown ${envDropdown ? "show-options" : ""}`}>
-                  <div className="selected" onClick={() => setEnvDropdown(!envDropdown)}>
-                    <span>{data[selectedDNISIndex].environment || "Select Environment *"}</span>
-                    <ChevronDown size={16} />
-                  </div>
-                  <div className="options">
-                    {environments.map((env, i) => (
-                      <div key={i} className="option" onClick={() => selectEnvironment(env)}>
-                        {env}
+                  <div className="input-group">
+                    <label>Application Name</label>
+                    <div className={`custom-dropdown ${appDropdown ? "show-options" : ""} ${errors.appName ? "error-border" : ""}`}>
+                      <div className="selected" onClick={() => setAppDropdown(!appDropdown)}>
+                        <span>{data[selectedDNISIndex].appName || "Select App..."}</span>
+                        <ChevronDown size={16} />
                       </div>
-                    ))}
+                      <div className="options">
+                        {ivrAppNames.map((app, i) => (
+                          <div key={i} className="option" onClick={() => {
+                            const upd = [...data]; upd[selectedDNISIndex].appName = app;
+                            setData(upd); setAppDropdown(false);
+                            setErrors(prev => ({...prev, appName: null}));
+                          }}>{app}</div>
+                        ))}
+                      </div>
+                    </div>
+                    {errors.appName && <span className="error-msg">{errors.appName}</span>}
                   </div>
+
+                  <div className="input-group">
+                    <label>Environment</label>
+                    <div className={`custom-dropdown ${envDropdown ? "show-options" : ""} ${errors.environment ? "error-border" : ""}`}>
+                      <div className="selected" onClick={() => setEnvDropdown(!envDropdown)}>
+                        <span>{data[selectedDNISIndex].environment || "Select Env..."}</span>
+                        <ChevronDown size={16} />
+                      </div>
+                      <div className="options">
+                        {environments.map((env, i) => (
+                          <div key={i} className="option" onClick={() => {
+                            const upd = [...data]; upd[selectedDNISIndex].environment = env;
+                            setData(upd); setEnvDropdown(false);
+                            setErrors(prev => ({...prev, environment: null}));
+                          }}>{env}</div>
+                        ))}
+                      </div>
+                    </div>
+                    {errors.environment && <span className="error-msg">{errors.environment}</span>}
+                  </div>
+
+                  <div className="input-group">
+                    <label>Remarks</label>
+                    <textarea 
+                       name="remarks" 
+                       placeholder="Internal notes..."
+                       value={data[selectedDNISIndex].remarks || ""} 
+                       onChange={handleChange} 
+                    />
+                  </div>
+
+                  <button className="submit-btn" onClick={handleSave}>Save Changes</button>
                 </div>
-
-                <textarea
-                  name="remarks"
-                  placeholder="Remarks"
-                  value={data[selectedDNISIndex].remarks}
-                  onChange={handleChange}
-                />
-
-                <button className="submit-btn" onClick={handleSave}>
-                  Save / Update
-                </button>
-              </div>
-            ) : (
-              <p>Select a DNIS from left panel to edit</p>
-            )}
+              ) : (
+                <div className="empty-state">
+                  <Pencil size={40} opacity={0.1} />
+                  <p>Select a row to edit or click "Add New DNIS".</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
