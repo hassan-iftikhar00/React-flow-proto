@@ -13,7 +13,7 @@ import Navbar from "./components/Navbar";
 import NodeSidebar from "./components/NodeSidebar";
 import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
-import FlowBuilder from "./pages/FlowBuilder";
+import FlowBuilder from "./pages/Flowbuilder";
 import IVRConfig from "./pages/IVRConfig";
 import FieldsMapping from "./pages/FieldsMapping";
 import DNISConfig from "./pages/DNISConfig";
