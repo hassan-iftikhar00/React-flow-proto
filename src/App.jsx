@@ -151,9 +151,32 @@ function AppContent() {
       </Routes>
 
       {/* IVR Config Modal */}
-      <Dialog open={openConfig} onClose={handleCloseConfig} maxWidth="md" fullWidth>
-        <DialogContent sx={{ p: 0 }}>
-          <IVRConfig showPopup={showPopup} editFlowId={editFlowId} onClose={handleCloseConfig} />
+      <Dialog
+        open={openConfig}
+        onClose={handleCloseConfig}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            maxHeight: "90vh",
+            border: "1px solid var(--border-color, #e2e8f0)",
+          },
+        }}
+        sx={{
+          "& .MuiBackdrop-root": {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, position: "relative", overflow: "hidden" }}>
+          <IVRConfig
+            showPopup={showPopup}
+            editFlowId={editFlowId}
+            onClose={handleCloseConfig}
+          />
         </DialogContent>
       </Dialog>
 
@@ -161,10 +184,24 @@ function AppContent() {
       <Dialog
         open={openMapping}
         onClose={toggleMapping}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            maxHeight: "90vh",
+            border: "1px solid var(--border-color, #e2e8f0)",
+          },
+        }}
+        sx={{
+          "& .MuiBackdrop-root": {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+          },
+        }}
       >
-        <DialogContent sx={{ p: 0 }}>
+        <DialogContent sx={{ p: 0, overflow: "hidden" }}>
           <FieldsMapping
             showPopup={showPopup}
             onListChange={setFieldsMappingList}
@@ -173,8 +210,27 @@ function AppContent() {
       </Dialog>
 
       {/* DNIS Config Modal */}
-      <Dialog open={openDNIS} onClose={toggleDNIS} maxWidth="md" fullWidth>
-        <DialogContent sx={{ p: 0 }}>
+      <Dialog
+        open={openDNIS}
+        onClose={toggleDNIS}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            maxHeight: "90vh",
+            border: "1px solid var(--border-color, #e2e8f0)",
+          },
+        }}
+        sx={{
+          "& .MuiBackdrop-root": {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, overflow: "hidden" }}>
           <DNISConfig showPopup={showPopup} />
         </DialogContent>
       </Dialog>

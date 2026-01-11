@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { Pencil, Trash2, CheckCircle, XCircle, ChevronDown } from "lucide-react";
+import { Pencil, Trash2, ChevronDown } from "lucide-react";
+import {
+  XCircle as XCircleIcon,
+  CheckCircle,
+  Warning,
+  TextColumns,
+} from "@phosphor-icons/react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./FieldsMapping.css";
@@ -139,17 +145,24 @@ export default function FieldsMapping() {
   };
 
   return (
-    <div className="dnis-container">
-      <h2 className="title">Fields Mapping</h2>
+    <div className="dnis-container" style={{ background: "var(--card-bg, #ffffff)", borderRadius: "16px", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+      <div className="dnis-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 28px", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
+        <h3 style={{ display: "flex", alignItems: "center", gap: "12px", margin: 0, fontSize: "20px", fontWeight: 700, color: "black" }}>
+          <TextColumns size={24} color="#AA96DA" weight="duotone" />
+          Fields Mapping
+        </h3>
+        <button className="close-btn" onClick={() => window.history.back()} style={{ background: "rgba(255, 255, 255, 0.2)", border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+          <XCircleIcon size={24} color="#FF6B6B" weight="duotone" />
+        </button>
+      </div>
 
-      {alert.show && (
-        <div className="alert-wrapper">
-          <div className={`alert ${alert.type}`}>
-            {alert.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
-            <span>{alert.message}</span>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
+        {alert.show && (
+          <div style={{ position: "fixed", top: 24, right: 24, zIndex: 9999, display: "flex", alignItems: "center", gap: "12px", padding: "12px 20px", borderRadius: "8px", backgroundColor: alert.type === "error" ? "#fee2e2" : "#d1fae5", border: `2px solid ${alert.type === "error" ? "#ef4444" : "#10b981"}`, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}>
+            {alert.type === "success" ? <CheckCircle size={24} color="#10b981" weight="duotone" /> : <Warning size={24} color="#ef4444" weight="duotone" />}
+            <span style={{ fontWeight: 600, color: alert.type === "error" ? "#991b1b" : "#065f46" }}>{alert.message}</span>
           </div>
-        </div>
-      )}
+        )}
 
       <div className="toggle-row">
         <label className="switch">
@@ -304,6 +317,7 @@ export default function FieldsMapping() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

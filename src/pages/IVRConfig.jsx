@@ -27,6 +27,7 @@ import {
   TableRow,
   TableSortLabel,
   FormHelperText,
+  IconButton,
 } from "@mui/material";
 import {
   Save,
@@ -34,7 +35,18 @@ import {
   ArrowBack,
   ArrowForward,
   ErrorOutline,
+  Close,
 } from "@mui/icons-material";
+import {
+  XCircle,
+  Gear,
+  FloppyDisk,
+  ArrowLeft,
+  ArrowRight,
+  Eraser,
+  CheckCircle,
+  Warning,
+} from "@phosphor-icons/react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import "./IVRConfig.css";
 
@@ -108,7 +120,10 @@ export default function IVRConfig({ editFlowId, onClose }) {
     // Check prop first (for modal), then URL param (for page route)
     const flowIdToEdit = editFlowId || searchParams.get("edit");
     if (flowIdToEdit) {
-      const flowIdNum = typeof flowIdToEdit === 'number' ? flowIdToEdit : parseInt(flowIdToEdit);
+      const flowIdNum =
+        typeof flowIdToEdit === "number"
+          ? flowIdToEdit
+          : parseInt(flowIdToEdit);
       const flowIndex = ivrLogs.findIndex((log) => log.appId === flowIdNum);
       if (flowIndex !== -1) {
         handleEditLog(flowIndex);
@@ -496,548 +511,773 @@ export default function IVRConfig({ editFlowId, onClose }) {
   };
 
   return (
-    <Box className="ivr-container">
+    <Box
+      className="ivr-container"
+      sx={{
+        background: "var(--card-bg, #ffffff)",
+        borderRadius: onClose ? 4 : 0,
+        maxHeight: onClose ? "90vh" : "none",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Toast Notification */}
       {toast.open && (
         <Box
           className="ivr-toast"
           sx={{
-            borderLeft: `6px solid ${
-              toast.type === "error" ? "#d32f2f" : "#2e7d32"
+            position: "fixed",
+            top: 24,
+            right: 24,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            padding: "12px 20px",
+            borderRadius: 2,
+            backgroundColor: toast.type === "error" ? "#fee2e2" : "#d1fae5",
+            border: `2px solid ${
+              toast.type === "error" ? "#ef4444" : "#10b981"
             }`,
-            color: toast.type === "error" ? "#d32f2f" : "#2e7d32",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            animation: "slideInRight 0.3s ease-out",
           }}
         >
-          <ErrorOutline sx={{ mr: 1 }} />
-          <Typography variant="body2" fontWeight="bold">
+          {toast.type === "error" ? (
+            <Warning size={24} color="#ef4444" weight="duotone" />
+          ) : (
+            <CheckCircle size={24} color="#10b981" weight="duotone" />
+          )}
+          <Typography
+            variant="body2"
+            fontWeight="600"
+            sx={{ color: toast.type === "error" ? "#991b1b" : "#065f46" }}
+          >
             {toast.message}
           </Typography>
         </Box>
       )}
 
       {/* Header */}
-      <Box className="ivr-header-sticky">
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {editingLogIndex !== null && (
-            <Button
-              variant="outlined"
-              startIcon={<ArrowBack />}
-              onClick={handleBackToDashboard}
-              sx={{ minWidth: "auto" }}
+      <Box
+        className="ivr-header-sticky"
+        sx={{
+          padding: "24px 28px",
+          borderBottom: "1px solid var(--border-color, #e2e8f0)",
+          borderRadius: onClose ? "16px 16px 0 0" : 0,
+          background: "var(--card-bg, #ffffff)",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Gear size={24} color="#AA96DA" weight="duotone" />
+            <Typography
+              variant="h6"
+              sx={{
+                margin: 0,
+                fontSize: "20px",
+                fontWeight: 700,
+                color: "black",
+              }}
             >
-              Back
-            </Button>
+              {editingLogIndex !== null
+                ? "Edit Flow Configuration"
+                : "IVR Configuration Wizard"}
+            </Typography>
+          </Box>
+          {onClose && (
+            <button
+              className="close-btn"
+              onClick={handleBackToDashboard}
+              style={{
+                background: "rgba(255, 255, 255, 0.2)",
+                border: "none",
+                borderRadius: "8px",
+                padding: "8px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)";
+                e.currentTarget.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+            >
+              <XCircle size={24} color="#FF6B6B" weight="duotone" />
+            </button>
           )}
-          <Typography variant="h5" fontWeight="bold">
-            IVR Configuration Wizard
-            {editingLogIndex !== null && " - Edit Mode"}
-          </Typography>
         </Box>
       </Box>
 
-      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4, mt: 2 }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px 28px",
+        }}
+      >
+        <Stepper
+          activeStep={activeStep}
+          alternativeLabel
+          sx={{
+            mb: 3,
+            "& .MuiStepLabel-root .Mui-completed": {
+              color: "#10b981",
+            },
+            "& .MuiStepLabel-root .Mui-active": {
+              color: "#AA96DA",
+            },
+            "& .MuiStepLabel-label": {
+              fontWeight: 600,
+            },
+          }}
+        >
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
 
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Box component="form" noValidate>
-          {/* Step 0 - General */}
-          {activeStep === 0 && (
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.enable}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            borderRadius: 2,
+            border: "1px solid var(--border-color, #e2e8f0)",
+            backgroundColor: "var(--button-secondary-bg, #f8fafc)",
+          }}
+        >
+          <Box component="form" noValidate>
+            {/* Step 0 - General */}
+            {activeStep === 0 && (
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={form.enable}
+                        onChange={handleChange}
+                        name="enable"
+                      />
+                    }
+                    label="Enable IVR System"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="IVR Name"
+                    name="ivrName"
+                    value={form.ivrName}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    error={!!errors.ivrName}
+                    helperText={errors.ivrName}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <FormControl fullWidth required error={!!errors.appType}>
+                    <InputLabel>Application Type</InputLabel>
+                    <Select
+                      name="appType"
+                      value={form.appType}
                       onChange={handleChange}
-                      name="enable"
-                    />
-                  }
-                  label="Enable IVR System"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  label="IVR Name"
-                  name="ivrName"
-                  value={form.ivrName}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.ivrName}
-                  helperText={errors.ivrName}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <FormControl fullWidth required error={!!errors.appType}>
-                  <InputLabel>Application Type</InputLabel>
-                  <Select
-                    name="appType"
-                    value={form.appType}
+                    >
+                      {appTypes.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.appType && (
+                      <FormHelperText>{errors.appType}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Practice Code"
+                    name="practiceCode"
+                    value={form.practiceCode}
                     onChange={handleChange}
-                  >
-                    {appTypes.map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {type}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.appType && (
-                    <FormHelperText>{errors.appType}</FormHelperText>
-                  )}
-                </FormControl>
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  label="Practice Code"
-                  name="practiceCode"
-                  value={form.practiceCode}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.practiceCode}
-                  helperText={errors.practiceCode}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  label="Application Code"
-                  name="appCode"
-                  value={form.appCode}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.appCode}
-                  helperText={errors.appCode}
-                />
-              </Grid>
-            </Grid>
-          )}
-
-          {/* Step 1 - Routing */}
-          {activeStep === 1 && (
-            <Grid container spacing={3}>
-              <Grid item xs={6}>
-                <FormControl fullWidth required error={!!errors.environment}>
-                  <InputLabel>Environment</InputLabel>
-                  <Select
-                    name="environment"
-                    value={form.environment}
+                    fullWidth
+                    required
+                    error={!!errors.practiceCode}
+                    helperText={errors.practiceCode}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Application Code"
+                    name="appCode"
+                    value={form.appCode}
                     onChange={handleChange}
-                  >
-                    {environments.map((env) => (
-                      <MenuItem key={env} value={env}>
-                        {env}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.environment && (
-                    <FormHelperText>{errors.environment}</FormHelperText>
-                  )}
-                </FormControl>
+                    fullWidth
+                    required
+                    error={!!errors.appCode}
+                    helperText={errors.appCode}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <FormControl fullWidth required error={!!errors.timeZone}>
-                  <InputLabel>Time Zone</InputLabel>
-                  <Select
-                    name="timeZone"
-                    value={form.timeZone}
+            )}
+
+            {/* Step 1 - Routing */}
+            {activeStep === 1 && (
+              <Grid container spacing={3}>
+                <Grid item xs={6}>
+                  <FormControl fullWidth required error={!!errors.environment}>
+                    <InputLabel>Environment</InputLabel>
+                    <Select
+                      name="environment"
+                      value={form.environment}
+                      onChange={handleChange}
+                    >
+                      {environments.map((env) => (
+                        <MenuItem key={env} value={env}>
+                          {env}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.environment && (
+                      <FormHelperText>{errors.environment}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <FormControl fullWidth required error={!!errors.timeZone}>
+                    <InputLabel>Time Zone</InputLabel>
+                    <Select
+                      name="timeZone"
+                      value={form.timeZone}
+                      onChange={handleChange}
+                    >
+                      {timeZones.map((tz) => (
+                        <MenuItem key={tz} value={tz}>
+                          {tz}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.timeZone && (
+                      <FormHelperText>{errors.timeZone}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <FormControl fullWidth required error={!!errors.recordCNA}>
+                    <InputLabel>Record CNA</InputLabel>
+                    <Select
+                      name="recordCNA"
+                      value={form.recordCNA}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="Yes">Yes</MenuItem>
+                      <MenuItem value="No">No</MenuItem>
+                    </Select>
+                    {errors.recordCNA && (
+                      <FormHelperText>{errors.recordCNA}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <FormControl fullWidth required error={!!errors.purpose}>
+                    <InputLabel>Purpose</InputLabel>
+                    <Select
+                      name="purpose"
+                      value={form.purpose}
+                      onChange={handleChange}
+                    >
+                      {purposes.map((p) => (
+                        <MenuItem key={p} value={p}>
+                          {p}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.purpose && (
+                      <FormHelperText>{errors.purpose}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    type="time"
+                    label="Business Hours From"
+                    name="businessHoursFrom"
+                    InputLabelProps={{ shrink: true }}
+                    value={form.businessHoursFrom}
                     onChange={handleChange}
-                  >
-                    {timeZones.map((tz) => (
-                      <MenuItem key={tz} value={tz}>
-                        {tz}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.timeZone && (
-                    <FormHelperText>{errors.timeZone}</FormHelperText>
-                  )}
-                </FormControl>
-              </Grid>
-              <Grid item xs={6}>
-                <FormControl fullWidth required error={!!errors.recordCNA}>
-                  <InputLabel>Record CNA</InputLabel>
-                  <Select
-                    name="recordCNA"
-                    value={form.recordCNA}
+                    fullWidth
+                    required
+                    error={!!errors.businessHoursFrom}
+                    helperText={errors.businessHoursFrom}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    type="time"
+                    label="Business Hours To"
+                    name="businessHoursTo"
+                    InputLabelProps={{ shrink: true }}
+                    value={form.businessHoursTo}
                     onChange={handleChange}
-                  >
-                    <MenuItem value="Yes">Yes</MenuItem>
-                    <MenuItem value="No">No</MenuItem>
-                  </Select>
-                  {errors.recordCNA && (
-                    <FormHelperText>{errors.recordCNA}</FormHelperText>
-                  )}
-                </FormControl>
+                    fullWidth
+                    required
+                    error={!!errors.businessHoursTo}
+                    helperText={errors.businessHoursTo}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <FormControl fullWidth required error={!!errors.purpose}>
-                  <InputLabel>Purpose</InputLabel>
-                  <Select
-                    name="purpose"
-                    value={form.purpose}
+            )}
+
+            {/* Step 2 - Database */}
+            {activeStep === 2 && (
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Database Connection String"
+                    name="dbConnection"
+                    value={form.dbConnection}
                     onChange={handleChange}
-                  >
-                    {purposes.map((p) => (
-                      <MenuItem key={p} value={p}>
-                        {p}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.purpose && (
-                    <FormHelperText>{errors.purpose}</FormHelperText>
-                  )}
-                </FormControl>
+                    fullWidth
+                    required
+                    error={!!errors.dbConnection}
+                    helperText={errors.dbConnection}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  type="time"
-                  label="Business Hours From"
-                  name="businessHoursFrom"
-                  InputLabelProps={{ shrink: true }}
-                  value={form.businessHoursFrom}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.businessHoursFrom}
-                  helperText={errors.businessHoursFrom}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  type="time"
-                  label="Business Hours To"
-                  name="businessHoursTo"
-                  InputLabelProps={{ shrink: true }}
-                  value={form.businessHoursTo}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.businessHoursTo}
-                  helperText={errors.businessHoursTo}
-                />
-              </Grid>
-            </Grid>
-          )}
+            )}
 
-          {/* Step 2 - Database */}
-          {activeStep === 2 && (
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Database Connection String"
-                  name="dbConnection"
-                  value={form.dbConnection}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.dbConnection}
-                  helperText={errors.dbConnection}
-                />
+            {/* Step 3 - API */}
+            {activeStep === 3 && (
+              <Grid container spacing={3}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="API Key"
+                    name="apiKey"
+                    value={form.apiKey}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    error={!!errors.apiKey}
+                    helperText={errors.apiKey}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Insurance ID (Min 3 Chars)"
+                    name="insurance"
+                    value={form.insurance}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    // REMOVED: inputProps={{ maxLength: 11 }} to allow dynamic validation
+                    error={!!errors.insurance}
+                    helperText={errors.insurance}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Insurance Contact (Email OR 11+ Digit Phone)"
+                    name="insuranceContact"
+                    value={form.insuranceContact}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    error={!!errors.insuranceContact}
+                    helperText={errors.insuranceContact}
+                  />
+                </Grid>
               </Grid>
-            </Grid>
-          )}
+            )}
 
-          {/* Step 3 - API */}
-          {activeStep === 3 && (
-            <Grid container spacing={3}>
-              <Grid item xs={6}>
-                <TextField
-                  label="API Key"
-                  name="apiKey"
-                  value={form.apiKey}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.apiKey}
-                  helperText={errors.apiKey}
-                />
+            {/* Step 4 - Advanced */}
+            {activeStep === 4 && (
+              <Grid container spacing={3}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Timeout (seconds)"
+                    name="timeout"
+                    value={form.timeout}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    error={!!errors.timeout}
+                    helperText={errors.timeout}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Max Retries"
+                    name="retries"
+                    value={form.retries}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    error={!!errors.retries}
+                    helperText={errors.retries}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  label="Insurance ID (Min 3 Chars)"
-                  name="insurance"
-                  value={form.insurance}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  // REMOVED: inputProps={{ maxLength: 11 }} to allow dynamic validation
-                  error={!!errors.insurance}
-                  helperText={errors.insurance}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Insurance Contact (Email OR 11+ Digit Phone)"
-                  name="insuranceContact"
-                  value={form.insuranceContact}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.insuranceContact}
-                  helperText={errors.insuranceContact}
-                />
-              </Grid>
-            </Grid>
-          )}
+            )}
 
-          {/* Step 4 - Advanced */}
-          {activeStep === 4 && (
-            <Grid container spacing={3}>
-              <Grid item xs={6}>
-                <TextField
-                  label="Timeout (seconds)"
-                  name="timeout"
-                  value={form.timeout}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.timeout}
-                  helperText={errors.timeout}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  label="Max Retries"
-                  name="retries"
-                  value={form.retries}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.retries}
-                  helperText={errors.retries}
-                />
-              </Grid>
-            </Grid>
-          )}
-
-          {/* Buttons */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-            <Button
-              variant="outlined"
-              startIcon={<ArrowBack />}
-              disabled={activeStep === 0}
-              onClick={handleBack}
+            {/* Buttons */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mt: 5,
+                pt: 3,
+                borderTop: "1px solid #e2e8f0",
+              }}
             >
-              Back
-            </Button>
-
-            <Box>
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<Clear />}
-                onClick={handleClear}
-                sx={{ mr: 1 }}
+              <button
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                className="ivr-nav-btn"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: "2px solid #e2e8f0",
+                  background: activeStep === 0 ? "#f1f5f9" : "#ffffff",
+                  color: activeStep === 0 ? "#94a3b8" : "#64748b",
+                  fontWeight: 600,
+                  cursor: activeStep === 0 ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                  fontSize: "14px",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeStep !== 0) {
+                    e.currentTarget.style.borderColor = "#94a3b8";
+                    e.currentTarget.style.background = "#f8fafc";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeStep !== 0) {
+                    e.currentTarget.style.borderColor = "#e2e8f0";
+                    e.currentTarget.style.background = "#ffffff";
+                  }
+                }}
               >
-                Clear
-              </Button>
-              {activeStep === steps.length - 1 ? (
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<Save />}
-                  onClick={handleSubmit}
+                <ArrowLeft size={18} weight="bold" />
+                Previous
+              </button>
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <button
+                  onClick={handleClear}
+                  className="ivr-clear-btn"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    border: "2px solid #fee2e2",
+                    background: "#ffffff",
+                    color: "#ef4444",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    fontSize: "14px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#fee2e2";
+                    e.currentTarget.style.borderColor = "#ef4444";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#ffffff";
+                    e.currentTarget.style.borderColor = "#fee2e2";
+                  }}
                 >
-                  {editingLogIndex !== null ? "Update" : "Save"}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  endIcon={<ArrowForward />}
-                  onClick={handleNext}
-                >
-                  Next
-                </Button>
-              )}
-            </Box>
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Logs Table */}
-      <Paper className="ivr-paper" sx={{ mt: 3, p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          IVR Logs
-        </Typography>
-
-        {/* Filters */}
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={4}>
-            <TextField
-              placeholder="Search by App Name/Code/Type"
-              fullWidth
-              size="small"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>App Type</InputLabel>
-              <Select
-                multiple
-                name="appType"
-                value={filters.appType}
-                onChange={handleFilterChange}
-                input={<OutlinedInput label="App Type" />}
-                renderValue={(selected) => selected.join(", ")}
-              >
-                {appTypes.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    <Checkbox checked={filters.appType.indexOf(type) > -1} />
-                    <ListItemText primary={type} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Environment</InputLabel>
-              <Select
-                multiple
-                name="environment"
-                value={filters.environment}
-                onChange={handleFilterChange}
-                input={<OutlinedInput label="Environment" />}
-                renderValue={(selected) => selected.join(", ")}
-              >
-                {environments.map((env) => (
-                  <MenuItem key={env} value={env}>
-                    <Checkbox checked={filters.environment.indexOf(env) > -1} />
-                    <ListItemText primary={env} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Purpose</InputLabel>
-              <Select
-                multiple
-                name="purpose"
-                value={filters.purpose}
-                onChange={handleFilterChange}
-                input={<OutlinedInput label="Purpose" />}
-                renderValue={(selected) => selected.join(", ")}
-              >
-                {purposes.map((p) => (
-                  <MenuItem key={p} value={p}>
-                    <Checkbox checked={filters.purpose.indexOf(p) > -1} />
-                    <ListItemText primary={p} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-
-        {/* Table */}
-        <TableContainer sx={{ maxHeight: 600 }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                {[
-                  "appId",
-                  "appName",
-                  "appCode",
-                  "appType",
-                  "purpose",
-                  "insurance",
-                  "status",
-                  "timeZone",
-                  "businessHoursFrom",
-                  "businessHoursTo",
-                  "environment",
-                  "recordCNA",
-                  "practiceCode",
-                ].map((col) => (
-                  <TableCell
-                    key={col}
-                    sx={{
-                      backgroundColor:
-                        sortConfig.key === col ? "#f0f8ff" : "#f5f5f5",
-                      fontWeight: "bold",
-                      whiteSpace: "nowrap",
+                  <Eraser size={18} weight="duotone" />
+                  Clear
+                </button>
+                {activeStep === steps.length - 1 ? (
+                  <button
+                    onClick={handleSubmit}
+                    className="ivr-save-btn"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 24px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background:
+                        "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                      color: "#ffffff",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      fontSize: "14px",
+                      boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(16, 185, 129, 0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(16, 185, 129, 0.3)";
                     }}
                   >
-                    {renderSortLabel(
-                      col,
-                      col
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())
-                    )}
-                  </TableCell>
-                ))}
-                <TableCell
-                  align="center"
-                  sx={{ backgroundColor: "#f5f5f5", fontWeight: "bold" }}
+                    <FloppyDisk size={20} weight="duotone" />
+                    {editingLogIndex !== null
+                      ? "Update Configuration"
+                      : "Save Configuration"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleNext}
+                    className="ivr-next-btn"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "10px 24px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      color: "#ffffff",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      fontSize: "14px",
+                      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(102, 126, 234, 0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(102, 126, 234, 0.3)";
+                    }}
+                  >
+                    Next Step
+                    <ArrowRight size={18} weight="bold" />
+                  </button>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Logs Table */}
+        <Paper
+          className="ivr-paper"
+          sx={{
+            mt: 3,
+            p: 3,
+            borderRadius: 2,
+            border: "1px solid var(--border-color, #e2e8f0)",
+            backgroundColor: "var(--button-secondary-bg, #f8fafc)",
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{ mb: 3, fontWeight: 700, color: "black" }}
+          >
+            Configuration History
+          </Typography>
+
+          {/* Filters */}
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={4}>
+              <TextField
+                placeholder="Search by App Name/Code/Type"
+                fullWidth
+                size="small"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>App Type</InputLabel>
+                <Select
+                  multiple
+                  name="appType"
+                  value={filters.appType}
+                  onChange={handleFilterChange}
+                  input={<OutlinedInput label="App Type" />}
+                  renderValue={(selected) => selected.join(", ")}
                 >
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedLogs.length === 0 ? (
+                  {appTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      <Checkbox checked={filters.appType.indexOf(type) > -1} />
+                      <ListItemText primary={type} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Environment</InputLabel>
+                <Select
+                  multiple
+                  name="environment"
+                  value={filters.environment}
+                  onChange={handleFilterChange}
+                  input={<OutlinedInput label="Environment" />}
+                  renderValue={(selected) => selected.join(", ")}
+                >
+                  {environments.map((env) => (
+                    <MenuItem key={env} value={env}>
+                      <Checkbox
+                        checked={filters.environment.indexOf(env) > -1}
+                      />
+                      <ListItemText primary={env} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Purpose</InputLabel>
+                <Select
+                  multiple
+                  name="purpose"
+                  value={filters.purpose}
+                  onChange={handleFilterChange}
+                  input={<OutlinedInput label="Purpose" />}
+                  renderValue={(selected) => selected.join(", ")}
+                >
+                  {purposes.map((p) => (
+                    <MenuItem key={p} value={p}>
+                      <Checkbox checked={filters.purpose.indexOf(p) > -1} />
+                      <ListItemText primary={p} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+
+          {/* Table */}
+          <TableContainer sx={{ maxHeight: 600 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={14} align="center">
-                    No Records Found
+                  {[
+                    "appId",
+                    "appName",
+                    "appCode",
+                    "appType",
+                    "purpose",
+                    "insurance",
+                    "status",
+                    "timeZone",
+                    "businessHoursFrom",
+                    "businessHoursTo",
+                    "environment",
+                    "recordCNA",
+                    "practiceCode",
+                  ].map((col) => (
+                    <TableCell
+                      key={col}
+                      sx={{
+                        backgroundColor:
+                          sortConfig.key === col ? "#f0f8ff" : "#f5f5f5",
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {renderSortLabel(
+                        col,
+                        col
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell
+                    align="center"
+                    sx={{ backgroundColor: "#f5f5f5", fontWeight: "bold" }}
+                  >
+                    Action
                   </TableCell>
                 </TableRow>
-              ) : (
-                sortedLogs.map((row, index) => (
-                  <TableRow key={index} hover>
-                    {[
-                      "appId",
-                      "appName",
-                      "appCode",
-                      "appType",
-                      "purpose",
-                      "insurance",
-                      "status",
-                      "timeZone",
-                      "businessHoursFrom",
-                      "businessHoursTo",
-                      "environment",
-                      "recordCNA",
-                      "practiceCode",
-                    ].map((col) => (
-                      <TableCell key={col} sx={{ whiteSpace: "nowrap" }}>
-                        {row[col] || "-"}
-                      </TableCell>
-                    ))}
-                    <TableCell align="center" sx={{ minWidth: 150 }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        sx={{ mr: 1 }}
-                        onClick={() => handleEditLog(ivrLogs.indexOf(row))}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => handleDeleteLog(ivrLogs.indexOf(row))}
-                      >
-                        Delete
-                      </Button>
+              </TableHead>
+              <TableBody>
+                {sortedLogs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={14} align="center">
+                      No Records Found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                ) : (
+                  sortedLogs.map((row, index) => (
+                    <TableRow key={index} hover>
+                      {[
+                        "appId",
+                        "appName",
+                        "appCode",
+                        "appType",
+                        "purpose",
+                        "insurance",
+                        "status",
+                        "timeZone",
+                        "businessHoursFrom",
+                        "businessHoursTo",
+                        "environment",
+                        "recordCNA",
+                        "practiceCode",
+                      ].map((col) => (
+                        <TableCell key={col} sx={{ whiteSpace: "nowrap" }}>
+                          {row[col] || "-"}
+                        </TableCell>
+                      ))}
+                      <TableCell align="center" sx={{ minWidth: 150 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          sx={{ mr: 1 }}
+                          onClick={() => handleEditLog(ivrLogs.indexOf(row))}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleDeleteLog(ivrLogs.indexOf(row))}
+                        >
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Box>
     </Box>
   );
 }
