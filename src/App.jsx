@@ -15,6 +15,7 @@ import FlowEditor from "./components/FlowEditor";
 import Dashboard from "./pages/Dashboard";
 import FlowBuilder from "./pages/Flowbuilder";
 import IVRConfig from "./pages/IVRConfig";
+import IVRConfigPage from "./pages/IVRConfigPage";
 import FieldsMapping from "./pages/FieldsMapping";
 import DNISConfig from "./pages/DNISConfig";
 import ConfigurationPage from "./pages/ConfigurationPage";
@@ -120,7 +121,7 @@ function AppContent() {
           element={<FlowEditorPage onOpenConfig={toggleConfig} />}
         />
         <Route path="/builder" element={<FlowBuilder />} />
-        <Route path="/ivr-config" element={<IVRConfig />} />
+        <Route path="/ivr-config" element={<IVRConfigPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
