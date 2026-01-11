@@ -112,14 +112,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Navbar
-        theme={theme}
-        setTheme={setTheme}
-        currentPage={location.pathname}
-        onOpenConfig={toggleConfig}
-        onOpenDNIS={toggleDNIS}
-        onOpenMapping={toggleMapping}
-      />
+      <Navbar theme={theme} setTheme={setTheme} />
 
       <Routes>
         <Route
@@ -128,6 +121,8 @@ function AppContent() {
             <Dashboard
               onOpenConfig={toggleConfig}
               onEditFlowSettings={handleEditFlowSettings}
+              onOpenDNIS={toggleDNIS}
+              onOpenMapping={toggleMapping}
             />
           }
         />
@@ -137,6 +132,8 @@ function AppContent() {
             <Dashboard
               onOpenConfig={toggleConfig}
               onEditFlowSettings={handleEditFlowSettings}
+              onOpenDNIS={toggleDNIS}
+              onOpenMapping={toggleMapping}
             />
           }
         />
@@ -169,9 +166,11 @@ function AppContent() {
           zIndex: 10001,
           "& .MuiBackdrop-root": {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
-            backdropFilter: "blur(4px)",
             zIndex: 10001,
           },
+        }}
+        TransitionProps={{
+          timeout: 150,
         }}
       >
         <DialogContent sx={{ p: 0, position: "relative", overflow: "hidden" }}>
@@ -202,9 +201,11 @@ function AppContent() {
           zIndex: 10001,
           "& .MuiBackdrop-root": {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
-            backdropFilter: "blur(4px)",
             zIndex: 10001,
           },
+        }}
+        TransitionProps={{
+          timeout: 150,
         }}
       >
         <DialogContent sx={{ p: 0, overflow: "hidden" }}>
@@ -235,9 +236,11 @@ function AppContent() {
           zIndex: 10001,
           "& .MuiBackdrop-root": {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
-            backdropFilter: "blur(4px)",
             zIndex: 10001,
           },
+        }}
+        TransitionProps={{
+          timeout: 150,
         }}
       >
         <DialogContent sx={{ p: 0, overflow: "hidden" }}>

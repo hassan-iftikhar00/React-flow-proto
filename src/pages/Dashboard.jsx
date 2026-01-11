@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -25,11 +25,18 @@ import {
   Hospital,
   CalendarBlank,
   FlowArrow,
+  Phone,
+  TextColumns,
 } from "@phosphor-icons/react";
 import "./Dashboard.css";
 import { useLocalStorage, getLocalStorageItem } from "../hooks/useLocalStorage";
 
-export default function Dashboard({ onOpenConfig, onEditFlowSettings }) {
+export default function Dashboard({
+  onOpenConfig,
+  onEditFlowSettings,
+  onOpenDNIS,
+  onOpenMapping,
+}) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,20 +128,20 @@ export default function Dashboard({ onOpenConfig, onEditFlowSettings }) {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Also refresh when component becomes visible
-    const interval = setInterval(handleStorageChange, 1000);
-
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
     };
   }, [currentUser]);
 
-  // Filtered search
-  const filteredFlows = flows.filter(
-    (flow) =>
-      flow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      flow.description.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filtered search - memoized to prevent recalculation
+  const filteredFlows = useMemo(
+    () =>
+      flows.filter(
+        (flow) =>
+          flow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          flow.description.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [flows, searchTerm]
   );
 
   // Helper function to get relative time
@@ -151,12 +158,12 @@ export default function Dashboard({ onOpenConfig, onEditFlowSettings }) {
     return `${diffDays} days ago`;
   };
 
-  const handleCreateNewFlow = () => {
+  const handleCreateNewFlow = useCallback(() => {
     // Open IVR Config modal to create a new flow
     if (onOpenConfig) {
       onOpenConfig();
     }
-  };
+  }, [onOpenConfig]);
 
   const handleDuplicateFlow = (flow) => {
     // Get the original log from IVR Config
@@ -296,23 +303,38 @@ export default function Dashboard({ onOpenConfig, onEditFlowSettings }) {
         {/* Header Section */}
         <div className="dashboard-header">
           <div className="dashboard-header-content">
-            <h1 className="dashboard-title">IVR Flow Dashboard</h1>
+            <h1 className="dashboard-title">
+              <FlowArrow
+                size={36}
+                color="#6366F1"
+                weight="duotone"
+                style={{ marginRight: "12px" }}
+              />
+              IVR Flow Dashboard
+            </h1>
             <p className="dashboard-subtitle">
               Create, manage, and deploy your conversation flows
             </p>
           </div>
           <div className="header-actions">
+            <button className="btn-primary" onClick={handleCreateNewFlow}>
+              <Gear size={20} weight="duotone" />
+              New Flow
+            </button>
+            <button className="btn-secondary" onClick={onOpenDNIS}>
+              <Phone size={20} weight="duotone" />
+              DNIS Config
+            </button>
+            <button className="btn-secondary" onClick={onOpenMapping}>
+              <TextColumns size={20} weight="duotone" />
+              Fields Mapping
+            </button>
             <button
               className="btn-secondary"
               onClick={() => navigate("/configuration")}
-              style={{ marginRight: "12px" }}
             >
               <Settings size={20} />
               Configuration
-            </button>
-            <button className="btn-primary" onClick={handleCreateNewFlow}>
-              <Plus size={20} />
-              New Flow
             </button>
           </div>
         </div>
@@ -328,12 +350,6 @@ export default function Dashboard({ onOpenConfig, onEditFlowSettings }) {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
-          </div>
-          <div className="toolbar-actions">
-            <button className="btn-secondary">
-              <Filter size={18} />
-              Filter
-            </button>
           </div>
         </div>
 
