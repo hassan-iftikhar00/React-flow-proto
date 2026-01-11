@@ -112,10 +112,15 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Dashboard onOpenConfig={toggleConfig} />} />
         <Route
+          path="/dashboard"
+          element={<Dashboard onOpenConfig={toggleConfig} />}
+        />
+        <Route
           path="/flows/:flowId"
           element={<FlowEditorPage onOpenConfig={toggleConfig} />}
         />
         <Route path="/builder" element={<FlowBuilder />} />
+        <Route path="/ivr-config" element={<IVRConfig />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

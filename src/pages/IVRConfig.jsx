@@ -346,7 +346,7 @@ export default function IVRConfig() {
           ? "IVR Configuration updated successfully!"
           : "IVR Configuration saved successfully!"
       );
-      
+
       // Navigate back to dashboard if we came from there
       const editFlowId = searchParams.get("edit");
       if (isEditing && editFlowId) {

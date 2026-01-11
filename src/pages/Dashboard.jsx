@@ -159,10 +159,54 @@ export default function Dashboard({ onOpenConfig }) {
   };
 
   const handleDuplicateFlow = (flow) => {
+    // Get the original log from IVR Config
+    const ivrLogs = getLocalStorageItem("ivrConfig_logs", []);
+    const originalLog = ivrLogs.find((log) => log.appId === flow.id);
+
+    if (!originalLog) {
+      alert("Unable to duplicate flow: Original flow data not found.");
+      return;
+    }
+
+    // Create a new unique ID
+    const newAppId = Date.now();
+
+    // Duplicate the IVR Config log
+    const duplicatedLog = {
+      ...originalLog,
+      appId: newAppId,
+      appName: `${originalLog.appName} (Copy)`,
+      appCode: `${originalLog.appCode}_copy_${newAppId}`, // Ensure unique app code
+      status: "Disabled", // Start as disabled
+    };
+
+    // Save to IVR Config logs
+    const updatedLogs = [...ivrLogs, duplicatedLog];
+    localStorage.setItem("ivrConfig_logs", JSON.stringify(updatedLogs));
+
+    // Duplicate flow nodes if they exist
+    const originalNodes = getLocalStorageItem(`flow_${flow.id}_nodes`, []);
+    if (originalNodes.length > 0) {
+      localStorage.setItem(
+        `flow_${newAppId}_nodes`,
+        JSON.stringify(originalNodes)
+      );
+    }
+
+    // Duplicate flow edges if they exist
+    const originalEdges = getLocalStorageItem(`flow_${flow.id}_edges`, []);
+    if (originalEdges.length > 0) {
+      localStorage.setItem(
+        `flow_${newAppId}_edges`,
+        JSON.stringify(originalEdges)
+      );
+    }
+
+    // Update local state by reloading from storage
     const now = new Date().toISOString();
     const duplicatedFlow = {
       ...flow,
-      id: Date.now(),
+      id: newAppId,
       name: `${flow.name} (Copy)`,
       lastModified: now,
       created: new Date().toLocaleDateString("en-US", {
