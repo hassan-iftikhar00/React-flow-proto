@@ -64,6 +64,7 @@ function AppContent() {
   const [openConfig, setOpenConfig] = useState(false);
   const [openMapping, setOpenMapping] = useState(false);
   const [openDNIS, setOpenDNIS] = useState(false);
+  const [editFlowId, setEditFlowId] = useState(null);
 
   const [fieldsMappingList, setFieldsMappingList] = useState([]);
   const [popupOpen, setPopupOpen] = useState(false);
@@ -89,6 +90,16 @@ function AppContent() {
   const toggleMapping = () => setOpenMapping((prev) => !prev);
   const toggleDNIS = () => setOpenDNIS((prev) => !prev);
 
+  const handleEditFlowSettings = (flowId) => {
+    setEditFlowId(flowId);
+    setOpenConfig(true);
+  };
+
+  const handleCloseConfig = () => {
+    setOpenConfig(false);
+    setEditFlowId(null);
+  };
+
   if (loading)
     return (
       <div className="app-loading">
@@ -111,10 +122,23 @@ function AppContent() {
       />
 
       <Routes>
-        <Route path="/" element={<Dashboard onOpenConfig={toggleConfig} />} />
+        <Route
+          path="/"
+          element={
+            <Dashboard
+              onOpenConfig={toggleConfig}
+              onEditFlowSettings={handleEditFlowSettings}
+            />
+          }
+        />
         <Route
           path="/dashboard"
-          element={<Dashboard onOpenConfig={toggleConfig} />}
+          element={
+            <Dashboard
+              onOpenConfig={toggleConfig}
+              onEditFlowSettings={handleEditFlowSettings}
+            />
+          }
         />
         <Route
           path="/flows/:flowId"
@@ -127,9 +151,9 @@ function AppContent() {
       </Routes>
 
       {/* IVR Config Modal */}
-      <Dialog open={openConfig} onClose={toggleConfig} maxWidth="md" fullWidth>
+      <Dialog open={openConfig} onClose={handleCloseConfig} maxWidth="md" fullWidth>
         <DialogContent sx={{ p: 0 }}>
-          <IVRConfig showPopup={showPopup} />
+          <IVRConfig showPopup={showPopup} editFlowId={editFlowId} onClose={handleCloseConfig} />
         </DialogContent>
       </Dialog>
 

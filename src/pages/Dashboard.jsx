@@ -29,7 +29,7 @@ import {
 import "./Dashboard.css";
 import { useLocalStorage, getLocalStorageItem } from "../hooks/useLocalStorage";
 
-export default function Dashboard({ onOpenConfig }) {
+export default function Dashboard({ onOpenConfig, onEditFlowSettings }) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -243,8 +243,10 @@ export default function Dashboard({ onOpenConfig }) {
   };
 
   const handleEditFlowSettings = (flowId) => {
-    // Navigate to IVR Config with the flow ID to edit
-    navigate(`/ivr-config?edit=${flowId}`);
+    // Open the config modal with flow ID for editing
+    if (onEditFlowSettings) {
+      onEditFlowSettings(flowId);
+    }
   };
 
   const handleLoadFlow = (flow) => {

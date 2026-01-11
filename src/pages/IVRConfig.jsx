@@ -57,7 +57,7 @@ const timeZones = [
   "Central European Time (Berlin, Paris, Rome)",
 ];
 
-export default function IVRConfig() {
+export default function IVRConfig({ editFlowId, onClose }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
@@ -103,11 +103,12 @@ export default function IVRConfig() {
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-  // --- LOAD FLOW FOR EDITING FROM URL PARAM ---
+  // --- LOAD FLOW FOR EDITING FROM PROP OR URL PARAM ---
   useEffect(() => {
-    const editFlowId = searchParams.get("edit");
-    if (editFlowId) {
-      const flowIdNum = parseInt(editFlowId);
+    // Check prop first (for modal), then URL param (for page route)
+    const flowIdToEdit = editFlowId || searchParams.get("edit");
+    if (flowIdToEdit) {
+      const flowIdNum = typeof flowIdToEdit === 'number' ? flowIdToEdit : parseInt(flowIdToEdit);
       const flowIndex = ivrLogs.findIndex((log) => log.appId === flowIdNum);
       if (flowIndex !== -1) {
         handleEditLog(flowIndex);
@@ -115,7 +116,7 @@ export default function IVRConfig() {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     }
-  }, [searchParams]);
+  }, [editFlowId, searchParams, ivrLogs]);
 
   // --- HELPER FUNCTIONS ---
 
@@ -347,9 +348,14 @@ export default function IVRConfig() {
           : "IVR Configuration saved successfully!"
       );
 
-      // Navigate back to dashboard if we came from there
-      const editFlowId = searchParams.get("edit");
-      if (isEditing && editFlowId) {
+      // Close modal if editing from modal, otherwise navigate if from page route
+      if (isEditing && editFlowId && onClose) {
+        // Editing from modal - close after delay
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else if (isEditing && searchParams.get("edit")) {
+        // Editing from page route - navigate back
         setTimeout(() => {
           navigate("/dashboard");
         }, 1500);
@@ -480,7 +486,13 @@ export default function IVRConfig() {
   );
 
   const handleBackToDashboard = () => {
-    navigate("/dashboard");
+    if (onClose) {
+      // If opened as modal, close it
+      onClose();
+    } else {
+      // If opened as page, navigate back
+      navigate("/dashboard");
+    }
   };
 
   return (
