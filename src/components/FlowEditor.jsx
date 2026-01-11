@@ -299,33 +299,90 @@ function FlowEditorContent({
         setShowSearch(true);
       }
 
+      // Delete/Backspace: Delete selected edge
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedEdge) {
+        e.preventDefault();
+        wrappedSetEdges((eds) =>
+          eds.filter((edge) => edge.id !== selectedEdge.id)
+        );
+        setSelectedEdge(null);
+      }
+
       // ESC: Close search/panels
       if (e.key === "Escape") {
         setShowSearch(false);
         setShowVersionHistory(false);
         setShowAnalytics(false);
         setShowActivityLog(false);
+        setSelectedEdge(null);
+        setSelectedNode(null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [selectedEdge, wrappedSetEdges]);
 
   // add edge
   const onConnect = useCallback(
-    (params) =>
-      wrappedSetEdges((eds) =>
-        addEdge(
+    (params) => {
+      // Check if source node already has outgoing edges
+      const sourceNode = nodes.find((n) => n.id === params.source);
+
+      // Determine maximum allowed outgoing edges based on node type and configuration
+      let maxAllowedEdges = 1; // Default for most nodes
+
+      if (sourceNode?.type === "menu") {
+        // For menu nodes, limit based on number of configured options
+        const optionsCount = sourceNode.data?.options?.length || 0;
+        maxAllowedEdges = optionsCount;
+      } else if (sourceNode?.type === "istt" || sourceNode?.type === "stt") {
+        // These nodes can have multiple outputs
+        maxAllowedEdges = Infinity;
+      }
+
+      wrappedSetEdges((eds) => {
+        // Count existing outgoing edges from this source node
+        const existingEdgesFromSource = eds.filter(
+          (e) => e.source === params.source
+        );
+
+        // Check if adding this edge would exceed the limit
+        if (existingEdgesFromSource.length >= maxAllowedEdges) {
+          // If limit reached and maxAllowedEdges is 1, replace the existing edge
+          if (maxAllowedEdges === 1) {
+            const filteredEdges = eds.filter((e) => e.source !== params.source);
+            return addEdge(
+              {
+                ...params,
+                animated: true,
+                markerEnd: { type: MarkerType.Arrow },
+                style: { stroke: "#06b6d4", strokeWidth: 2 },
+              },
+              filteredEdges
+            );
+          } else {
+            // For menu nodes, show alert when limit is reached
+            alert(
+              `This menu node has only ${maxAllowedEdges} option(s) configured. Please add more options in the node settings to create additional connections.`
+            );
+            return eds; // Don't add the edge
+          }
+        }
+
+        // Add the new edge
+        return addEdge(
           {
             ...params,
             animated: true,
             markerEnd: { type: MarkerType.Arrow },
+            style: { stroke: "#06b6d4", strokeWidth: 2 },
           },
           eds
-        )
-      ),
-    [wrappedSetEdges]
+        );
+      });
+    },
+    [wrappedSetEdges, nodes]
   );
 
   // 🆕 sidebar click -> add node
@@ -397,17 +454,16 @@ function FlowEditorContent({
         }
       };
 
-      // Calculate position for new node based on last selected node
+      // Calculate position for new node based on the most recent node
       let newPosition = { x: 250, y: 100 };
-      if (lastNodeIdRef.current) {
-        const lastNode = nodes.find((n) => n.id === lastNodeIdRef.current);
-        if (lastNode) {
-          // Place new node below and slightly to the right of the last node
-          newPosition = {
-            x: lastNode.position.x + 50,
-            y: lastNode.position.y + 150,
-          };
-        }
+      if (nodes.length > 0) {
+        // Get the most recently added node (last node in the array)
+        const mostRecentNode = nodes[nodes.length - 1];
+        // Place new node below and slightly to the right of the most recent node
+        newPosition = {
+          x: mostRecentNode.position.x + 50,
+          y: mostRecentNode.position.y + 150,
+        };
       }
 
       const newNode = {
@@ -432,13 +488,14 @@ function FlowEditorContent({
       };
 
       wrappedSetNodes((nds) => {
-        // Connect to last added node
+        // Connect to the most recent node (last node in the array)
         let updatedNodes = nds.concat(newNode);
-        if (lastNodeIdRef.current) {
+        if (nds.length > 0) {
+          const mostRecentNodeId = nds[nds.length - 1].id;
           wrappedSetEdges((eds) =>
             eds.concat({
-              id: `edge-${lastNodeIdRef.current}-${newNode.id}`,
-              source: lastNodeIdRef.current,
+              id: `edge-${mostRecentNodeId}-${newNode.id}`,
+              source: mostRecentNodeId,
               target: newNode.id,
               animated: true,
               markerEnd: { type: MarkerType.Arrow },
@@ -458,6 +515,26 @@ function FlowEditorContent({
 
       // Automatically select the new node to open config panel
       setSelectedNode(newNode);
+
+      // Pan to the newly added node
+      setTimeout(() => {
+        const reactFlowInstance = reactFlowWrapper.current;
+        if (reactFlowInstance) {
+          // Center the view on the new node
+          const x = newPosition.x + 100; // Add offset to center
+          const y = newPosition.y + 50;
+          const zoom = 0.8;
+
+          fitView({
+            padding: 0.2,
+            includeHiddenNodes: false,
+            minZoom: 0.5,
+            maxZoom: 1.2,
+            duration: 400,
+            nodes: [{ id: newNode.id }],
+          });
+        }
+      }, 50);
 
       setFlowAction(null); // reset action
     }
@@ -1115,6 +1192,9 @@ function FlowEditorContent({
                     configTab === "config" ? "active" : ""
                   }`}
                   onClick={() => setConfigTab("config")}
+                  style={{
+                    color: configTab === "config" ? "#1e293b" : "#94a3b8",
+                  }}
                 >
                   <GearIcon size={18} weight="duotone" />
                   Settings
@@ -1124,6 +1204,9 @@ function FlowEditorContent({
                     configTab === "comments" ? "active" : ""
                   }`}
                   onClick={() => setConfigTab("comments")}
+                  style={{
+                    color: configTab === "comments" ? "#1e293b" : "#94a3b8",
+                  }}
                 >
                   <Settings size={18} />
                   Comments

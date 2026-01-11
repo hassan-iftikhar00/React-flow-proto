@@ -17,6 +17,7 @@ import FlowBuilder from "./pages/FlowBuilder";
 import IVRConfig from "./pages/IVRConfig";
 import FieldsMapping from "./pages/FieldsMapping";
 import DNISConfig from "./pages/DNISConfig";
+import ConfigurationPage from "./pages/ConfigurationPage";
 
 import { Dialog, DialogContent, Typography } from "@mui/material";
 import { WarningAmber } from "@mui/icons-material";
@@ -110,8 +111,12 @@ function AppContent() {
 
       <Routes>
         <Route path="/" element={<Dashboard onOpenConfig={toggleConfig} />} />
-        <Route path="/flows/:flowId" element={<FlowEditorPage onOpenConfig={toggleConfig} />} />
+        <Route
+          path="/flows/:flowId"
+          element={<FlowEditorPage onOpenConfig={toggleConfig} />}
+        />
         <Route path="/builder" element={<FlowBuilder />} />
+        <Route path="/configuration" element={<ConfigurationPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -123,9 +128,17 @@ function AppContent() {
       </Dialog>
 
       {/* Fields Mapping Modal */}
-      <Dialog open={openMapping} onClose={toggleMapping} maxWidth="md" fullWidth>
+      <Dialog
+        open={openMapping}
+        onClose={toggleMapping}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogContent sx={{ p: 0 }}>
-          <FieldsMapping showPopup={showPopup} onListChange={setFieldsMappingList} />
+          <FieldsMapping
+            showPopup={showPopup}
+            onListChange={setFieldsMappingList}
+          />
         </DialogContent>
       </Dialog>
 

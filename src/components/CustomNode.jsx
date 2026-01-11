@@ -285,6 +285,26 @@ export function MenuNode({ data, style }) {
           title={`${option.key}: ${option.label}`}
         />
       ))}
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
     </div>
   );
 }
@@ -352,6 +372,26 @@ export function WaitNode({ data, style }) {
         Wait
       </strong>
       <div style={textStyle}>{data.time ? `${data.time}s` : "No time set"}</div>
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
 
       <Handle
         type="target"
@@ -431,6 +471,26 @@ export function DDTMFNode({ data, style }) {
       </strong>
       <div style={textStyle}>{data.mapping || "No mapping set"}</div>
 
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
+
       <Handle
         type="target"
         position={Position.Top}
@@ -509,6 +569,26 @@ export function DTMFNode({ data, style }) {
       </strong>
       <div style={textStyle}>{data.dtmfValue || "No DTMF set"}</div>
 
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
+
       <Handle
         type="target"
         position={Position.Top}
@@ -574,6 +654,26 @@ export function RecordNode({ data, style }) {
       <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>🎙 Record</strong>
       <div style={textStyle}>{data.recordText || "Recording..."}</div>
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
 
       <Handle
         type="target"
@@ -641,6 +741,26 @@ export function CollectNode({ data, style }) {
       <CommentBadge count={data.commentCount} onClick={data.onCommentClick} />
       <strong style={textStyle}>⌨ Collect Input</strong>
       <div style={textStyle}>Variable: {data.variable || "var1"}</div>
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
 
       <Handle
         type="target"
@@ -785,6 +905,26 @@ export function TTSNode({ data }) {
       </strong>
       <div>{data.text || "Enter text to speak"}</div>
 
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
+
       <Handle
         type="target"
         position={Position.Top}
@@ -829,6 +969,26 @@ export function STTNode({ data }) {
         Speech-to-Text
       </strong>
       <div>{data.promptText || "Enter prompt"}</div>
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
 
       <Handle
         type="target"
@@ -935,6 +1095,26 @@ export function ISSTNode({ data }) {
           title={func.name}
         />
       ))}
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
     </div>
   );
 }
@@ -1028,6 +1208,27 @@ export function TerminatorNode({ data }) {
         />
         Terminator
       </strong>
+
+      {/* User info badge */}
+      {data.createdBy && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#666",
+            marginTop: "8px",
+            padding: "4px 8px",
+            background: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "4px",
+            borderLeft: "2px solid #3b82f6",
+          }}
+          title={`Created by ${data.createdBy.name}\n${
+            data.createdAt ? new Date(data.createdAt).toLocaleString() : ""
+          }`}
+        >
+          👤 {data.createdBy.name.split(" ")[0]}
+        </div>
+      )}
+
       <Handle
         type="target"
         position={Position.Top}

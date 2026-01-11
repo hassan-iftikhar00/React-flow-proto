@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import "./ConfigurationPage.css";
 
 // APi form data that will be sent to api will be as:
@@ -9,6 +11,7 @@ import "./ConfigurationPage.css";
 // }
 
 export default function ConfigurationPage() {
+  const navigate = useNavigate();
   const [environment, setEnvironment] = useState("production");
   const [numberOption, setNumberOption] = useState("all");
   const [specificNumber, setSpecificNumber] = useState("");
@@ -36,6 +39,14 @@ export default function ConfigurationPage() {
 
   return (
     <div className="configuration-page">
+      <button
+        onClick={() => navigate(-1)}
+        className="back-button-top"
+        aria-label="Go back"
+      >
+        <ArrowLeft size={20} />
+        Back
+      </button>
       <div className="configuration-container">
         <div className="configuration-header">
           <h1>Configuration</h1>
