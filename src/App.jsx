@@ -162,12 +162,15 @@ function AppContent() {
             boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
             maxHeight: "90vh",
             border: "1px solid var(--border-color, #e2e8f0)",
+            zIndex: 10001,
           },
         }}
         sx={{
+          zIndex: 10001,
           "& .MuiBackdrop-root": {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(4px)",
+            zIndex: 10001,
           },
         }}
       >
@@ -192,12 +195,15 @@ function AppContent() {
             boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
             maxHeight: "90vh",
             border: "1px solid var(--border-color, #e2e8f0)",
+            zIndex: 10001,
           },
         }}
         sx={{
+          zIndex: 10001,
           "& .MuiBackdrop-root": {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(4px)",
+            zIndex: 10001,
           },
         }}
       >
@@ -205,6 +211,7 @@ function AppContent() {
           <FieldsMapping
             showPopup={showPopup}
             onListChange={setFieldsMappingList}
+            onClose={toggleMapping}
           />
         </DialogContent>
       </Dialog>
@@ -221,17 +228,20 @@ function AppContent() {
             boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
             maxHeight: "90vh",
             border: "1px solid var(--border-color, #e2e8f0)",
+            zIndex: 10001,
           },
         }}
         sx={{
+          zIndex: 10001,
           "& .MuiBackdrop-root": {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(4px)",
+            zIndex: 10001,
           },
         }}
       >
         <DialogContent sx={{ p: 0, overflow: "hidden" }}>
-          <DNISConfig showPopup={showPopup} />
+          <DNISConfig showPopup={showPopup} onClose={toggleDNIS} />
         </DialogContent>
       </Dialog>
 

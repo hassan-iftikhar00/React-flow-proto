@@ -26,7 +26,7 @@
      to ye margin content ko neeche push karega taake wo chupe nahi.
      Apne Navbar ki height ke hisab se '80px' ko adjust karein.
   */
-  margin-top: 80px; 
+
   min-height: calc(100vh - 80px);
   background-color: var(--aurora-3);
   position: relative;
@@ -62,8 +62,12 @@
 }
 
 @keyframes floatAurora {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(30px, -20px) scale(1.1); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(30px, -20px) scale(1.1);
+  }
 }
 
 /* -----------------------------------------------------
@@ -73,10 +77,12 @@
   position: sticky;
   top: 0; /* Container ke top pe stick karega */
   z-index: 50;
-  background-color: var(--aurora-3); /* Background zaruri hai taake content through na dikhe */
+  background-color: var(
+    --aurora-3
+  ); /* Background zaruri hai taake content through na dikhe */
   padding-bottom: 16px;
   margin-bottom: 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: block;
 }
 
@@ -86,14 +92,14 @@
 .ivr-toast {
   position: fixed;
   /* Navbar (approx 60-80px) ke neeche dikhane ke liye */
-  top: 90px;       
+  top: 90px;
   right: 20px;
-  z-index: 99999;  /* Sabse upar (Navbar aur Modal ke upar) */
+  z-index: 99999; /* Sabse upar (Navbar aur Modal ke upar) */
   min-width: 320px;
   padding: 16px 20px;
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -102,14 +108,21 @@
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(100%); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* -----------------------------------------------------
    CARDS (Paper)
 ------------------------------------------------------ */
-.ivr-paper, .MuiPaper-root {
+.ivr-paper,
+.MuiPaper-root {
   border-radius: 18px !important;
   background: var(--glass-bg) !important;
   border: 1px solid var(--glass-border) !important;
