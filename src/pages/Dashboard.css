@@ -516,6 +516,17 @@
   color: white;
 }
 
+.btn-action.settings {
+  color: #8B5CF6;
+  border-color: #8B5CF620;
+}
+
+.btn-action.settings:hover {
+  background: #8B5CF6;
+  border-color: #8B5CF6;
+  color: white;
+}
+
 .btn-action.play {
   color: #10B981;
   border-color: #10B98120;

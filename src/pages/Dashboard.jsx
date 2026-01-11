@@ -198,6 +198,11 @@ export default function Dashboard({ onOpenConfig }) {
     }
   };
 
+  const handleEditFlowSettings = (flowId) => {
+    // Navigate to IVR Config with the flow ID to edit
+    navigate(`/ivr-config?edit=${flowId}`);
+  };
+
   const handleLoadFlow = (flow) => {
     setSelectedFlow(flow);
     navigate(`/flows/${flow.id}`);
@@ -376,6 +381,16 @@ export default function Dashboard({ onOpenConfig }) {
                       title="Edit Flow"
                     >
                       <Edit3 size={16} />
+                    </button>
+                    <button
+                      className="btn-action settings"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditFlowSettings(flow.id);
+                      }}
+                      title="Flow Settings"
+                    >
+                      <Settings size={16} />
                     </button>
                     <button
                       className="btn-action play"

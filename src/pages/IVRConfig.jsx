@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -57,6 +58,8 @@ const timeZones = [
 ];
 
 export default function IVRConfig() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
 
   // State Initialization
@@ -99,6 +102,20 @@ export default function IVRConfig() {
     purpose: [],
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
+  // --- LOAD FLOW FOR EDITING FROM URL PARAM ---
+  useEffect(() => {
+    const editFlowId = searchParams.get("edit");
+    if (editFlowId) {
+      const flowIdNum = parseInt(editFlowId);
+      const flowIndex = ivrLogs.findIndex((log) => log.appId === flowIdNum);
+      if (flowIndex !== -1) {
+        handleEditLog(flowIndex);
+        // Scroll to top to show the form
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+  }, [searchParams]);
 
   // --- HELPER FUNCTIONS ---
 
@@ -322,14 +339,24 @@ export default function IVRConfig() {
       setIvrLogs(updatedLogs);
 
       // 5. Success UI
+      const isEditing = editingLogIndex !== null;
       showToast(
         "success",
-        editingLogIndex !== null
-          ? "IVR Log updated successfully!"
+        isEditing
+          ? "IVR Configuration updated successfully!"
           : "IVR Configuration saved successfully!"
       );
-      setEditingLogIndex(null);
-      handleClear();
+      
+      // Navigate back to dashboard if we came from there
+      const editFlowId = searchParams.get("edit");
+      if (isEditing && editFlowId) {
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
+      } else {
+        setEditingLogIndex(null);
+        handleClear();
+      }
     } catch (error) {
       // 6. Error Handling
       console.error("Critical Error during save:", error);
@@ -452,6 +479,10 @@ export default function IVRConfig() {
     </TableSortLabel>
   );
 
+  const handleBackToDashboard = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <Box className="ivr-container">
       {/* Toast Notification */}
@@ -474,9 +505,22 @@ export default function IVRConfig() {
 
       {/* Header */}
       <Box className="ivr-header-sticky">
-        <Typography variant="h5" fontWeight="bold">
-          IVR Configuration Wizard
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {editingLogIndex !== null && (
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBack />}
+              onClick={handleBackToDashboard}
+              sx={{ minWidth: "auto" }}
+            >
+              Back
+            </Button>
+          )}
+          <Typography variant="h5" fontWeight="bold">
+            IVR Configuration Wizard
+            {editingLogIndex !== null && " - Edit Mode"}
+          </Typography>
+        </Box>
       </Box>
 
       <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4, mt: 2 }}>
