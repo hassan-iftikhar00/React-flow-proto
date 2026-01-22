@@ -139,9 +139,9 @@ export default function Dashboard({
       flows.filter(
         (flow) =>
           flow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          flow.description.toLowerCase().includes(searchTerm.toLowerCase())
+          flow.description.toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [flows, searchTerm]
+    [flows, searchTerm],
   );
 
   // Helper function to get relative time
@@ -196,7 +196,7 @@ export default function Dashboard({
     if (originalNodes.length > 0) {
       localStorage.setItem(
         `flow_${newAppId}_nodes`,
-        JSON.stringify(originalNodes)
+        JSON.stringify(originalNodes),
       );
     }
 
@@ -205,7 +205,7 @@ export default function Dashboard({
     if (originalEdges.length > 0) {
       localStorage.setItem(
         `flow_${newAppId}_edges`,
-        JSON.stringify(originalEdges)
+        JSON.stringify(originalEdges),
       );
     }
 

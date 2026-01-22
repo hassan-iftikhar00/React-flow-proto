@@ -8,6 +8,8 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SignalRProvider } from "./contexts/SignalRContext";
+import { RealtimeDataProvider } from "./contexts/RealtimeDataContext";
 import Login from "./components/Login";
 import Navbar from "./components/Navbar";
 import NodeSidebar from "./components/NodeSidebar";
@@ -19,6 +21,8 @@ import IVRConfigPage from "./pages/IVRConfigPage";
 import FieldsMapping from "./pages/FieldsMapping";
 import DNISConfig from "./pages/DNISConfig";
 import ConfigurationPage from "./pages/ConfigurationPage";
+import IVRExecutiveDashboard from "./pages/IVRExecutiveDashboard";
+import DetailedTemplatePortal from "./pages/DetailedTemplatePortal";
 
 import { Dialog, DialogContent, Typography } from "@mui/material";
 import { WarningAmber } from "@mui/icons-material";
@@ -144,6 +148,8 @@ function AppContent() {
         <Route path="/builder" element={<FlowBuilder />} />
         <Route path="/ivr-config" element={<IVRConfigPage />} />
         <Route path="/configuration" element={<ConfigurationPage />} />
+        <Route path="/ivr-dashboard" element={<IVRExecutiveDashboard />} />
+        <Route path="/portal" element={<DetailedTemplatePortal />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -264,7 +270,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
+        <SignalRProvider>
+          <RealtimeDataProvider>
+            <AppContent />
+          </RealtimeDataProvider>
+        </SignalRProvider>
       </AuthProvider>
     </BrowserRouter>
   );

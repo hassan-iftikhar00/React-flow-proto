@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import "./ConfigurationPage.css";
 
-// APi form data that will be sent to api will be as:
-// {
-//   environment: "production" or "development",
-//   numberOption: "all" or "specific",
-//   specificNumber: "1234567890" (only if specific is selected)
+// API expects:
+// POST https://localhost:44395/api/Default
+// Body: {
+//   "EnvType": "Prod" or "Dev",
+//   "DNIS": "1234567890"
 // }
 
 export default function ConfigurationPage() {
@@ -15,18 +15,59 @@ export default function ConfigurationPage() {
   const [environment, setEnvironment] = useState("production");
   const [numberOption, setNumberOption] = useState("all");
   const [specificNumber, setSpecificNumber] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [responseData, setResponseData] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(false);
 
-    const formData = {
-      environment,
-      numberOption,
-      ...(numberOption === "specific" && { specificNumber }),
-    };
+    // Validate specific number if selected
+    if (numberOption === "specific" && !specificNumber) {
+      setError("Please enter a specific number");
+      return;
+    }
 
-    console.log("Form submitted:", formData);
-    // API call will be added here later
+    setLoading(true);
+    try {
+      // Map form values to API format
+      const apiData = {
+        EnvType: environment === "production" ? "Prod" : "Dev",
+        ...(numberOption === "specific" && { DNIS: specificNumber }),
+      };
+
+      console.log("Sending to API:", apiData);
+
+      const response = await fetch("https://localhost:44395/api/Default", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      setSuccess(true);
+      setResponseData(result);
+      setShowModal(true);
+      // Optionally reset form or navigate
+      // navigate('/some-page');
+    } catch (err) {
+      console.error("API call failed:", err);
+      setError(err.message || "Failed to submit configuration");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNumberChange = (e) => {
@@ -118,14 +159,61 @@ export default function ConfigurationPage() {
             </div>
           )}
 
+          {/* Error Message */}
+          {error && (
+            <div className="form-section">
+              <div className="error-message">{error}</div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="form-section">
+              <div className="success-message">
+                Configuration submitted successfully!
+              </div>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="form-actions">
-            <button type="submit" className="submit-button">
-              Submit
+            <button type="submit" className="submit-button" disabled={loading}>
+              {loading ? "Submitting..." : "Submit"}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Response Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>API Response</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowModal(false)}
+                aria-label="Close modal"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <pre className="response-json">
+                {JSON.stringify(responseData, null, 2)}
+              </pre>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-button"
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

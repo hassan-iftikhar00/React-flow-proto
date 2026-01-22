@@ -1,0 +1,354 @@
+/* IVR Executive Dashboard - Medical Billing System */
+
+.ivr-dashboard-new {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Top Bar with Title and Filters */
+.dashboard-top-bar {
+  background: #3c4858;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #2a3443;
+}
+
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.dashboard-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.portal-link-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.portal-link-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.dashboard-filters {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-select {
+  background: white;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  padding: 8px 32px 8px 12px;
+  font-size: 13px;
+  color: #2d3748;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  min-width: 120px;
+}
+
+.filter-select:hover {
+  border-color: #3b82f6;
+}
+
+/* Alert Banner */
+.alert-banner {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.alert-banner svg {
+  flex-shrink: 0;
+}
+
+/* Two Column Layout */
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 24px;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.dashboard-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.column-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 2px solid #e2e8f0;
+  letter-spacing: 0.5px;
+}
+
+/* Metric Cards */
+.metric-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  text-transform: none;
+  flex-shrink: 0;
+}
+
+.metric-header {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+/* Split Layout (KPI + Chart) */
+.metric-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: center;
+  flex: 1;
+  min-height: 220px;
+}
+
+.metric-kpi-large .kpi-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.metric-kpi-large .kpi-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.metric-chart-small {
+  min-height: 140px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Two Column Metric Row */
+.metric-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* KPI Styles */
+.kpi-large-inline {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.kpi-value-large {
+  font-size: 56px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.kpi-value-medium {
+  font-size: 42px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.time-label,
+.time-range,
+.trend-label {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+/* Bot Label */
+.bot-label {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 12px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Metric with Trend */
+.metric-with-trend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 230px;
+  justify-content: flex-start;
+}
+
+/* Donut with Labels */
+.donut-with-label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 220px;
+  justify-content: center;
+  flex: 1;
+}
+
+.donut-percentage {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 12px;
+}
+
+.donut-sub-label {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Range Labels */
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+/* Placeholder Chart */
+.placeholder-chart {
+  padding: 20px 0;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+/* Loading State */
+.ivr-dashboard.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: #64748b;
+}
+
+.loading-spinner svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+  .dashboard-columns {
+    gap: 20px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .dashboard-filters {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .filter-select {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .metric-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-columns {
+    padding: 16px;
+  }
+}
